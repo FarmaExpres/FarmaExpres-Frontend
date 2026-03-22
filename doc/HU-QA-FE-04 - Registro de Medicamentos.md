@@ -21,59 +21,60 @@ Esta funcionalidad permite ingresar la informacion completa del medicamento, inc
 
 #### Interfaz
 
-- [ ] Existe un boton **Agregar medicamento**
-- [ ] Al hacer clic se abre un **modal o formulario**
+- [x] Existe un boton **Agregar medicamento**
+- [x] Al hacer clic se abre un **modal o formulario**
 
 #### Formulario
 
-- [ ] Campo **Codigo del medicamento** (obligatorio)
-- [ ] Campo **Nombre comercial** (obligatorio)
-- [ ] Campo **Stock inicial** (obligatorio)
-- [ ] Campo **Stock minimo** (obligatorio)
-- [ ] Campo **Precio unitario** (obligatorio)
-- [ ] Campo **Fecha de vencimiento** (obligatorio)
+- [x] Campo **Codigo del medicamento** (obligatorio)
+- [x] Campo **Nombre comercial** (obligatorio)
+- [x] Campo **Stock inicial** (obligatorio)
+- [x] Campo **Stock minimo** (obligatorio)
+- [x] Campo **Precio unitario** (obligatorio)
+- [x] Campo **Fecha de vencimiento** (obligatorio)
 
 #### Validaciones
 
-- [ ] Todos los campos son obligatorios
-- [ ] El codigo no puede estar vacio
-- [ ] El stock debe ser un numero valido (>= 0)
-- [ ] El stock minimo debe ser un numero valido
-- [ ] El precio debe ser un numero valido
-- [ ] La fecha debe ser valida
-- [ ] No permite enviar formulario incompleto
+- [x] Todos los campos son obligatorios
+- [x] El codigo no puede estar vacio
+- [x] El stock debe ser un numero valido (>= 0)
+- [x] El stock minimo debe ser un numero valido
+- [x] El precio debe ser un numero valido
+- [x] La fecha debe ser valida
+- [x] No permite enviar formulario incompleto
 
 #### Integracion con Backend
 
-- [ ] Se realiza peticion **POST /medicines**
-- [ ] Se envian: codigo, nombre, stock, stock minimo, precio, fecha de vencimiento
+- [x] Se realiza peticion **POST /medicines**
+- [x] Se envian: codigo, nombre, stock, stock minimo, precio, fecha de vencimiento
+- [x] Se realiza peticion **POST /productos** (endpoint vigente en backend actual)
 
 #### Respuesta del Sistema
 
 **Exito:**
 
-- [ ] Se cierra el formulario
-- [ ] Se muestra mensaje: "Medicamento registrado correctamente"
-- [ ] Se actualiza la lista de medicamentos
+- [x] Se cierra el formulario
+- [x] Se muestra mensaje: "Medicamento registrado correctamente"
+- [x] Se actualiza la lista de medicamentos
 
 **Error:**
 
-- [ ] Si el codigo ya existe: mostrar mensaje claro
-- [ ] Mostrar error si falla el servidor
+- [x] Si el codigo ya existe: mostrar mensaje claro
+- [x] Mostrar error si falla el servidor
 
 #### Control de Acceso
 
-- [ ] Solo usuarios con rol **Administrador** pueden ver y usar esta funcionalidad
-- [ ] Usuarios con rol **Farmaceutico** o **Auditor** no pueden acceder
+- [x] Solo usuarios con rol **Administrador** pueden ver y usar esta funcionalidad
+- [x] Usuarios con rol **Farmaceutico** o **Auditor** no pueden acceder
 
 ### 1.4 Checklist QA
 
-- [ ] No permite campos vacios
-- [ ] No permite valores negativos en stock
-- [ ] No permite precios invalidos
-- [ ] Muestra error si el codigo esta duplicado
-- [ ] Actualiza la tabla sin recargar la pagina
-- [ ] Respeta los roles de acceso
+- [x] No permite campos vacios
+- [x] No permite valores negativos en stock
+- [x] No permite precios invalidos
+- [x] Muestra error si el codigo esta duplicado
+- [x] Actualiza la tabla sin recargar la pagina
+- [x] Respeta los roles de acceso
 
 ### 1.5 Notas Tecnicas
 
