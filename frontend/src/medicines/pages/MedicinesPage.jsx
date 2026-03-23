@@ -127,44 +127,44 @@ const MedicinesPage = () => {
   }, [medicineToDeactivate])
 
   return (
-    <div className="p-6 max-w-7xl mx-auto">
-      <div className="flex justify-between items-center mb-4">
-        <h1 className="text-2xl font-bold">Gestión de Medicamentos</h1>
+    <div className="mx-auto max-w-7xl p-4 md:p-5">
+      <div className="mb-4 flex flex-col justify-between gap-3 md:flex-row md:items-center">
+        <div>
+          <h1 className="fe-section-title">Gestión de Medicamentos</h1>
+        </div>
 
         <button
           onClick={handleOpenCreate}
-          className="bg-purple-600 text-white px-4 py-2 rounded-lg"
+          className="fe-btn-primary"
         >
           + Agregar medicamento
         </button>
       </div>
 
       {feedback && (
-        <div className="fixed top-4 right-4 z-50 max-w-md w-[90vw] sm:w-auto">
-          <div
-            className={`rounded-lg px-4 py-3 text-sm shadow-lg ${
-              feedback.type === 'success'
-                ? 'bg-green-100 text-green-700 border border-green-200'
-                : 'bg-red-100 text-red-700 border border-red-200'
-            }`}
-          >
-            {feedback.message}
-          </div>
+        <div
+          className={`fe-toast ${
+            feedback.type === 'success'
+              ? 'border-green-200 bg-green-100 text-green-700'
+              : 'border-red-200 bg-red-100 text-red-700'
+          }`}
+        >
+          {feedback.message}
         </div>
       )}
 
-      <div className="mb-4 flex flex-col sm:flex-row sm:items-center gap-3">
+      <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center">
         <input
           value={searchTerm}
           onChange={(event) => setSearchTerm(event.target.value)}
           placeholder="Buscar por código o nombre..."
-          className="border px-3 py-2 rounded-lg w-full sm:w-1/3"
+          className="fe-input w-full sm:w-[310px]"
         />
 
         <select
           value={sortBy}
           onChange={(event) => setSortBy(event.target.value)}
-          className="border px-3 py-2 rounded-lg w-full sm:w-auto"
+          className="fe-input w-full sm:w-[300px]"
         >
           <option value="code">Ordenar por código (asc)</option>
           <option value="name">Ordenar por nombre (A-Z)</option>

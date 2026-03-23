@@ -1,6 +1,20 @@
 import { useEffect, useMemo, useState } from 'react'
 import { getMedicines } from '../services/medicines.service'
 
+const EditIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-3.5 w-3.5">
+    <path d="M12 20h9" />
+    <path d="m16.5 3.5 4 4L8 20H4v-4L16.5 3.5Z" />
+  </svg>
+)
+
+const DisableIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-3.5 w-3.5">
+    <path d="M18 6 6 18" />
+    <circle cx="12" cy="12" r="9" />
+  </svg>
+)
+
 const MedicinesTable = ({
   reload,
   searchTerm = '',
@@ -102,25 +116,25 @@ const MedicinesTable = ({
   }, [reload, onError])
 
   return (
-    <div className="bg-white rounded-xl shadow overflow-hidden">
-      <table className="w-full text-sm">
-        <thead className="bg-gray-50 text-gray-500">
+    <div className="fe-card fe-table-wrap">
+      <table className="fe-table">
+        <thead>
           <tr>
-            <th className="p-3 text-left">CÓDIGO</th>
-            <th className="p-3 text-left">NOMBRE</th>
-            <th className="p-3 text-center">STOCK</th>
-            <th className="p-3 text-center">STOCK MÍNIMO</th>
-            <th className="p-3 text-center">PRECIO</th>
-            <th className="p-3 text-center">VENCIMIENTO</th>
-            <th className="p-3 text-center">ESTADO</th>
-            <th className="p-3 text-center">ACCIONES</th>
+            <th className="text-left">CÓDIGO</th>
+            <th className="text-left">NOMBRE</th>
+            <th className="text-center">STOCK</th>
+            <th className="text-center">STOCK MÍNIMO</th>
+            <th className="text-center">PRECIO</th>
+            <th className="text-center">VENCIMIENTO</th>
+            <th className="text-center">ESTADO</th>
+            <th className="text-center">ACCIONES</th>
           </tr>
         </thead>
 
         <tbody>
           {isLoading ? (
             <tr>
-              <td colSpan="8" className="p-6 text-center text-gray-400">
+              <td colSpan="8" className="p-5 text-center text-gray-400">
                 Cargando medicamentos...
               </td>
             </tr>
@@ -128,53 +142,59 @@ const MedicinesTable = ({
             filteredMedicines.map((medicine, index) => (
               <tr
                 key={medicine.id || index}
-                className={`border-t ${medicine.activo === false ? 'bg-gray-50 text-gray-500' : ''}`}
+                className={medicine.activo === false ? 'bg-[#f6f7fb] text-gray-500' : ''}
               >
-                <td className="p-3">
-                  <span className="bg-gray-100 px-2 py-1 rounded text-xs">
+                <td className="whitespace-nowrap">
+                  <span className="rounded-lg bg-[#eef2fa] px-2.5 py-1 text-xs font-semibold text-[#526180]">
                     {medicine.codigo || '---'}
                   </span>
                 </td>
 
-                <td className="p-3">{medicine.nombre || '---'}</td>
+                <td className="max-w-[250px] truncate" title={medicine.nombre || '---'}>
+                  {medicine.nombre || '---'}
+                </td>
 
-                <td className={`p-3 text-center ${medicine.stock < 20 ? 'text-red-500 font-bold' : ''}`}>
+                <td className={`whitespace-nowrap text-center ${medicine.stock < 20 ? 'font-bold text-red-500' : 'text-[#283b61]'}`}>
                   {medicine.stock ?? 0}
                 </td>
 
-                <td className="p-3 text-center">{medicine.stockMinimo ?? 0}</td>
+                <td className="whitespace-nowrap text-center">{medicine.stockMinimo ?? 0}</td>
 
-                <td className="p-3 text-center">$ {medicine.precio ?? 0}</td>
-                <td className="p-3 text-center text-red-500">{medicine.fechavencimiento || '---'}</td>
-                <td className="p-3 text-center">
+                <td className="whitespace-nowrap text-center font-semibold text-[#30456f]">$ {medicine.precio ?? 0}</td>
+                <td className="whitespace-nowrap text-center text-red-500">{medicine.fechavencimiento || '---'}</td>
+                <td className="whitespace-nowrap text-center">
                   <span
-                    className={`px-2 py-1 rounded text-xs font-medium ${
+                    className={`rounded-lg px-2.5 py-1 text-xs font-semibold ${
                       medicine.activo === false
-                        ? 'bg-gray-200 text-gray-700'
-                        : 'bg-green-100 text-green-700'
+                        ? 'bg-slate-200 text-slate-700'
+                        : 'bg-emerald-100 text-emerald-700'
                     }`}
                   >
                     {medicine.activo === false ? 'Inactivo' : 'Activo'}
                   </span>
                 </td>
-                <td className="p-3">
-                  <div className="flex justify-center gap-2">
+                <td className="whitespace-nowrap">
+                  <div className="flex justify-center gap-1.5">
                     <button
                       type="button"
                       onClick={() => onEdit?.(medicine)}
+                      title="Editar medicamento"
+                      aria-label="Editar medicamento"
                       disabled={!medicine?.id || medicine.activo === false}
-                      className="bg-blue-600 text-white px-3 py-1 rounded text-xs disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="inline-flex h-7 w-7 items-center justify-center rounded-md bg-[#316dff] text-white transition hover:bg-[#295de0] disabled:cursor-not-allowed disabled:opacity-50"
                     >
-                      Editar
+                      <EditIcon />
                     </button>
 
                     <button
                       type="button"
                       onClick={() => onDeactivate?.(medicine)}
+                      title="Desactivar medicamento"
+                      aria-label="Desactivar medicamento"
                       disabled={!medicine?.id || medicine.activo === false}
-                      className="bg-red-600 text-white px-3 py-1 rounded text-xs disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="inline-flex h-7 w-7 items-center justify-center rounded-md bg-[#eb4e68] text-white transition hover:bg-[#d9405a] disabled:cursor-not-allowed disabled:opacity-50"
                     >
-                      Desactivar
+                      <DisableIcon />
                     </button>
                   </div>
                 </td>
@@ -182,7 +202,7 @@ const MedicinesTable = ({
             ))
           ) : (
             <tr>
-              <td colSpan="8" className="p-6 text-center text-gray-400">
+              <td colSpan="8" className="p-5 text-center text-gray-400">
                 {Array.isArray(medicines) && medicines.length > 0
                   ? 'No se encontraron coincidencias para la búsqueda.'
                   : 'No hay medicamentos registrados'}
