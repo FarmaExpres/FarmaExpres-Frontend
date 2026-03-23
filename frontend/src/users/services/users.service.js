@@ -157,16 +157,48 @@ export const toggleUserStatus = async ({ id, isActive }, token) => {
 }
 
 export const changeUserPassword = async ({ id, currentPassword, newPassword }, token) => {
-  try {
-    const response = await authApi.put(`${USERS_ENDPOINT}/${id}/password`, {
-      passwordActual: currentPassword,
-      nuevaPassword: newPassword
-    }, {
-      headers: buildAuthHeaders(token)
-    })
+  const endpointCandidates = [
+    `${USERS_ENDPOINT}/${id}/password`,
+    `${USERS_ENDPOINT}/${id}/contrasena`,
+    `/users/${id}/password`
+  ]
 
-    return response.data
-  } catch (error) {
-    throw normalizeApiError(error, 'No se pudo cambiar la contraseña.')
+  const payloadCandidates = [
+    { passwordActual: currentPassword, nuevaPassword: newPassword },
+    { currentPassword, newPassword },
+    { nuevaPassword: newPassword },
+    { newPassword },
+    { password: newPassword }
+  ]
+
+  let lastError = null
+
+  for (const payload of payloadCandidates) {
+    try {
+      const response = await requestWithFallbackEndpoints({
+        method: 'put',
+        endpoints: endpointCandidates,
+        payload,
+        token,
+        fallbackMessage: 'No se pudo cambiar la contraseña.'
+      })
+
+      return response.data
+    } catch (error) {
+      const normalizedError = error?.status ? error : normalizeApiError(error, 'No se pudo cambiar la contraseña.')
+      lastError = normalizedError
+
+      // Un 400 ya trae una validacion funcional del backend (ej: contraseña actual incorrecta),
+      // por eso no se debe seguir intentando payloads alternos que puedan sobreescribir el mensaje.
+      if (normalizedError.status === 400) {
+        throw normalizedError
+      }
+
+      if (normalizedError.isForbidden || normalizedError.isUnauthorized || normalizedError.isNotFound) {
+        throw normalizedError
+      }
+    }
   }
+
+  throw (lastError || new Error('No se pudo cambiar la contraseña.'))
 }

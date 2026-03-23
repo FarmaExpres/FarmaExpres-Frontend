@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 
 const MIN_PASSWORD_LENGTH = 8
 
@@ -8,9 +8,25 @@ const buildInitialForm = () => ({
   confirmPassword: ''
 })
 
-const UserPasswordModal = ({ isOpen, onClose, user, onSubmit, isSubmitting = false, isSelfChange = false, errorMessage = '' }) => {
+const UserPasswordModal = ({ isOpen, onClose, user, onSubmit, isSubmitting = false, errorMessage = '' }) => {
   const [form, setForm] = useState(buildInitialForm)
   const [errors, setErrors] = useState({})
+  const [showPassword, setShowPassword] = useState({
+    currentPassword: false,
+    newPassword: false,
+    confirmPassword: false
+  })
+
+  useEffect(() => {
+    if (!isOpen) return
+    setForm(buildInitialForm())
+    setErrors({})
+    setShowPassword({
+      currentPassword: false,
+      newPassword: false,
+      confirmPassword: false
+    })
+  }, [isOpen, user?.id])
 
   if (!isOpen || !user) return null
 
@@ -25,8 +41,6 @@ const UserPasswordModal = ({ isOpen, onClose, user, onSubmit, isSubmitting = fal
       nextErrors.newPassword = 'La nueva contraseña es obligatoria.'
     } else if (form.newPassword.length < MIN_PASSWORD_LENGTH) {
       nextErrors.newPassword = `La nueva contraseña debe tener al menos ${MIN_PASSWORD_LENGTH} caracteres.`
-    } else if (form.newPassword === form.currentPassword) {
-      nextErrors.newPassword = 'La nueva contraseña debe ser diferente de la actual.'
     }
 
     if (!form.confirmPassword) {
@@ -43,11 +57,18 @@ const UserPasswordModal = ({ isOpen, onClose, user, onSubmit, isSubmitting = fal
     setErrors((current) => ({ ...current, [name]: undefined }))
   }
 
+  const togglePasswordVisibility = (field) => {
+    setShowPassword((current) => ({ ...current, [field]: !current[field] }))
+  }
+
   const handleSave = () => {
     const nextErrors = validate()
     setErrors(nextErrors)
     if (Object.keys(nextErrors).length > 0) return
-    onSubmit(form)
+    onSubmit({
+      currentPassword: form.currentPassword,
+      newPassword: form.newPassword
+    })
   }
 
   return (
@@ -62,10 +83,9 @@ const UserPasswordModal = ({ isOpen, onClose, user, onSubmit, isSubmitting = fal
         </button>
 
         <h2 className="mb-1 text-xl font-bold text-[#1b2946]">Cambiar Contraseña</h2>
-        <p className="mb-5 text-sm text-[#7583a0]">
-          {isSelfChange
-            ? 'Actualiza tu contraseña de acceso.'
-            : `Actualiza la contraseña de ${user.nombre || 'este usuario'}.`}
+        <p className="mb-1 text-sm text-[#7583a0]">Actualiza la contraseña del usuario seleccionado.</p>
+        <p className="mb-5 text-sm font-medium text-[#1b2946]">
+          {user.nombre || 'Sin nombre'} ({user.email || 'sin correo'})
         </p>
 
         {errorMessage && (
@@ -77,40 +97,71 @@ const UserPasswordModal = ({ isOpen, onClose, user, onSubmit, isSubmitting = fal
         <div className="grid grid-cols-1 gap-4">
           <div>
             <label htmlFor="currentPassword">Contraseña actual</label>
-            <input
-              id="currentPassword"
-              name="currentPassword"
-              type="password"
-              value={form.currentPassword}
-              onChange={handleChange}
-              className="fe-input"
-            />
+            <div className="relative">
+              <input
+                id="currentPassword"
+                name="currentPassword"
+                type={showPassword.currentPassword ? 'text' : 'password'}
+                value={form.currentPassword}
+                onChange={handleChange}
+                className="fe-input pr-24"
+              />
+              <button
+                type="button"
+                onClick={() => togglePasswordVisibility('currentPassword')}
+                className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md px-2 py-1 text-xs font-semibold text-[#4f5f82] transition hover:bg-slate-100"
+                aria-label={showPassword.currentPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+              >
+                {showPassword.currentPassword ? 'Ocultar' : 'Mostrar'}
+              </button>
+            </div>
             {errors.currentPassword && <p className="mt-1 text-xs text-red-600">{errors.currentPassword}</p>}
           </div>
 
           <div>
             <label htmlFor="newPassword">Nueva contraseña</label>
-            <input
-              id="newPassword"
-              name="newPassword"
-              type="password"
-              value={form.newPassword}
-              onChange={handleChange}
-              className="fe-input"
-            />
+            <div className="relative">
+              <input
+                id="newPassword"
+                name="newPassword"
+                type={showPassword.newPassword ? 'text' : 'password'}
+                value={form.newPassword}
+                onChange={handleChange}
+                className="fe-input pr-24"
+              />
+              <button
+                type="button"
+                onClick={() => togglePasswordVisibility('newPassword')}
+                className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md px-2 py-1 text-xs font-semibold text-[#4f5f82] transition hover:bg-slate-100"
+                aria-label={showPassword.newPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+              >
+                {showPassword.newPassword ? 'Ocultar' : 'Mostrar'}
+              </button>
+            </div>
+            <p className="mt-1 text-xs text-[#6f7c98]">Mínimo 8 caracteres.</p>
             {errors.newPassword && <p className="mt-1 text-xs text-red-600">{errors.newPassword}</p>}
           </div>
 
           <div>
             <label htmlFor="confirmPassword">Confirmar nueva contraseña</label>
-            <input
-              id="confirmPassword"
-              name="confirmPassword"
-              type="password"
-              value={form.confirmPassword}
-              onChange={handleChange}
-              className="fe-input"
-            />
+            <div className="relative">
+              <input
+                id="confirmPassword"
+                name="confirmPassword"
+                type={showPassword.confirmPassword ? 'text' : 'password'}
+                value={form.confirmPassword}
+                onChange={handleChange}
+                className="fe-input pr-24"
+              />
+              <button
+                type="button"
+                onClick={() => togglePasswordVisibility('confirmPassword')}
+                className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md px-2 py-1 text-xs font-semibold text-[#4f5f82] transition hover:bg-slate-100"
+                aria-label={showPassword.confirmPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+              >
+                {showPassword.confirmPassword ? 'Ocultar' : 'Mostrar'}
+              </button>
+            </div>
             {errors.confirmPassword && <p className="mt-1 text-xs text-red-600">{errors.confirmPassword}</p>}
           </div>
         </div>
