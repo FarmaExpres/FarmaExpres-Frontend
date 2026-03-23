@@ -40,6 +40,7 @@ const normalizeApiError = (error, fallbackMessage) => {
     status,
     message: userFriendlyMessage,
     isAuthError,
+    isNotFound: status === 404 || /no encontrado|not found/i.test(backendMessage),
     isDuplicateCode: /duplic|exist|codigo|código/i.test(backendMessage)
   }
 }
@@ -65,5 +66,17 @@ export const createMedicine = async (data, token) => {
     return response.data
   } catch (error) {
     throw normalizeApiError(error, 'No se pudo registrar el medicamento.')
+  }
+}
+
+export const updateMedicine = async (id, data, token) => {
+  try {
+    const response = await axios.put(`${API_URL}${MEDICINES_ENDPOINT}/${id}`, data, {
+      headers: getAuthHeaders(token)
+    })
+
+    return response.data
+  } catch (error) {
+    throw normalizeApiError(error, 'No se pudo actualizar el medicamento.')
   }
 }
