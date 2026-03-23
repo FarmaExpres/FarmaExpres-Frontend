@@ -13,6 +13,7 @@ const UsersTable = ({
   isAdministrator = false,
   currentUserEmail = '',
   onEdit,
+  onChangePassword,
   onToggleStatus,
   isProcessingId = null
 }) => {
@@ -69,6 +70,17 @@ const UsersTable = ({
                   onClick={() => onEdit?.(user)}
                 >
                   ✎
+                </button>
+
+                <button
+                  type="button"
+                  className="fe-user-action fe-user-action-password"
+                  title="Cambiar contraseña"
+                  aria-label="Cambiar contraseña"
+                  disabled={!isAdministrator || isProcessing}
+                  onClick={() => onChangePassword?.(user)}
+                >
+                  🔒
                 </button>
 
                 <button
