@@ -84,6 +84,11 @@ const MedicineEditModal = ({ isOpen, medicine, onClose, onSuccess, onError }) =>
   }
 
   const handleSubmit = async () => {
+    if (medicine?.activo === false) {
+      onError('No se permite editar medicamentos inactivos.')
+      return
+    }
+
     const validationErrors = validateForm(form)
     setErrors(validationErrors)
 
