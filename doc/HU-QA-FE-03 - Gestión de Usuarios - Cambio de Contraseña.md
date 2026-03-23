@@ -29,12 +29,12 @@ para **mantener la seguridad de las cuentas dentro del sistema**.
 - [x] Campo **Confirmar contraseña** (obligatorio).
 - [x] Visualización del usuario seleccionado (nombre y correo).
 
-#### Validaciones
+#### validaciones
 
-- [x] Valida campos obligatorios.
-- [x] Valida longitud mínima de contraseña.
-- [x] Valida coincidencia entre nueva contraseña y confirmación.
-- [x] Valida que la nueva contraseña sea diferente a la actual.
+- [x] válida campos obligatorios.
+- [x] válida longitud mínima de contraseña.
+- [x] válida coincidencia entre nueva contraseña y confirmación.
+- [x] válida que la nueva contraseña sea diferente a la actual.
 
 #### Integración con Backend
 
@@ -92,7 +92,7 @@ para **mantener la seguridad de las cuentas dentro del sistema**.
 
 ### CP-HU-FE-03-01 - Visualización de acción Cambiar contraseña
 
-- **Objetivo:** Validar que la acción exista por cada usuario en tabla.
+- **Objetivo:** validar que la acción exista por cada usuario en tabla.
 - **Acción ejecutada:** Ingreso con admin y revisión de acciones por tarjeta.
 - **Resultado evidenciado:** Se visualiza botón de cambio de contraseña.
 - **Comentario del caso:** Cumple criterio de interfaz para iniciar flujo.
@@ -110,7 +110,7 @@ para **mantener la seguridad de las cuentas dentro del sistema**.
 
 ![CP-HU-FE-03-02](./images/HU-FE-03/02-modal-cambio-contrasena.png)
 
-### CP-HU-FE-03-03 - Validación de campos obligatorios
+### CP-HU-FE-03-03 - validación de campos obligatorios
 
 - **Objetivo:** Verificar que el formulario no permita envío vacío.
 - **Acción ejecutada:** Intento de guardar sin completar datos.
@@ -120,7 +120,7 @@ para **mantener la seguridad de las cuentas dentro del sistema**.
 
 ![CP-HU-FE-03-03](./images/HU-FE-03/03-validacion-campos-obligatorios.png)
 
-### CP-HU-FE-03-04 - Validación de longitud mínima
+### CP-HU-FE-03-04 - validación de longitud mínima
 
 - **Objetivo:** Confirmar restricción de seguridad por longitud.
 - **Acción ejecutada:** Ingreso de contraseña menor al mínimo y envío.
@@ -130,7 +130,7 @@ para **mantener la seguridad de las cuentas dentro del sistema**.
 
 ![CP-HU-FE-03-04](./images/HU-FE-03/04-validacion-longitud-minima.png)
 
-### CP-HU-FE-03-05 - Validación de confirmación de contraseña
+### CP-HU-FE-03-05 - validación de confirmación de contraseña
 
 - **Objetivo:** Confirmar que las contraseñas deben coincidir.
 - **Acción ejecutada:** Ingreso de valores distintos en nueva/confirmación.
@@ -140,9 +140,9 @@ para **mantener la seguridad de las cuentas dentro del sistema**.
 
 ![CP-HU-FE-03-05](./images/HU-FE-03/05-validacion-contrasenas-diferentes.png)
 
-### CP-HU-FE-03-06 - Cambio exitoso de contraseña
+### CP-HU-FE-03-06 - Cambio Éxitoso de contraseña
 
-- **Objetivo:** Validar flujo exitoso de actualización.
+- **Objetivo:** validar flujo Éxitoso de actualización.
 - **Acción ejecutada:** Envío de formulario con datos válidos.
 - **Resultado evidenciado:** Cierre de modal y mensaje de éxito.
 - **Comentario del caso:** Cumple respuesta esperada del sistema.
@@ -160,7 +160,7 @@ para **mantener la seguridad de las cuentas dentro del sistema**.
 
 ![CP-HU-FE-03-07](./images/HU-FE-03/07-error-contrasena-actual-incorrecta.png)
 
-### CP-HU-FE-03-08 - Validación de nueva contraseña diferente a la actual
+### CP-HU-FE-03-08 - validación de nueva contraseña diferente a la actual
 
 - **Objetivo:** Verificar que no se permita usar la misma contraseña actual como nueva contraseña.
 - **Acción ejecutada:** Ingreso de la misma contraseña en `Contraseña actual` y `Nueva contraseña`, luego envío del formulario.
@@ -177,3 +177,4 @@ para **mantener la seguridad de las cuentas dentro del sistema**.
 - La HU-FE-03 queda implementada en frontend con acción, modal, validaciones y control por rol admin.
 - Se incluye manejo de errores funcionales y técnicos para el cambio de contraseña.
 - Se valida contraseña actual en frontend/backend para reforzar seguridad del cambio de contraseña.
+
