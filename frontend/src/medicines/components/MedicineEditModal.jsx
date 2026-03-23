@@ -126,17 +126,18 @@ const MedicineEditModal = ({ isOpen, medicine, onClose, onSuccess, onError }) =>
 
   if (!isOpen) return null
 
-  const inputClassName = 'w-full border rounded px-3 py-2'
+  const inputClassName = 'fe-input'
   const errorClassName = 'mt-1 text-xs text-red-600'
 
   return (
-    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-      <div className="bg-white rounded-xl shadow-lg w-full max-w-lg p-6 relative">
-        <button onClick={handleClose} className="absolute top-3 right-3 text-gray-500">
+    <div className="fe-modal-overlay">
+      <div className="fe-modal-card max-w-xl">
+        <button onClick={handleClose} className="absolute right-4 top-4 text-gray-400 transition hover:text-gray-600">
           ✕
         </button>
 
-        <h2 className="text-lg font-semibold mb-4">Actualizar Medicamento</h2>
+        <h2 className="mb-1 text-xl font-bold text-[#1b2946]">Actualizar Medicamento</h2>
+        <p className="mb-5 text-sm text-[#7583a0]">Edita los campos permitidos para actualizar el registro.</p>
 
         <div className="grid grid-cols-2 gap-4">
           <div className="col-span-2">
@@ -145,7 +146,7 @@ const MedicineEditModal = ({ isOpen, medicine, onClose, onSuccess, onError }) =>
               id="code"
               name="code"
               value={form.code}
-              className={`${inputClassName} bg-gray-100 cursor-not-allowed`}
+              className={`${inputClassName} cursor-not-allowed bg-[#f2f5fb] text-[#6c7994]`}
               readOnly
               disabled
             />
@@ -218,14 +219,14 @@ const MedicineEditModal = ({ isOpen, medicine, onClose, onSuccess, onError }) =>
         </div>
 
         <div className="flex justify-end gap-3 mt-4">
-          <button onClick={handleClose} className="border px-4 py-2 rounded">
+          <button onClick={handleClose} className="fe-btn-muted">
             Cancelar
           </button>
 
           <button
             onClick={handleSubmit}
             disabled={isSubmitting}
-            className="bg-purple-600 text-white px-4 py-2 rounded disabled:opacity-60"
+            className="fe-btn-primary"
           >
             {isSubmitting ? 'Guardando...' : 'Guardar cambios'}
           </button>
