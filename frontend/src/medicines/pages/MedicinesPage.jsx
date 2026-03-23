@@ -1,23 +1,45 @@
 import { useCallback, useState } from 'react'
 import MedicinesTable from '../components/MedicinesTable'
 import MedicineModal from '../components/MedicineModal'
+import MedicineEditModal from '../components/MedicineEditModal'
 
 const MedicinesPage = () => {
-  const [openModal, setOpenModal] = useState(false)
+  const [openCreateModal, setOpenCreateModal] = useState(false)
+  const [openEditModal, setOpenEditModal] = useState(false)
+  const [selectedMedicine, setSelectedMedicine] = useState(null)
+  const [searchTerm, setSearchTerm] = useState('')
   const [reloadKey, setReloadKey] = useState(0)
   const [feedback, setFeedback] = useState(null)
 
   const handleOpenCreate = () => {
     setFeedback(null)
-    setOpenModal(true)
+    setOpenCreateModal(true)
   }
 
-  const handleCloseModal = () => {
-    setOpenModal(false)
+  const handleCloseCreateModal = () => {
+    setOpenCreateModal(false)
+  }
+
+  const handleOpenEdit = (medicine) => {
+    setFeedback(null)
+    setSelectedMedicine(medicine)
+    setOpenEditModal(true)
+  }
+
+  const handleCloseEditModal = () => {
+    setOpenEditModal(false)
+    setSelectedMedicine(null)
   }
 
   const handleCreateSuccess = useCallback((message) => {
-    setOpenModal(false)
+    setOpenCreateModal(false)
+    setReloadKey((current) => current + 1)
+    setFeedback({ type: 'success', message })
+  }, [])
+
+  const handleUpdateSuccess = useCallback((message) => {
+    setOpenEditModal(false)
+    setSelectedMedicine(null)
     setReloadKey((current) => current + 1)
     setFeedback({ type: 'success', message })
   }, [])
@@ -53,17 +75,32 @@ const MedicinesPage = () => {
 
       <div className="mb-4">
         <input
-          placeholder="Buscar..."
+          value={searchTerm}
+          onChange={(event) => setSearchTerm(event.target.value)}
+          placeholder="Buscar por código o nombre..."
           className="border px-3 py-2 rounded-lg w-1/3"
         />
       </div>
 
-      <MedicinesTable reload={reloadKey} onError={handleError} />
+      <MedicinesTable
+        reload={reloadKey}
+        searchTerm={searchTerm}
+        onError={handleError}
+        onEdit={handleOpenEdit}
+      />
 
       <MedicineModal
-        isOpen={openModal}
-        onClose={handleCloseModal}
+        isOpen={openCreateModal}
+        onClose={handleCloseCreateModal}
         onSuccess={handleCreateSuccess}
+        onError={handleError}
+      />
+
+      <MedicineEditModal
+        isOpen={openEditModal}
+        medicine={selectedMedicine}
+        onClose={handleCloseEditModal}
+        onSuccess={handleUpdateSuccess}
         onError={handleError}
       />
     </div>
