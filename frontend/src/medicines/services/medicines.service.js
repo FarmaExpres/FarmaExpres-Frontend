@@ -80,3 +80,15 @@ export const updateMedicine = async (id, data, token) => {
     throw normalizeApiError(error, 'No se pudo actualizar el medicamento.')
   }
 }
+
+export const deactivateMedicine = async (id, token) => {
+  try {
+    const response = await axios.delete(`${API_URL}${MEDICINES_ENDPOINT}/${id}`, {
+      headers: getAuthHeaders(token)
+    })
+
+    return response.data
+  } catch (error) {
+    throw normalizeApiError(error, 'No se pudo desactivar el medicamento.')
+  }
+}
