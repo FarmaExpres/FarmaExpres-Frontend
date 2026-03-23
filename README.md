@@ -1,173 +1,182 @@
-# FarmaExpres — Frontend
+# FarmaExpres Frontend
 
 ## Descripción General
 
-FarmaExpres es una aplicación web tipo ERP enfocada en la gestión de inventario para una farmacia. Este repositorio corresponde al frontend del sistema, encargado de la interacción con el usuario y la visualización de la información.
+FarmaExpres Frontend es la capa web del sistema ERP para gestión farmacéutica.
+El proyecto está diseñado para operar por módulos funcionales y control de acceso por roles, con foco en trazabilidad, seguridad y eficiencia operativa.
 
-El objetivo del frontend es proporcionar una interfaz clara, eficiente y escalable que permita:
+---
 
-* Visualizar información en tiempo real
-* Gestionar el inventario de medicamentos
-* Controlar usuarios y roles
-* Registrar movimientos de entrada y salida
-* Generar reportes y alertas
+## Alcance Funcional del Sistema
+
+La aplicación contempla los siguientes dominios funcionales:
+
+- Autenticación.
+- Dashboard.
+- Gestión de usuarios.
+- Gestión de medicamentos.
+- Inventario (control de stock, entradas y salidas).
+- Movimientos.
+- Alertas.
+- Reportes.
+- Auditoría.
+
+Roles de operación:
+
+- Administrador.
+- Farmacéutico.
+- Auditor.
+
+---
+
+## Referencia de Diseño Funcional
+
+La referencia visual/funcional del sistema se documenta en:
+
+- [Layout funcional del sistema](./Layout.md)
+- [Demo de interfaz (Canva)](https://temenico.my.canva.site/farmaexpres)
+
+Backlog funcional (historias de usuario):
+
+- [GitHub Issues - Weeks-6](https://github.com/jose6668/Weeks-6/issues)
 
 ---
 
 ## Arquitectura del Proyecto
 
-El proyecto utiliza Screaming Architecture, donde la estructura del código refleja directamente el dominio del negocio.
+La arquitectura se organiza por dominio funcional para mantener separación de responsabilidades y escalabilidad.
 
-Esto permite que cualquier desarrollador entienda rápidamente el propósito del sistema solo viendo la estructura de carpetas.
-
-### Estructura principal
+### Estructura objetivo
 
 ```bash
-src/
-│
-├── auth/
-├── dashboard/
-├── medicines/
-├── users/
-├── inventory/
-├── movements/
-├── reports/
-├── alerts/
-├── audit/
-└── shared/
+FarmaExpres-Frontend/
+├── frontend/
+│   ├── public/
+│   ├── src/
+│   │   ├── auth/
+│   │   ├── dashboard/
+│   │   ├── medicines/
+│   │   ├── users/
+│   │   ├── inventory/
+│   │   ├── movements/
+│   │   ├── reports/
+│   │   ├── alerts/
+│   │   ├── audit/
+│   │   ├── layout/
+│   │   └── shared/
+│   ├── Dockerfile
+│   ├── docker-compose.yml
+│   └── package.json
+├── doc/
+│   ├── HU-QA-FE-*.md
+│   └── images/
+├── Layout/
+│   └── images/
+├── Layout.md
+└── README.md
 ```
 
-### Organización interna de cada módulo
-
-Cada módulo está desacoplado y contiene su propia lógica:
+### Estructura interna por módulo
 
 ```bash
-medicines/
-│
+<module>/
 ├── pages/
 ├── components/
 ├── services/
 └── store/
 ```
 
-Este enfoque permite:
+---
 
-* Escalabilidad del sistema
-* Mantenimiento sencillo
-* Separación clara de responsabilidades
+## Tecnologías
+
+Stack principal del frontend:
+
+- React.
+- Vite.
+- JavaScript (ES Modules).
+- Axios.
+- Tailwind CSS.
+- ESLint.
+- Docker + Nginx.
 
 ---
 
-## Tecnologías utilizadas
+## Configuración Técnica
 
-El frontend será desarrollado con tecnologías modernas y ampliamente utilizadas en la industria:
+### Integración con Backend
 
-* React (Vite)
-* JavaScript (ES6+)
-* Tailwind CSS
-* React Router DOM
-* Axios
-* Zustand
+El frontend consume dos contextos principales de API:
 
----
+- Inventario: `API_URL`.
+- Autenticación/usuarios: `AUTH_API_URL`.
 
-## Integración con Backend
+Archivo de configuración:
 
-La comunicación con el backend se realizará mediante peticiones HTTP centralizadas.
+- `frontend/src/shared/config/api.js`
 
-```js
-import axios from 'axios'
+Variables de entorno:
 
-const api = axios.create({
-  baseURL: 'http://localhost:3000/api'
-})
+- `VITE_API_URL`
+- `VITE_AUTH_API_URL`
+- `VITE_DEV_TOKEN`
 
-export default api
-```
+### Seguridad
 
-Cada módulo tendrá su propio archivo de servicios para consumir endpoints específicos.
+- Uso de token Bearer para endpoints protegidos.
+- Manejo de autorización por rol en funcionalidades administrativas.
+- Estandarización de manejo de errores de autenticación/autorización.
 
 ---
 
-## Autenticación y Seguridad
+## Convenciones de Desarrollo
 
-El sistema implementará:
-
-* Inicio de sesión mediante credenciales
-* Manejo de token (JWT)
-* Almacenamiento en localStorage
-* Protección de rutas privadas
-* Control de acceso basado en roles
+- Código fuente en inglés.
+- Mensajes funcionales orientados a usuario en español.
+- Commits bajo estándar Conventional Commits.
+- Cambios acotados por historia de usuario.
 
 ---
 
-## Roles del Sistema
+## Ejecución del Proyecto
 
-El sistema contempla tres tipos de usuarios:
+### Requisitos
 
-* Administrator
-* Pharmacist
-* Auditor
+- Node.js 18+
+- npm 9+
 
-Cada rol tendrá acceso limitado a funcionalidades específicas.
+### Desarrollo local
 
----
-
-## Módulos Funcionales
-
-El frontend estará compuesto por los siguientes módulos:
-
-1. Authentication
-2. Dashboard
-3. Medicines Management
-4. Users Management
-5. Inventory
-6. Entries
-7. Exits
-8. Movements
-9. Reports
-10. Alerts
-11. Stock Control
-12. Audit
-
-Cada módulo es independiente y representa una parte del negocio.
-
----
-
-## Gestión de Estado
-
-Se utilizará Zustand para manejar:
-
-* Usuario autenticado
-* Token de sesión
-* Datos globales compartidos
-
----
-
-## Diseño de Interfaz
-
-El diseño seguirá un enfoque tipo dashboard:
-
-* Interfaz limpia y minimalista
-* Componentes reutilizables
-* Experiencia de usuario clara
-* Adaptabilidad (responsive design)
-
----
-
-## Instalación del Proyecto
+Desde `frontend/`:
 
 ```bash
-npm create vite@latest
-cd farmaexpres-frontend
 npm install
-npm install axios react-router-dom zustand tailwindcss
+npm run dev
 ```
 
----
+### Build y previsualización
 
-## Ejecución
+Desde `frontend/`:
 
 ```bash
-npm run dev
+npm run build
+npm run preview
+```
+
+### Ejecución con Docker
+
+Desde `frontend/`:
+
+```bash
+docker compose up --build
+```
+
+Aplicación disponible en:
+
+- `http://localhost:5173`
+
+Para detener contenedores:
+
+```bash
+docker compose down
 ```
