@@ -4,13 +4,13 @@ const DeactivateMedicineModal = ({ isOpen, medicine, isSubmitting, onCancel, onC
   if (!isOpen || !medicine) return null
 
   return (
-    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-      <div className="bg-white rounded-xl shadow-lg w-full max-w-md p-6">
+    <div className="fe-modal-overlay">
+      <div className="fe-modal-card max-w-md">
         <div className="mb-3 flex items-start gap-3">
-          <span className="mt-0.5 inline-flex h-8 w-8 items-center justify-center rounded-full bg-amber-100 text-amber-700">
+          <span className="mt-0.5 inline-flex h-9 w-9 items-center justify-center rounded-full bg-amber-100 text-amber-700">
             <AlertTriangleIcon className="h-5 w-5" />
           </span>
-          <h2 className="text-lg font-semibold">Confirmar desactivación</h2>
+          <h2 className="text-lg font-semibold text-[#1c2b49]">Confirmar desactivación</h2>
         </div>
 
         <p className="text-sm text-gray-700 mb-2">
@@ -20,7 +20,7 @@ const DeactivateMedicineModal = ({ isOpen, medicine, isSubmitting, onCancel, onC
           El medicamento quedará inactivo y no podrá editarse desde esta vista.
         </p>
 
-        <div className="mb-5 rounded-md border border-gray-200 bg-gray-50 px-3 py-2 text-sm">
+        <div className="mb-5 rounded-xl border border-gray-200 bg-[#f7f9ff] px-3 py-2 text-sm">
           <p>
             <span className="font-medium">Código:</span> {medicine.codigo || '---'}
           </p>
@@ -34,7 +34,7 @@ const DeactivateMedicineModal = ({ isOpen, medicine, isSubmitting, onCancel, onC
             type="button"
             onClick={onCancel}
             disabled={isSubmitting}
-            className="border px-4 py-2 rounded disabled:opacity-60"
+            className="fe-btn-muted"
           >
             Cancelar
           </button>
@@ -42,7 +42,7 @@ const DeactivateMedicineModal = ({ isOpen, medicine, isSubmitting, onCancel, onC
             type="button"
             onClick={onConfirm}
             disabled={isSubmitting}
-            className="bg-red-600 text-white px-4 py-2 rounded disabled:opacity-60"
+            className="fe-btn-danger px-4 py-2.5 text-sm"
           >
             {isSubmitting ? 'Desactivando...' : 'Confirmar'}
           </button>
