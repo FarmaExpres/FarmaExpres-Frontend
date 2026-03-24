@@ -2,8 +2,9 @@ import { useCallback, useEffect, useState } from 'react'
 import UsersTable from '../components/UsersTable'
 import UserModal from '../components/UserModal'
 import UserEditModal from '../components/UserEditModal'
+import UserPasswordModal from '../components/UserPasswordModal'
 import { isAdmin } from '../../shared/auth/session'
-import { getUsers, toggleUserStatus, updateUser } from '../services/users.service'
+import { changeUserPassword, getUsers, toggleUserStatus, updateUser } from '../services/users.service'
 import { normalizeRole, ROLES } from '../../shared/constants/roles'
 
 const normalizeUser = (user) => ({
@@ -17,11 +18,14 @@ const normalizeUser = (user) => ({
 const UsersPage = ({ role, currentUserEmail = '' }) => {
   const [openCreateModal, setOpenCreateModal] = useState(false)
   const [openEditModal, setOpenEditModal] = useState(false)
+  const [openPasswordModal, setOpenPasswordModal] = useState(false)
   const [selectedUser, setSelectedUser] = useState(null)
   const [users, setUsers] = useState([])
   const [isLoadingUsers, setIsLoadingUsers] = useState(false)
   const [isSubmittingEdit, setIsSubmittingEdit] = useState(false)
+  const [isSubmittingPassword, setIsSubmittingPassword] = useState(false)
   const [processingUserId, setProcessingUserId] = useState(null)
+  const [passwordError, setPasswordError] = useState('')
   const [feedback, setFeedback] = useState(null)
 
   const isAdministrator = isAdmin(role)
@@ -104,6 +108,23 @@ const UsersPage = ({ role, currentUserEmail = '' }) => {
   const handleCloseEditModal = () => {
     setOpenEditModal(false)
     setSelectedUser(null)
+  }
+
+  const handleOpenPassword = (user) => {
+    if (!isAdministrator) {
+      setFeedback({ type: 'error', message: 'No tienes permisos para cambiar contraseñas.' })
+      return
+    }
+
+    setSelectedUser(user)
+    setPasswordError('')
+    setOpenPasswordModal(true)
+  }
+
+  const handleClosePasswordModal = () => {
+    setOpenPasswordModal(false)
+    setSelectedUser(null)
+    setPasswordError('')
   }
 
   const handleCreateSuccess = useCallback((createdUser) => {
@@ -190,6 +211,43 @@ const UsersPage = ({ role, currentUserEmail = '' }) => {
     }
   }
 
+  const handlePasswordSubmit = async ({ currentPassword, newPassword }) => {
+    if (!selectedUser?.id) return
+
+    setIsSubmittingPassword(true)
+    setPasswordError('')
+
+    try {
+      await changeUserPassword({
+        id: selectedUser.id,
+        currentPassword,
+        newPassword
+      })
+
+      handleClosePasswordModal()
+      setFeedback({ type: 'success', message: 'Contraseña actualizada correctamente.' })
+    } catch (error) {
+      if (error?.isNotFound) {
+        setPasswordError('El usuario no existe o fue eliminado.')
+        return
+      }
+
+      if (error?.isForbidden) {
+        setPasswordError('No tienes permisos para cambiar contraseñas. Se requiere rol Administrador.')
+        return
+      }
+
+      if (error?.status === 400) {
+        setPasswordError(error?.rawMessage || 'La contraseña actual es incorrecta o la nueva no cumple las reglas.')
+        return
+      }
+
+      setPasswordError(error?.message || 'No se pudo actualizar la contraseña. Intenta nuevamente.')
+    } finally {
+      setIsSubmittingPassword(false)
+    }
+  }
+
   return (
     <div className="mx-auto max-w-7xl p-4 md:p-5">
       <div className="mb-4 flex flex-col justify-between gap-3 md:flex-row md:items-center">
@@ -209,7 +267,7 @@ const UsersPage = ({ role, currentUserEmail = '' }) => {
 
       {!isAdministrator && (
         <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-          Esta sección es solo de consulta. Solo un usuario con rol Administrador puede crear usuarios.
+          Esta sección es solo de consulta. Solo un usuario con rol Administrador puede crear, editar, cambiar contraseña y activar/desactivar usuarios.
         </div>
       )}
 
@@ -231,6 +289,7 @@ const UsersPage = ({ role, currentUserEmail = '' }) => {
         isAdministrator={isAdministrator}
         currentUserEmail={normalizedCurrentUserEmail}
         onEdit={handleOpenEdit}
+        onChangePassword={handleOpenPassword}
         onToggleStatus={handleToggleUserStatus}
         isProcessingId={processingUserId}
       />
@@ -251,6 +310,16 @@ const UsersPage = ({ role, currentUserEmail = '' }) => {
         onSubmit={handleEditSubmit}
         isSubmitting={isSubmittingEdit}
         existingEmails={users.map((user) => user.email)}
+      />
+
+      <UserPasswordModal
+        key={`password-${selectedUser?.id || 'none'}-${openPasswordModal ? 'open' : 'closed'}`}
+        isOpen={openPasswordModal}
+        onClose={handleClosePasswordModal}
+        user={selectedUser}
+        onSubmit={handlePasswordSubmit}
+        isSubmitting={isSubmittingPassword}
+        errorMessage={passwordError}
       />
     </div>
   )
