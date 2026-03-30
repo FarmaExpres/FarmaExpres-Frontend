@@ -9,10 +9,10 @@ import { normalizeRole, ROLES } from '../../shared/constants/roles'
 
 const normalizeUser = (user) => ({
   id: user?.id,
-  nombre: user?.nombre || '',
+  nombre: user?.nombre || user?.name || '',
   email: user?.email || '',
-  rol: user?.rol || '',
-  estado: user?.estado || 'ACTIVO'
+  rol: user?.rol || user?.role || '',
+  estado: user?.estado || user?.status || (user?.active === false ? 'INACTIVO' : 'ACTIVO')
 })
 
 const UsersPage = ({ role, currentUserEmail = '' }) => {

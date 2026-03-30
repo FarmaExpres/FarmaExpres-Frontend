@@ -1,13 +1,7 @@
 import { getRoleLabel, normalizeRole, ROLES } from '../../shared/constants/roles'
+import FarmaShieldIcon from '../../shared/ui/icons/FarmaShieldIcon'
 
 const iconClassName = 'h-5 w-5 shrink-0'
-
-const IconLink = () => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className={iconClassName}>
-    <path d="M10 13a5 5 0 0 1 0-7l1.7-1.7a5 5 0 1 1 7.1 7.1L17 13" />
-    <path d="M14 11a5 5 0 0 1 0 7l-1.7 1.7a5 5 0 0 1-7.1-7.1L7 11" />
-  </svg>
-)
 
 const IconGrid = () => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className={iconClassName}>
@@ -130,7 +124,7 @@ const MENU_BY_ROLE = {
     { key: 'alerts', label: 'Alertas', badge: '24' },
     { key: 'stock', label: 'Control Stock' }
   ],
-  [ROLES.EMPLEADO]: [
+  [ROLES.FARMACEUTICO]: [
     { key: 'dashboard', label: 'Dashboard' },
     { key: 'inventory', label: 'Inventario' },
     { key: 'entries', label: 'Entradas' },
@@ -157,7 +151,7 @@ const getInitials = (name) =>
     .toUpperCase()
 
 const getDefaultNameByRole = (role) => {
-  if (role === ROLES.EMPLEADO) return 'Usuario Farmaceutico'
+  if (role === ROLES.FARMACEUTICO) return 'Usuario Farmaceutico'
   if (role === ROLES.AUDITOR) return 'Usuario Auditor'
   return 'Usuario Administrador'
 }
@@ -172,8 +166,8 @@ const Sidebar = ({ activeModule, role, user, onNavigate, onLogout }) => {
     <aside className="w-full border-r border-[#e7e9ef] bg-[#f6f7fb] md:sticky md:top-0 md:h-screen md:w-[238px] md:flex md:flex-col md:overflow-y-auto">
       <div className="p-4 pb-2">
         <div className="flex items-center gap-3">
-          <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-[#7b5cff] to-[#6d34f4] text-white shadow-sm">
-            <IconLink />
+          <span className="flex items-center justify-center">
+            <FarmaShieldIcon className="h-14 w-14" />
           </span>
           <div>
             <p className="text-2xl leading-none font-semibold text-[#21314d]">FarmaExpres</p>

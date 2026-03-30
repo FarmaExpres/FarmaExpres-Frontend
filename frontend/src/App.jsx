@@ -1,37 +1,91 @@
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
+import { Navigate, Route, Routes, useNavigate } from 'react-router-dom'
 import AppLayout from './layout/components/AppLayout'
 import MedicinesPage from './medicines/pages/MedicinesPage'
 import UsersPage from './users/pages/UsersPage'
+import LoginPage from './auth/pages/LoginPage'
+import ProtectedRoute from './shared/routing/ProtectedRoute'
+import PublicOnlyRoute from './shared/routing/PublicOnlyRoute'
 import { clearSession, getSession, isAdmin } from './shared/auth/session'
 
+const AppShell = ({ session, activeModule, onNavigate, onLogout }) => (
+  <AppLayout
+    role={session.role}
+    user={session.user}
+    activeModule={activeModule}
+    onNavigate={onNavigate}
+    onLogout={onLogout}
+  >
+    {activeModule === 'users' ? (
+      <UsersPage role={session.role} currentUserEmail={session.user.email} />
+    ) : (
+      <MedicinesPage />
+    )}
+  </AppLayout>
+)
+
 function App() {
-  const session = useMemo(() => getSession(), [])
-  const [activeModule, setActiveModule] = useState('medicines')
+  const navigate = useNavigate()
+  const [session, setSession] = useState(() => getSession())
+
+  const refreshSession = () => setSession(getSession())
 
   const handleNavigate = (moduleKey) => {
     if (moduleKey === 'users' && !isAdmin(session.role)) return
-    setActiveModule(moduleKey)
+
+    if (moduleKey === 'users') {
+      navigate('/users')
+      return
+    }
+
+    navigate('/medicines')
   }
 
   const handleLogout = () => {
     clearSession()
-    window.location.reload()
+    refreshSession()
+    navigate('/login', { replace: true })
   }
 
   return (
-    <AppLayout
-      role={session.role}
-      user={session.user}
-      activeModule={activeModule}
-      onNavigate={handleNavigate}
-      onLogout={handleLogout}
-    >
-      {activeModule === 'users' ? (
-        <UsersPage role={session.role} currentUserEmail={session.user.email} />
-      ) : (
-        <MedicinesPage />
-      )}
-    </AppLayout>
+    <Routes>
+      <Route element={<PublicOnlyRoute isAuthenticated={session.isAuthenticated} />}>
+        <Route path="/login" element={<LoginPage onLoginSuccess={refreshSession} />} />
+      </Route>
+
+      <Route element={<ProtectedRoute isAuthenticated={session.isAuthenticated} />}>
+        <Route path="/" element={<Navigate to="/medicines" replace />} />
+        <Route
+          path="/medicines"
+          element={(
+            <AppShell
+              session={session}
+              activeModule="medicines"
+              onNavigate={handleNavigate}
+              onLogout={handleLogout}
+            />
+          )}
+        />
+        <Route
+          path="/users"
+          element={isAdmin(session.role)
+            ? (
+              <AppShell
+                session={session}
+                activeModule="users"
+                onNavigate={handleNavigate}
+                onLogout={handleLogout}
+              />
+              )
+            : <Navigate to="/dashboard" replace />}
+        />
+      </Route>
+
+      <Route
+        path="*"
+        element={<Navigate to={session.isAuthenticated ? '/medicines' : '/login'} replace />}
+      />
+    </Routes>
   )
 }
 
