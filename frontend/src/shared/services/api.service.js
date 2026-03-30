@@ -1,6 +1,6 @@
 import axios from 'axios'
 import { API_URL, AUTH_API_URL } from '../config/api'
-import { getAuthToken } from '../auth/session'
+import { clearSession, getAuthToken } from '../auth/session'
 
 export const inventoryApi = axios.create({
   baseURL: API_URL
@@ -9,6 +9,24 @@ export const inventoryApi = axios.create({
 export const authApi = axios.create({
   baseURL: AUTH_API_URL
 })
+
+const handleAuthFailure = (error) => {
+  const status = error?.response?.status
+  const requestUrl = String(error?.config?.url || '')
+  const isLoginRequest = /\/api\/auth\/login$/i.test(requestUrl)
+
+  if ((status === 401 || status === 403) && !isLoginRequest) {
+    clearSession()
+    if (typeof window !== 'undefined' && window.location.pathname !== '/login') {
+      window.location.replace('/login')
+    }
+  }
+
+  return Promise.reject(error)
+}
+
+inventoryApi.interceptors.response.use((response) => response, handleAuthFailure)
+authApi.interceptors.response.use((response) => response, handleAuthFailure)
 
 export const buildAuthHeaders = (token) => {
   const authToken = (token || getAuthToken()).trim()

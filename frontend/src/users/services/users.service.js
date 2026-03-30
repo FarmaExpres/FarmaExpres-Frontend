@@ -1,45 +1,23 @@
 import { buildAuthHeaders, normalizeApiError, authApi } from '../../shared/services/api.service'
 import { getRoleApiCandidates } from '../../shared/constants/roles'
 
-const USERS_ENDPOINT = '/usuarios'
+const USERS_ENDPOINT = '/api/users'
+
+const mapStatusToUi = (status, active) => {
+  if (typeof active === 'boolean') return active ? 'ACTIVO' : 'INACTIVO'
+
+  const normalizedStatus = String(status || '').trim().toUpperCase()
+  if (['INACTIVE', 'INACTIVO', 'BLOCKED', 'BLOQUEADO'].includes(normalizedStatus)) return 'INACTIVO'
+  return 'ACTIVO'
+}
 
 const mapUser = (user = {}) => ({
   id: user?.id,
-  nombre: user?.nombre || '',
-  email: user?.email || '',
-  rol: user?.rol || '',
-  estado: String(user?.estado || 'ACTIVO').toUpperCase()
+  nombre: String(user?.name ?? user?.nombre ?? '').trim(),
+  email: String(user?.email ?? '').trim().toLowerCase(),
+  rol: String(user?.role ?? user?.rol ?? '').trim().toUpperCase(),
+  estado: mapStatusToUi(user?.status ?? user?.estado, user?.active ?? user?.activo)
 })
-
-const requestWithFallbackEndpoints = async ({ method, endpoints, payload, token, fallbackMessage }) => {
-  let lastError = null
-
-  for (const endpoint of endpoints) {
-    try {
-      const response = await authApi.request({
-        method,
-        url: endpoint,
-        data: payload,
-        headers: buildAuthHeaders(token)
-      })
-
-      return response
-    } catch (error) {
-      const normalizedError = normalizeApiError(error, fallbackMessage)
-      lastError = normalizedError
-
-      // Cuando el endpoint no existe en backend, se prueba la siguiente ruta candidata.
-      if (normalizedError.status === 404 || normalizedError.status === 405) continue
-
-      throw normalizedError
-    }
-  }
-
-  throw (
-    lastError ||
-    new Error(fallbackMessage || 'No se pudo completar la solicitud.')
-  )
-}
 
 export const getUsers = async (token) => {
   try {
@@ -54,18 +32,19 @@ export const getUsers = async (token) => {
 }
 
 export const createUser = async (data, token) => {
-  const basePayload = {
-    nombre: data.fullName.trim(),
-    email: data.email.trim().toLowerCase(),
-    password: data.password,
-    rol: ''
-  }
   const roleCandidates = getRoleApiCandidates(data.role)
   let lastError = null
 
   for (const apiRole of roleCandidates) {
     try {
-      const response = await authApi.post(USERS_ENDPOINT, { ...basePayload, rol: apiRole }, {
+      const payload = {
+        name: String(data?.fullName || '').trim(),
+        email: String(data?.email || '').trim().toLowerCase(),
+        password: String(data?.password || ''),
+        role: apiRole
+      }
+
+      const response = await authApi.post(USERS_ENDPOINT, payload, {
         headers: buildAuthHeaders(token)
       })
 
@@ -75,7 +54,7 @@ export const createUser = async (data, token) => {
       lastError = normalizedError
 
       const roleNotFound =
-        /rol no encontrado|role not found/i.test(normalizedError.rawMessage || '')
+        /rol no encontrado|role not found|invalid role|unknown role/i.test(normalizedError.rawMessage || '')
 
       // Errores de permisos/autenticación no deben reintentarse, salvo cuando backend indique rol no encontrado.
       if ((normalizedError.isForbidden || normalizedError.isUnauthorized) && !roleNotFound) {
@@ -88,31 +67,27 @@ export const createUser = async (data, token) => {
 }
 
 export const updateUser = async ({ id, fullName, email, role }, token) => {
-  const payload = {
-    nombre: String(fullName || '').trim(),
-    email: String(email || '').trim().toLowerCase(),
-    rol: ''
-  }
-
   const roleCandidates = getRoleApiCandidates(role)
   let lastError = null
 
   for (const apiRole of roleCandidates) {
     try {
-      const response = await requestWithFallbackEndpoints({
-        method: 'put',
-        endpoints: [`${USERS_ENDPOINT}/${id}`, `${USERS_ENDPOINT}/${id}/perfil`],
-        payload: { ...payload, rol: apiRole },
-        token,
-        fallbackMessage: 'No se pudo actualizar el usuario.'
+      const payload = {
+        name: String(fullName || '').trim(),
+        email: String(email || '').trim().toLowerCase(),
+        role: apiRole
+      }
+
+      const response = await authApi.put(`${USERS_ENDPOINT}/${id}/update`, payload, {
+        headers: buildAuthHeaders(token)
       })
 
       return mapUser(response.data)
     } catch (error) {
-      const normalizedError = error?.status ? error : normalizeApiError(error, 'No se pudo actualizar el usuario.')
+      const normalizedError = normalizeApiError(error, 'No se pudo actualizar el usuario.')
       lastError = normalizedError
 
-      const roleNotFound = /rol no encontrado|role not found/i.test(normalizedError.rawMessage || '')
+      const roleNotFound = /rol no encontrado|role not found|invalid role|unknown role/i.test(normalizedError.rawMessage || '')
       if ((normalizedError.isForbidden || normalizedError.isUnauthorized) && !roleNotFound) {
         throw normalizedError
       }
@@ -123,82 +98,31 @@ export const updateUser = async ({ id, fullName, email, role }, token) => {
 }
 
 export const toggleUserStatus = async ({ id, isActive }, token) => {
-  const endpointCandidates = [
-    `${USERS_ENDPOINT}/${id}/estado`,
-    `${USERS_ENDPOINT}/${id}/status`,
-    `${USERS_ENDPOINT}/${id}/${isActive ? 'activar' : 'desactivar'}`
-  ]
+  try {
+    const action = isActive ? 'unlock' : 'block'
+    const response = await authApi.put(`${USERS_ENDPOINT}/${id}/${action}`, null, {
+      headers: buildAuthHeaders(token)
+    })
 
-  const payloadCandidates = [
-    { estado: isActive ? 'ACTIVO' : 'INACTIVO' },
-    { estado: isActive },
-    {}
-  ]
-
-  let lastError = null
-
-  for (const payload of payloadCandidates) {
-    try {
-      const response = await requestWithFallbackEndpoints({
-        method: 'patch',
-        endpoints: endpointCandidates,
-        payload,
-        token,
-        fallbackMessage: 'No se pudo actualizar el estado del usuario.'
-      })
-
-      return mapUser(response.data)
-    } catch (error) {
-      lastError = error?.status ? error : normalizeApiError(error, 'No se pudo actualizar el estado del usuario.')
-    }
+    return mapUser(response.data || { id, active: isActive })
+  } catch (error) {
+    throw normalizeApiError(error, 'No se pudo actualizar el estado del usuario.')
   }
-
-  throw (lastError || new Error('No se pudo actualizar el estado del usuario.'))
 }
 
 export const changeUserPassword = async ({ id, currentPassword, newPassword }, token) => {
-  const endpointCandidates = [
-    `${USERS_ENDPOINT}/${id}/password`,
-    `${USERS_ENDPOINT}/${id}/contrasena`,
-    `/users/${id}/password`
-  ]
-
-  const payloadCandidates = [
-    { passwordActual: currentPassword, nuevaPassword: newPassword },
-    { currentPassword, newPassword },
-    { nuevaPassword: newPassword },
-    { newPassword },
-    { password: newPassword }
-  ]
-
-  let lastError = null
-
-  for (const payload of payloadCandidates) {
-    try {
-      const response = await requestWithFallbackEndpoints({
-        method: 'put',
-        endpoints: endpointCandidates,
-        payload,
-        token,
-        fallbackMessage: 'No se pudo cambiar la contraseña.'
-      })
-
-      return response.data
-    } catch (error) {
-      const normalizedError = error?.status ? error : normalizeApiError(error, 'No se pudo cambiar la contraseña.')
-      lastError = normalizedError
-
-      // Un 400 ya trae una validacion funcional del backend (ej: contraseña actual incorrecta),
-      // por eso no se debe seguir intentando payloads alternos que puedan sobreescribir el mensaje.
-      if (normalizedError.status === 400) {
-        throw normalizedError
-      }
-
-      if (normalizedError.isForbidden || normalizedError.isUnauthorized || normalizedError.isNotFound) {
-        throw normalizedError
-      }
+  try {
+    const payload = {
+      currentpassword: String(currentPassword || ''),
+      newPassword: String(newPassword || '')
     }
-  }
 
-  throw (lastError || new Error('No se pudo cambiar la contraseña.'))
+    const response = await authApi.put(`${USERS_ENDPOINT}/${id}/password`, payload, {
+      headers: buildAuthHeaders(token)
+    })
+
+    return response.data
+  } catch (error) {
+    throw normalizeApiError(error, 'No se pudo cambiar la contraseña.')
+  }
 }
