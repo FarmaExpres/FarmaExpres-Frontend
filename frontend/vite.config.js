@@ -6,17 +6,30 @@ export default defineConfig({
   plugins: [react()],
   server: {
     proxy: {
-      '/inventory-api': {
-        target: 'http://localhost:8082',
-        changeOrigin: true,
-        secure: false,
-        rewrite: (path) => path.replace(/^\/inventory-api/, '')
-      },
-      '/auth-api': {
+      '/api/auth': {
         target: 'http://localhost:8081',
         changeOrigin: true,
-        secure: false,
-        rewrite: (path) => path.replace(/^\/auth-api/, '')
+        secure: false
+      },
+      '/api/users': {
+        target: 'http://localhost:8081',
+        changeOrigin: true,
+        secure: false
+      },
+      '/api/binnacle': {
+        target: 'http://localhost:8081',
+        changeOrigin: true,
+        secure: false
+      },
+      '/api/products': {
+        target: 'http://localhost:8082',
+        changeOrigin: true,
+        secure: false
+      },
+      '/api': {
+        target: 'http://localhost:8080',
+        changeOrigin: true,
+        secure: false
       }
     }
   }

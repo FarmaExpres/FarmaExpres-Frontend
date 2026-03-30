@@ -29,8 +29,9 @@ docker compose down
 
 ## Variables de entorno
 
-Para pruebas locales sin login implementado, puedes usar:
+Con la autenticación implementada, **no se usa token manual en `.env.local`**.
+El usuario inicia sesión en `/login` y el token se gestiona automáticamente en `localStorage`.
 
-`VITE_DEV_TOKEN=<token_jwt>`
+Si se requiere apuntar el frontend a otro gateway:
 
-en el archivo `.env.local`.
+`VITE_API_BASE_URL=http://localhost:8080`
