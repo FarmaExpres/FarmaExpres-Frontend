@@ -101,11 +101,11 @@ const MedicineEditModal = ({ isOpen, medicine, onClose, onSuccess, onError }) =>
 
     // Se envían solo campos editables para respetar el criterio de no modificar el código.
     const payload = {
-      nombre: form.commercialName.trim(),
+      name: form.commercialName.trim(),
       stock: Number(form.stock),
-      stockMinimo: Number(form.minimumStock),
-      precio: Number(form.unitPrice),
-      fechavencimiento: form.expirationDate
+      minimumStock: Number(form.minimumStock),
+      unitPrice: Number(form.unitPrice),
+      expirationDate: form.expirationDate
     }
 
     setIsSubmitting(true)

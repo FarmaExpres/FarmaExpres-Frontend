@@ -92,15 +92,15 @@ const MedicineModal = ({ isOpen, onClose, onSuccess, onError }) => {
 
     if (Object.keys(validationErrors).length > 0) return
 
-    // Se mapea el modelo interno (inglés) al contrato que espera el backend.
+    // Se construye el payload con contrato vigente de backend (campos en inglés).
     const payload = {
-      codigo: form.code.trim(),
-      nombre: form.commercialName.trim(),
+      code: form.code.trim(),
+      name: form.commercialName.trim(),
       stock: Number(form.initialStock),
-      stockMinimo: Number(form.minimumStock),
-      precio: Number(form.unitPrice),
-      fechavencimiento: form.expirationDate,
-      activo: true
+      minimumStock: Number(form.minimumStock),
+      unitPrice: Number(form.unitPrice),
+      expirationDate: form.expirationDate,
+      active: true
     }
 
     setIsSubmitting(true)

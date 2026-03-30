@@ -5,9 +5,9 @@ const isValidEmail = (value) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(String(valu
 const isLowercaseEmail = (value) => String(value || '').trim() === String(value || '').trim().toLowerCase()
 
 const buildInitialForm = (user) => ({
-  fullName: user?.nombre || '',
+  fullName: user?.nombre || user?.name || '',
   email: user?.email || '',
-  role: user?.rol || USER_ROLE_OPTIONS[0].value
+  role: user?.rol || user?.role || USER_ROLE_OPTIONS[0].value
 })
 
 const UserEditModal = ({ isOpen, onClose, user, onSubmit, existingEmails = [], isSubmitting = false }) => {
