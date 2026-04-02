@@ -32,7 +32,7 @@ para **controlar quién accede al sistema y mantener sus datos actualizados**.
 - [x] Campo **Confirmar contraseña** (obligatorio).
 - [x] Selector de **Rol** (Administrador/Farmacéutico/Auditor).
 
-#### validaciones
+#### Validaciones
 
 - [x] Todos los campos obligatorios.
 - [x] Correo con formato válido.
@@ -111,7 +111,7 @@ para **controlar quién accede al sistema y mantener sus datos actualizados**.
 
 ![CP-HU-FE-01-01](./images/HU-FE-01/01-boton-nuevo-usuario-admin.png)
 
-### CP-HU-FE-01-02 - validaciones de creación (campos obligatorios)
+### CP-HU-FE-01-02 - Validaciones de creación (campos obligatorios)
 
 - **Objetivo:** Verificar que no se permita envío vacío.
 - **Acción ejecutada:** Intento de guardar formulario sin completar datos.
@@ -120,7 +120,7 @@ para **controlar quién accede al sistema y mantener sus datos actualizados**.
 
 ![CP-HU-FE-01-02](./images/HU-FE-01/02-validaciones-campos-obligatorios.png)
 
-### CP-HU-FE-01-03 - validación de correo en minúsculas
+### CP-HU-FE-01-03 - Validación de correo en minúsculas
 
 - **Objetivo:** Confirmar regla de correo en minúsculas.
 - **Acción ejecutada:** Ingreso de correo con mayúsculas.
@@ -131,7 +131,7 @@ para **controlar quién accede al sistema y mantener sus datos actualizados**.
 
 ### CP-HU-FE-01-04 - Creación exitosa de usuario
 
-- **Objetivo:** validar flujo Éxitoso de alta.
+- **Objetivo:** Validar flujo exitoso de alta.
 - **Acción ejecutada:** Registro de usuario con datos válidos.
 - **Resultado evidenciado:** Mensaje de éxito y nuevo usuario en listado.
 - **Evidencia:**
@@ -140,7 +140,7 @@ para **controlar quién accede al sistema y mantener sus datos actualizados**.
 
 ### CP-HU-FE-01-05 - Error por correo duplicado
 
-- **Objetivo:** validar control de duplicidad.
+- **Objetivo:** Validar control de duplicidad.
 - **Acción ejecutada:** Intento de crear usuario con correo ya existente.
 - **Resultado evidenciado:** Mensaje claro de correo duplicado.
 - **Evidencia:**
@@ -149,7 +149,7 @@ para **controlar quién accede al sistema y mantener sus datos actualizados**.
 
 ### CP-HU-FE-01-06 - Edición de usuario
 
-- **Objetivo:** validar actualización de datos de usuario.
+- **Objetivo:** Validar actualización de datos de usuario.
 - **Acción ejecutada:** Editar nombre/correo/rol de un usuario existente.
 - **Resultado evidenciado:** Cambios persistidos y visibles en listado.
 - **Evidencia:**
@@ -158,7 +158,7 @@ para **controlar quién accede al sistema y mantener sus datos actualizados**.
 
 ### CP-HU-FE-01-07 - Desactivación de usuario
 
-- **Objetivo:** validar eliminación lógica/desactivación.
+- **Objetivo:** Validar eliminación lógica/desactivación.
 - **Acción ejecutada:** Desactivar usuario desde acción de estado.
 - **Resultado evidenciado:** Usuario pasa a estado inactivo y UI actualizada.
 - **Evidencia:**
@@ -167,7 +167,7 @@ para **controlar quién accede al sistema y mantener sus datos actualizados**.
 
 ### CP-HU-FE-01-08 - Bloqueo de autodesactivación admin principal
 
-- **Objetivo:** validar regla de negocio crítica.
+- **Objetivo:** Validar regla de negocio crítica.
 - **Acción ejecutada:** Intento del admin autenticado de desactivarse a sí mismo.
 - **Resultado evidenciado:** Sistema bloquea acción y muestra mensaje de error.
 - **Evidencia:**

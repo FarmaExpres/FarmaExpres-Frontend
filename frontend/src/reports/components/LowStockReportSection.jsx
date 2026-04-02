@@ -108,7 +108,7 @@ const LowStockReportSection = ({ rows = [], isLoading = false, onExport, exportD
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h2 className="text-[1.2rem] font-bold text-[#1f2e4d]">Reporte de Bajo Stock</h2>
-              <p className="mt-1 text-sm text-[#6e7d99]">Productos con nivel de inventario por debajo del mínimo configurado.</p>
+              <p className="mt-1 text-sm text-[#6e7d99]">Productos por debajo del stock mínimo y sugerencia de reposición.</p>
             </div>
             <button
               type="button"

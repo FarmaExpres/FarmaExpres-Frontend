@@ -127,7 +127,7 @@ const MovementsReportSection = ({
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h2 className="text-[1.2rem] font-bold text-[#1f2e4d]">Reporte de Movimientos</h2>
-              <p className="mt-1 text-sm text-[#6e7d99]">Historial de entradas, salidas y ajustes del inventario con clasificación visual por tipo.</p>
+              <p className="mt-1 text-sm text-[#6e7d99]">Registro de entradas, salidas y ajustes del inventario.</p>
             </div>
             <button
               type="button"

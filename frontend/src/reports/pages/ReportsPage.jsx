@@ -18,8 +18,14 @@ import {
 } from '../utils/reportData.utils'
 import { exportReportExcel } from '../utils/reportExport.utils'
 
+const REPORTS_ACTIVE_TAB_STORAGE_KEY = 'reports:active-tab'
+
 const ReportsPage = () => {
-  const [activeTab, setActiveTab] = useState('inventory')
+  const [activeTab, setActiveTab] = useState(() => {
+    const persistedTab = String(sessionStorage.getItem(REPORTS_ACTIVE_TAB_STORAGE_KEY) || '').trim()
+    const isValidPersistedTab = REPORT_TABS.some((tab) => tab.key === persistedTab)
+    return isValidPersistedTab ? persistedTab : 'inventory'
+  })
   const [isExporting, setIsExporting] = useState(false)
   const [medicines, setMedicines] = useState([])
   const [movements, setMovements] = useState([])
@@ -97,6 +103,10 @@ const ReportsPage = () => {
       setIsExporting(false)
     }
   }
+
+  useEffect(() => {
+    sessionStorage.setItem(REPORTS_ACTIVE_TAB_STORAGE_KEY, activeTab)
+  }, [activeTab])
 
   return (
     <div className="fe-page-shell">

@@ -62,7 +62,7 @@ const InventoryReportSection = ({ rows = [], isLoading = false, onExport, export
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h2 className="text-[1.2rem] font-bold text-[#1f2e4d]">Reporte de Inventario Actual</h2>
-              <p className="mt-1 text-sm text-[#6e7d99]">Visualización consolidada de stock, precio unitario y valor económico por producto.</p>
+              <p className="mt-1 text-sm text-[#6e7d99]">Resumen del inventario actual con stock y valor por producto.</p>
             </div>
             <button
               type="button"
