@@ -26,6 +26,13 @@ const resolveExpiringStatus = (daysUntilExpiration) => {
   return 'Controlado'
 }
 
+const resolveLowStockStatus = (item = {}) => {
+  const stock = toNumber(item.stock)
+  const minimum = Math.max(toNumber(item.stockMinimo), 1)
+  const level = (stock / minimum) * 100
+  return level <= 50 ? 'Crítico' : 'Alerta'
+}
+
 const toContentWidth = (rows = [], selector, { min = 16, max = 60, padding = 2 } = {}) => {
   const longest = rows.reduce((currentMax, row) => {
     const value = String(selector(row) || '')
@@ -170,13 +177,13 @@ export const buildExpiringWorksheet = (rowsData = []) => ({
 export const buildLowStockWorksheet = (rowsData = []) => ({
   rows: buildWorksheetRows({
     reportTitle: 'Bajo Stock',
-    header: ['Codigo', 'Medicamento', 'Stock', 'Minimo', 'Sugerencia de reposicion'],
+    header: ['Codigo', 'Medicamento', 'Stock', 'Minimo', 'Estado', 'Sugerencia de reposicion'],
     rows: rowsData.map((item) => {
       const shortage = Math.max((toNumber(item.stockMinimo) * 2) - toNumber(item.stock), 1)
-      return [item.codigo, item.nombre, item.stock, item.stockMinimo, `Reponer ${shortage} unidades`]
+      return [item.codigo, item.nombre, item.stock, item.stockMinimo, resolveLowStockStatus(item), `Reponer ${shortage} unidades`]
     })
   }),
-  cols: [{ wch: 14 }, { wch: 34 }, { wch: 10 }, { wch: 10 }, { wch: 30 }],
+  cols: [{ wch: 14 }, { wch: 34 }, { wch: 10 }, { wch: 10 }, { wch: 14 }, { wch: 36 }],
   summary: buildSummaryWorksheet({
     reportTitle: 'Bajo Stock',
     summaryItems: [{ label: 'Productos en bajo stock', value: rowsData.length }]
