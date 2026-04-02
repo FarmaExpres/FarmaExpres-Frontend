@@ -120,7 +120,7 @@ const MENU_BY_ROLE = {
     { key: 'medicines', label: 'Medicamentos', moduleKey: 'medicines' },
     { key: 'users', label: 'Usuarios', moduleKey: 'users' },
     { key: 'movements', label: 'Movimientos', moduleKey: 'movements' },
-    { key: 'reports', label: 'Reportes' },
+    { key: 'reports', label: 'Reportes', moduleKey: 'reports' },
     { key: 'alerts', label: 'Alertas', badge: '24' },
     { key: 'stock', label: 'Control Stock' }
   ],
@@ -136,7 +136,7 @@ const MENU_BY_ROLE = {
     { key: 'dashboard', label: 'Dashboard' },
     { key: 'inventory', label: 'Inventario' },
     { key: 'movements', label: 'Movimientos', moduleKey: 'movements' },
-    { key: 'reports', label: 'Reportes' },
+    { key: 'reports', label: 'Reportes', moduleKey: 'reports' },
     { key: 'audit', label: 'Auditoria' }
   ]
 }
