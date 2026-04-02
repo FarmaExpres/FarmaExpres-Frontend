@@ -15,6 +15,15 @@ const MOVEMENTS_FILTER_SUFFIX = Object.freeze({
   adjustment: 'ajustes'
 })
 
+const toContentWidth = (rows = [], selector, { min = 16, max = 60, padding = 2 } = {}) => {
+  const longest = rows.reduce((currentMax, row) => {
+    const value = String(selector(row) || '')
+    return Math.max(currentMax, value.length)
+  }, 0)
+
+  return Math.max(min, Math.min(max, longest + padding))
+}
+
 const buildWorksheetRows = ({ reportTitle, header, rows }) => ([
   ['Reporte', reportTitle],
   ['Generado', getReportTimestamp()],
@@ -85,15 +94,36 @@ export const buildInventoryWorksheet = (rowsData = []) => {
 export const buildMovementsWorksheet = (rowsData = [], movementsFilterKey = 'all') => ({
   rows: buildWorksheetRows({
     reportTitle: 'Movimientos',
-    header: ['Fecha', 'Hora', 'Tipo', 'Medicamento', 'Cantidad', 'Usuario'],
-    rows: rowsData.map((item) => [item.date, item.time, item.typeLabel, item.medicine, item.quantity, item.user])
+    header: ['Fecha', 'Hora', 'Tipo', 'Medicamento', 'Cantidad', 'Motivo', 'Detalle Ajuste', 'Usuario'],
+    rows: rowsData.map((item) => [
+      item.date,
+      item.time,
+      item.typeLabel,
+      item.medicine,
+      item.quantity,
+      item.type === 'UPDATED' ? (item.reason || 'Ajuste de producto') : (item.reason || 'No especificado'),
+      item.type === 'UPDATED'
+        ? (item.adjustmentDetailText || item.adjustmentSummary || 'Sin detalle específico del ajuste')
+        : '',
+      item.user
+    ])
   }),
-  cols: [{ wch: 12 }, { wch: 10 }, { wch: 12 }, { wch: 34 }, { wch: 12 }, { wch: 28 }],
+  cols: [
+    { wch: 12 },
+    { wch: 10 },
+    { wch: 12 },
+    { wch: 30 },
+    { wch: 12 },
+    { wch: toContentWidth(rowsData, (item) => (item.type === 'UPDATED' ? (item.reason || 'Ajuste de producto') : (item.reason || 'No especificado')), { min: 28, max: 50 }) },
+    { wch: toContentWidth(rowsData, (item) => (item.type === 'UPDATED' ? (item.adjustmentDetailText || item.adjustmentSummary || 'Sin detalle específico del ajuste') : ''), { min: 34, max: 72 }) },
+    { wch: 22 }
+  ],
   summary: buildSummaryWorksheet({
     reportTitle: 'Movimientos',
     summaryItems: [{ label: 'Registros exportados', value: rowsData.length }]
   }),
   numericColumns: [5],
+  wrapTextColumns: [6, 7],
   theme: REPORT_THEMES.movements,
   fileName: `reporte-movimientos-${MOVEMENTS_FILTER_SUFFIX[movementsFilterKey] || MOVEMENTS_FILTER_SUFFIX.all}-${getFileTimestamp()}.xlsx`,
   sheetName: 'Movimientos'
@@ -155,4 +185,3 @@ export const buildByUserWorksheet = (rowsData = []) => ({
   fileName: `reporte-por-usuario-${getFileTimestamp()}.xlsx`,
   sheetName: 'PorUsuario'
 })
-

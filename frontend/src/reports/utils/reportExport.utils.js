@@ -50,6 +50,7 @@ export const exportReportExcel = async ({
     headerLength: data.rows[3]?.length || 1,
     currencyColumns: data.currencyColumns || [],
     numericColumns: data.numericColumns || [],
+    wrapTextColumns: data.wrapTextColumns || [],
     theme: data.theme || REPORT_THEMES.inventory
   })
 
@@ -66,4 +67,3 @@ export const exportReportExcel = async ({
 
   await triggerExcelDownload(workbook, data.fileName)
 }
-

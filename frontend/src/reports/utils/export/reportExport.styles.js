@@ -10,6 +10,7 @@ export const applyCorporateSheetStyles = ({
   headerLength,
   currencyColumns = [],
   numericColumns = [],
+  wrapTextColumns = [],
   theme
 }) => {
   worksheet.views = [{ state: 'frozen', ySplit: 4 }]
@@ -62,6 +63,9 @@ export const applyCorporateSheetStyles = ({
   numericColumns.forEach((columnIndex) => {
     worksheet.getColumn(columnIndex).numFmt = '#,##0'
     worksheet.getColumn(columnIndex).alignment = { horizontal: 'left', vertical: 'middle' }
+  })
+  wrapTextColumns.forEach((columnIndex) => {
+    worksheet.getColumn(columnIndex).alignment = { horizontal: 'left', vertical: 'top', wrapText: true }
   })
   worksheet.getColumn(1).alignment = { horizontal: 'left', vertical: 'middle' }
   worksheet.getColumn(2).alignment = { horizontal: 'left', vertical: 'middle' }
@@ -119,4 +123,3 @@ export const applySummaryStyles = (worksheet, rowCount = 0, formats = []) => {
     targetCell.alignment = { horizontal: 'left', vertical: 'middle' }
   })
 }
-
