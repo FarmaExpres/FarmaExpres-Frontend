@@ -20,7 +20,7 @@ const UsersTable = ({
   const normalizedCurrentUserEmail = String(currentUserEmail || '').trim().toLowerCase()
 
   return (
-    <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+    <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 2xl:grid-cols-3 2xl:gap-5">
       {isLoading && (
         <div className="fe-card col-span-full p-5 text-center text-gray-400">
           Cargando usuarios...
@@ -41,20 +41,20 @@ const UsersTable = ({
         const isProcessing = isProcessingId === user.id
 
         return (
-          <article key={user.id || `${user.email}-${index}`} className="fe-card p-4">
+          <article key={user.id || `${user.email}-${index}`} className="fe-card p-4 2xl:p-5">
             <div className="flex items-center gap-3">
-              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#e9d8ff] text-base font-bold text-[#6a3cf1]">
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#e9d8ff] text-base font-bold text-[#6a3cf1] 2xl:h-14 2xl:w-14">
                 {getInitials(user.nombre)}
               </div>
 
               <div className="min-w-0 flex-1">
-                <h3 className="truncate text-[1.05rem] font-semibold text-[#1b2b4a]">{user.nombre || 'Sin nombre'}</h3>
-                <p className="truncate text-sm text-[#7b89a5]">{user.email || '---'}</p>
+                <h3 className="truncate text-[1.05rem] font-semibold text-[#1b2b4a] 2xl:text-[1.12rem]">{user.nombre || 'Sin nombre'}</h3>
+                <p className="truncate text-sm text-[#7b89a5] 2xl:text-[0.95rem]">{user.email || '---'}</p>
                 <div className="mt-2 flex items-center gap-2">
-                  <span className="rounded-full bg-[#ebf1ff] px-2.5 py-1 text-xs font-semibold text-[#4565a8]">
+                  <span className="inline-flex h-8 items-center rounded-full bg-[#ebf1ff] px-3 text-xs font-semibold text-[#4565a8]">
                     {getRoleLabel(user.rol)}
                   </span>
-                  <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${userIsActive ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-200 text-slate-700'}`}>
+                  <span className={`inline-flex h-8 items-center rounded-full px-3 text-xs font-semibold ${userIsActive ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-200 text-slate-700'}`}>
                     {userIsActive ? 'Activo' : 'Inactivo'}
                   </span>
                 </div>

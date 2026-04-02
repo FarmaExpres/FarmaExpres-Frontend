@@ -119,7 +119,7 @@ const MENU_BY_ROLE = {
     { key: 'dashboard', label: 'Dashboard' },
     { key: 'medicines', label: 'Medicamentos', moduleKey: 'medicines' },
     { key: 'users', label: 'Usuarios', moduleKey: 'users' },
-    { key: 'movements', label: 'Movimientos' },
+    { key: 'movements', label: 'Movimientos', moduleKey: 'movements' },
     { key: 'reports', label: 'Reportes' },
     { key: 'alerts', label: 'Alertas', badge: '24' },
     { key: 'stock', label: 'Control Stock' }
@@ -135,7 +135,7 @@ const MENU_BY_ROLE = {
   [ROLES.AUDITOR]: [
     { key: 'dashboard', label: 'Dashboard' },
     { key: 'inventory', label: 'Inventario' },
-    { key: 'movements', label: 'Movimientos' },
+    { key: 'movements', label: 'Movimientos', moduleKey: 'movements' },
     { key: 'reports', label: 'Reportes' },
     { key: 'audit', label: 'Auditoria' }
   ]
@@ -163,20 +163,22 @@ const Sidebar = ({ activeModule, role, user, onNavigate, onLogout }) => {
   const initials = getInitials(displayName) || 'US'
 
   return (
-    <aside className="w-full border-r border-[#e7e9ef] bg-[#f6f7fb] md:sticky md:top-0 md:h-screen md:w-[238px] md:flex md:flex-col md:overflow-y-auto">
-      <div className="p-4 pb-2">
-        <div className="flex items-center gap-3">
+    <aside className="w-full border-r border-[#e7e9ef] bg-[#f6f7fb] md:sticky md:top-0 md:h-screen md:w-[218px] md:flex md:flex-col md:overflow-y-auto lg:w-[234px] xl:w-[258px]">
+      <div className="px-3 pt-3.5 pb-2 lg:pt-4">
+        <div className="flex items-center gap-2 lg:gap-2.5">
           <span className="flex items-center justify-center">
-            <FarmaShieldIcon className="h-14 w-14" />
+            <FarmaShieldIcon className="h-12 w-12 lg:h-[3.25rem] lg:w-[3.25rem] xl:h-14 xl:w-14" />
           </span>
           <div>
-            <p className="text-2xl leading-none font-semibold text-[#21314d]">FarmaExpres</p>
-            <p className="mt-1 text-sm text-[#95a0b8]">ERP Farmacia</p>
+            <p className="whitespace-nowrap text-[1.44rem] leading-none font-semibold tracking-[-0.015em] text-[#21314d] lg:text-[1.54rem] xl:text-[1.68rem]">
+              FarmaExpres
+            </p>
+            <p className="mt-1 text-[0.95rem] text-[#95a0b8]">ERP Farmacia</p>
           </div>
         </div>
       </div>
 
-      <nav className="px-3 py-2">
+      <nav className="px-3 py-2 lg:px-4">
         {roleMenu.map((item) => {
           const Icon = iconMap[item.key] || IconGrid
           const isActive = item.moduleKey && activeModule === item.moduleKey
@@ -187,7 +189,7 @@ const Sidebar = ({ activeModule, role, user, onNavigate, onLogout }) => {
               key={item.key}
               type="button"
               onClick={() => isInteractive && onNavigate(item.moduleKey)}
-              className={`mb-1 flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-left text-sm transition ${
+              className={`mb-1 flex w-full items-center justify-between rounded-lg px-2.5 py-2.5 text-left text-sm transition lg:px-3 ${
                 isActive
                   ? 'bg-gradient-to-r from-[#6d3ff1] to-[#7f4fff] text-white shadow-sm'
                   : isInteractive
@@ -214,7 +216,7 @@ const Sidebar = ({ activeModule, role, user, onNavigate, onLogout }) => {
         })}
       </nav>
 
-      <div className="mt-auto border-t border-[#e7e9ef] p-3">
+      <div className="mt-auto border-t border-[#e7e9ef] p-4">
         <div className="mb-2.5 flex items-center gap-3">
           <span className="flex h-11 w-11 items-center justify-center rounded-full bg-[#e9d9ff] text-sm font-bold text-[#7d47f8]">
             {initials}

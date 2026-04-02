@@ -117,7 +117,7 @@ const MedicinesTable = ({
 
   return (
     <div className="fe-card fe-table-wrap">
-      <table className="fe-table">
+      <table className="fe-table text-sm 2xl:text-[15px]">
         <thead>
           <tr>
             <th className="text-left">CÓDIGO</th>
@@ -145,7 +145,7 @@ const MedicinesTable = ({
                 className={medicine.activo === false ? 'bg-[#f6f7fb] text-gray-500' : ''}
               >
                 <td className="whitespace-nowrap">
-                  <span className="rounded-lg bg-[#eef2fa] px-2.5 py-1 text-xs font-semibold text-[#526180]">
+                  <span className="inline-flex h-8 items-center rounded-lg bg-[#eef2fa] px-3 text-xs font-semibold text-[#526180] 2xl:text-[12px]">
                     {medicine.codigo || '---'}
                   </span>
                 </td>
@@ -164,7 +164,7 @@ const MedicinesTable = ({
                 <td className="whitespace-nowrap text-center text-red-500">{medicine.fechavencimiento || '---'}</td>
                 <td className="whitespace-nowrap text-center">
                   <span
-                    className={`rounded-lg px-2.5 py-1 text-xs font-semibold ${
+                    className={`inline-flex h-8 min-w-[86px] items-center justify-center rounded-lg px-3 text-xs font-semibold 2xl:text-[12px] ${
                       medicine.activo === false
                         ? 'bg-slate-200 text-slate-700'
                         : 'bg-emerald-100 text-emerald-700'
@@ -174,14 +174,14 @@ const MedicinesTable = ({
                   </span>
                 </td>
                 <td className="whitespace-nowrap">
-                  <div className="flex justify-center gap-1.5">
+                  <div className="flex justify-center gap-2">
                     <button
                       type="button"
                       onClick={() => onEdit?.(medicine)}
                       title="Editar medicamento"
                       aria-label="Editar medicamento"
                       disabled={!medicine?.id || medicine.activo === false}
-                      className="inline-flex h-7 w-7 items-center justify-center rounded-md bg-[#316dff] text-white transition hover:bg-[#295de0] disabled:cursor-not-allowed disabled:opacity-50"
+                      className="inline-flex h-8 w-8 items-center justify-center rounded-md bg-[#316dff] text-white transition hover:bg-[#295de0] disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       <EditIcon />
                     </button>
@@ -192,7 +192,7 @@ const MedicinesTable = ({
                       title="Desactivar medicamento"
                       aria-label="Desactivar medicamento"
                       disabled={!medicine?.id || medicine.activo === false}
-                      className="inline-flex h-7 w-7 items-center justify-center rounded-md bg-[#eb4e68] text-white transition hover:bg-[#d9405a] disabled:cursor-not-allowed disabled:opacity-50"
+                      className="inline-flex h-8 w-8 items-center justify-center rounded-md bg-[#eb4e68] text-white transition hover:bg-[#d9405a] disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       <DisableIcon />
                     </button>

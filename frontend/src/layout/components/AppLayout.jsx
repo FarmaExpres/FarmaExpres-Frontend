@@ -12,7 +12,7 @@ const AppLayout = ({ role, user, activeModule, onNavigate, onLogout, children })
       />
 
       <main className="flex-1 md:overflow-y-auto">
-        <div className="min-h-screen p-3 sm:p-4 md:min-h-full md:p-6">
+        <div className="min-h-screen p-3 sm:p-4 md:min-h-full md:px-2 md:py-3 lg:px-3 lg:py-4">
           <div className="fe-content-shell min-h-[calc(100vh-1.5rem)]">
             {children}
           </div>
