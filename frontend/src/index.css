@@ -16,6 +16,41 @@
   --fe-info: #316dff;
   --fe-danger: #eb4e68;
   --fe-success: #22a06b;
+  --fe-motion-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --fe-motion-fast: 220ms;
+  --fe-motion-base: 320ms;
+  --fe-motion-slow: 420ms;
+}
+
+@keyframes fe-route-enter {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes fe-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes fe-scale-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.985);
+    filter: blur(2px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0);
+  }
 }
 
 @layer base {
@@ -35,12 +70,26 @@
     color: var(--fe-text-primary);
   }
 
+  .transition,
+  .transition-colors,
+  .transition-opacity,
+  .transition-shadow,
+  .transition-transform {
+    transition-duration: var(--fe-motion-base) !important;
+    transition-timing-function: var(--fe-motion-ease) !important;
+  }
+
   label {
     @apply mb-1 block text-sm font-semibold text-slate-600;
   }
 }
 
 @layer components {
+  .fe-route-transition {
+    animation: fe-route-enter var(--fe-motion-slow) var(--fe-motion-ease);
+    will-change: opacity;
+  }
+
   .fe-content-shell {
     @apply rounded-xl border border-[#e8eaf2] bg-[#f7f9ff];
   }
@@ -55,6 +104,18 @@
 
   .fe-section-subtitle {
     @apply mt-1 text-sm text-[var(--fe-text-secondary)];
+  }
+
+  .fe-page-shell {
+    @apply mx-auto max-w-none p-3 md:px-4 md:py-3 lg:p-5 2xl:px-7 2xl:py-6;
+  }
+
+  .fe-page-head {
+    @apply mb-3 flex flex-col justify-between gap-2 md:flex-row md:items-center 2xl:mb-4;
+  }
+
+  .fe-page-title {
+    @apply fe-section-title 2xl:text-[2rem];
   }
 
   .fe-input {
@@ -98,11 +159,14 @@
   }
 
   .fe-modal-overlay {
-    @apply fixed inset-0 z-50 flex items-center justify-center bg-[#121b31]/45 p-4 backdrop-blur-[2px];
+    @apply fixed inset-0 z-50 flex items-center justify-center bg-[#0f172a] p-4;
+    background-color: rgba(15, 23, 42, 0.68);
+    animation: fe-fade-in var(--fe-motion-base) var(--fe-motion-ease);
   }
 
   .fe-modal-card {
     @apply relative w-full max-w-xl rounded-xl border border-[#e4e9f6] bg-white p-5 shadow-[0_16px_32px_rgba(18,27,49,0.2)];
+    animation: fe-scale-in var(--fe-motion-slow) var(--fe-motion-ease);
   }
 
   .fe-toast {
@@ -133,4 +197,48 @@
     @apply border-b border-[#f0f3f9] transition-colors hover:bg-[#f9fbff];
   }
 
+  .fe-table-compact th {
+    @apply px-2 py-2;
+  }
+
+  .fe-table-compact td {
+    @apply px-2 py-1.5;
+  }
+
+  .fe-badge-chip {
+    @apply inline-flex h-8 items-center justify-center rounded-full px-3 text-[11px] font-semibold leading-none;
+  }
+
+  .fe-badge-chip-compact {
+    @apply inline-flex h-8 min-w-[88px] items-center justify-center rounded-full px-2.5 text-[11px] font-semibold leading-none;
+  }
+
+  .fe-col-min-xxs {
+    min-width: 64px;
+  }
+
+  .fe-col-min-xs {
+    min-width: 78px;
+  }
+
+  .fe-col-min-sm {
+    min-width: 112px;
+  }
+
+  .fe-col-min-md {
+    min-width: 146px;
+  }
+
+  .fe-col-min-lg {
+    min-width: 178px;
+  }
+
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fe-route-transition,
+  .fe-modal-overlay,
+  .fe-modal-card {
+    animation: none;
+  }
 }
