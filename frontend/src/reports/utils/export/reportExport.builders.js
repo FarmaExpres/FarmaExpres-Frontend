@@ -15,6 +15,17 @@ const MOVEMENTS_FILTER_SUFFIX = Object.freeze({
   adjustment: 'ajustes'
 })
 
+const resolveExpiringStatus = (daysUntilExpiration) => {
+  const days = Number(daysUntilExpiration)
+
+  if (!Number.isFinite(days)) return 'Sin fecha'
+  if (days < 0) return 'Vencido'
+  if (days <= 7) return 'Crítico'
+  if (days <= 15) return 'Alto'
+  if (days <= 30) return 'Medio'
+  return 'Controlado'
+}
+
 const toContentWidth = (rows = [], selector, { min = 16, max = 60, padding = 2 } = {}) => {
   const longest = rows.reduce((currentMax, row) => {
     const value = String(selector(row) || '')
@@ -132,10 +143,20 @@ export const buildMovementsWorksheet = (rowsData = [], movementsFilterKey = 'all
 export const buildExpiringWorksheet = (rowsData = []) => ({
   rows: buildWorksheetRows({
     reportTitle: 'Proximos a Vencer',
-    header: ['Codigo', 'Medicamento', 'Vencimiento', 'Dias restantes', 'Stock'],
-    rows: rowsData.map((item) => [item.codigo, item.nombre, item.fechavencimiento || '---', getDaysUntilDate(item.fechavencimiento), item.stock])
+    header: ['Codigo', 'Medicamento', 'Vencimiento', 'Dias restantes', 'Stock', 'Estado'],
+    rows: rowsData.map((item) => {
+      const daysUntilExpiration = getDaysUntilDate(item.fechavencimiento)
+      return [
+        item.codigo,
+        item.nombre,
+        item.fechavencimiento || '---',
+        daysUntilExpiration,
+        item.stock,
+        resolveExpiringStatus(daysUntilExpiration)
+      ]
+    })
   }),
-  cols: [{ wch: 14 }, { wch: 36 }, { wch: 16 }, { wch: 16 }, { wch: 10 }],
+  cols: [{ wch: 14 }, { wch: 36 }, { wch: 16 }, { wch: 16 }, { wch: 10 }, { wch: 14 }],
   summary: buildSummaryWorksheet({
     reportTitle: 'Proximos a Vencer',
     summaryItems: [{ label: 'Productos en ventana de vencimiento', value: rowsData.length }]
