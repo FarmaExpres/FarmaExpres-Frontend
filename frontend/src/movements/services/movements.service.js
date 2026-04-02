@@ -215,6 +215,51 @@ const resolveReason = (movement = {}, normalizedType) => {
   return 'No especificado'
 }
 
+const parseAdjustmentDetail = (rawDetail) => {
+  if (!rawDetail) return []
+
+  if (Array.isArray(rawDetail)) {
+    return rawDetail.filter((item) => item && typeof item === 'object')
+  }
+
+  if (typeof rawDetail === 'string') {
+    try {
+      const parsed = JSON.parse(rawDetail)
+      return Array.isArray(parsed) ? parsed.filter((item) => item && typeof item === 'object') : []
+    } catch {
+      return []
+    }
+  }
+
+  return []
+}
+
+const formatAdjustmentValue = (value, format) => {
+  if (value === null || value === undefined || value === '') return '---'
+
+  if (format === 'currency') {
+    const numericValue = toNumberOrDefault(value, 0)
+    return `$${numericValue.toLocaleString('es-CO')}`
+  }
+
+  if (format === 'number') {
+    const numericValue = toNumberOrDefault(value, 0)
+    return numericValue.toLocaleString('es-CO')
+  }
+
+  return String(value)
+}
+
+const buildAdjustmentDetailText = (adjustmentDetail = []) =>
+  adjustmentDetail
+    .map((item) => {
+      const label = item?.label || item?.field || 'Campo'
+      const beforeValue = formatAdjustmentValue(item?.before, item?.format)
+      const afterValue = formatAdjustmentValue(item?.after, item?.format)
+      return `${label}: ${beforeValue} -> ${afterValue}`
+    })
+    .join(' | ')
+
 const isSystemSeedUser = (value) => {
   const normalizedValue = normalizeIdentity(value).replace(/[\s-]+/g, '_')
   return normalizedValue === 'system_init' || normalizedValue === 'system'
@@ -296,6 +341,11 @@ const mapMovement = (movement = {}, productsById = {}, usersByIdentity = {}, use
   const dateValue = dateDetails.value
   const productId = movement?.productId ?? movement?.product?.id ?? movement?.medicineId ?? null
   const signedQuantity = getSignedQuantity(movement?.amount ?? movement?.quantity ?? movement?.cantidad, normalizedType)
+  const adjustmentDetail = parseAdjustmentDetail(movement?.adjustmentDetail ?? movement?.adjustment_detail)
+  const adjustmentSummaryRaw = String(movement?.adjustmentSummary ?? movement?.adjustment_summary ?? '').trim()
+  const adjustmentSummary =
+    adjustmentSummaryRaw ||
+    (adjustmentDetail.length > 0 ? buildAdjustmentDetailText(adjustmentDetail) : '')
 
   const fallbackId = [
     movement?.dateTime ?? movement?.date ?? movement?.fecha ?? 'movement',
@@ -315,6 +365,9 @@ const mapMovement = (movement = {}, productsById = {}, usersByIdentity = {}, use
     medicine: resolveMedicineName(movement, productsById),
     quantity: signedQuantity,
     reason: resolveReason(movement, normalizedType),
+    adjustmentSummary,
+    adjustmentDetail,
+    adjustmentDetailText: buildAdjustmentDetailText(adjustmentDetail),
     user: userInfo.name,
     userId: userInfo.id,
     userRoleLabel: userInfo.roleLabel,
