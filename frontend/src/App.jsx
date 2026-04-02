@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Navigate, Route, Routes, useNavigate } from 'react-router-dom'
 import AppLayout from './layout/components/AppLayout'
 import MedicinesPage from './medicines/pages/MedicinesPage'
+import MovementsPage from './movements/pages/MovementsPage'
 import UsersPage from './users/pages/UsersPage'
 import LoginPage from './auth/pages/LoginPage'
 import ProtectedRoute from './shared/routing/ProtectedRoute'
@@ -16,11 +17,13 @@ const AppShell = ({ session, activeModule, onNavigate, onLogout }) => (
     onNavigate={onNavigate}
     onLogout={onLogout}
   >
-    {activeModule === 'users' ? (
-      <UsersPage role={session.role} currentUserEmail={session.user.email} />
-    ) : (
-      <MedicinesPage />
-    )}
+    <div key={activeModule} className="fe-route-transition">
+      {activeModule === 'users'
+        ? <UsersPage role={session.role} currentUserEmail={session.user.email} />
+        : activeModule === 'movements'
+          ? <MovementsPage />
+          : <MedicinesPage />}
+    </div>
   </AppLayout>
 )
 
@@ -35,6 +38,11 @@ function App() {
 
     if (moduleKey === 'users') {
       navigate('/users')
+      return
+    }
+
+    if (moduleKey === 'movements') {
+      navigate('/movements')
       return
     }
 
@@ -77,7 +85,18 @@ function App() {
                 onLogout={handleLogout}
               />
               )
-            : <Navigate to="/dashboard" replace />}
+            : <Navigate to="/medicines" replace />}
+        />
+        <Route
+          path="/movements"
+          element={(
+            <AppShell
+              session={session}
+              activeModule="movements"
+              onNavigate={handleNavigate}
+              onLogout={handleLogout}
+            />
+          )}
         />
       </Route>
 

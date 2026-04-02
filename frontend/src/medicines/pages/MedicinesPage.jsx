@@ -127,15 +127,15 @@ const MedicinesPage = () => {
   }, [medicineToDeactivate])
 
   return (
-    <div className="mx-auto max-w-7xl p-4 md:p-5">
-      <div className="mb-4 flex flex-col justify-between gap-3 md:flex-row md:items-center">
+    <div className="fe-page-shell">
+      <div className="fe-page-head">
         <div>
-          <h1 className="fe-section-title">Gestión de Medicamentos</h1>
+          <h1 className="fe-page-title">Gestión de Medicamentos</h1>
         </div>
 
         <button
           onClick={handleOpenCreate}
-          className="fe-btn-primary"
+          className="fe-btn-primary 2xl:h-12 2xl:px-6 2xl:text-base"
         >
           + Agregar medicamento
         </button>
@@ -158,13 +158,13 @@ const MedicinesPage = () => {
           value={searchTerm}
           onChange={(event) => setSearchTerm(event.target.value)}
           placeholder="Buscar por código o nombre..."
-          className="fe-input w-full sm:w-[310px]"
+          className="fe-input w-full sm:w-[310px] 2xl:h-12 2xl:text-base"
         />
 
         <select
           value={sortBy}
           onChange={(event) => setSortBy(event.target.value)}
-          className="fe-input w-full sm:w-[300px]"
+          className="fe-input w-full sm:w-[300px] 2xl:h-12 2xl:text-base"
         >
           <option value="code">Ordenar por código (asc)</option>
           <option value="name">Ordenar por nombre (A-Z)</option>
