@@ -1,9 +1,6 @@
-export const normalizeIdentity = (value) =>
-  String(value || '')
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .trim()
-    .toLowerCase()
+import { normalizeIdentity as normalizeIdentityText } from '../../shared/utils/text.utils'
+
+export const normalizeIdentity = (value) => normalizeIdentityText(value)
 
 export const toNumber = (value) => {
   const parsedValue = Number(value)
@@ -47,4 +44,3 @@ export const getFileTimestamp = () => {
   const minute = String(now.getMinutes()).padStart(2, '0')
   return `${year}${month}${day}-${hour}${minute}`
 }
-

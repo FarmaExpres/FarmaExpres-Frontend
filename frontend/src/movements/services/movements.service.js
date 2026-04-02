@@ -4,6 +4,7 @@ import {
   normalizeApiError
 } from '../../shared/services/api.service'
 import { getRoleLabel } from '../../shared/constants/roles'
+import { normalizeIdentity } from '../../shared/utils/text.utils'
 
 const MOVEMENTS_ENDPOINT_CANDIDATES = ['/api/movements', '/api/motions', '/api/Motion', '/movements']
 
@@ -24,7 +25,7 @@ const getClientTimeZone = () => {
   try {
     const resolvedTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone
     return String(resolvedTimeZone || '').trim() || undefined
-  } catch (error) {
+  } catch {
     return undefined
   }
 }
@@ -146,7 +147,7 @@ const resolveDateDetails = (movement = {}) => {
   }
 
   const parsedDate = new Date(rawDateText)
-  const hasExplicitTimezone = /([zZ]|[+\-]\d{2}:\d{2})$/.test(rawDateText)
+  const hasExplicitTimezone = /([zZ]|[+-]\d{2}:\d{2})$/.test(rawDateText)
   return {
     value: Number.isNaN(parsedDate.getTime()) ? null : parsedDate,
     raw: rawDateText,
@@ -213,13 +214,6 @@ const resolveReason = (movement = {}, normalizedType) => {
 
   return 'No especificado'
 }
-
-const normalizeIdentity = (value) =>
-  String(value || '')
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .trim()
-    .toLowerCase()
 
 const isSystemSeedUser = (value) => {
   const normalizedValue = normalizeIdentity(value).replace(/[\s-]+/g, '_')

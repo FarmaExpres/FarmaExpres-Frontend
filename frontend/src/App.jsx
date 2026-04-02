@@ -34,6 +34,7 @@ const AppShell = ({ session, activeModule, onNavigate, onLogout }) => (
 function App() {
   const navigate = useNavigate()
   const [session, setSession] = useState(() => getSession())
+  const canAccessMovements = [ROLES.ADMIN, ROLES.AUDITOR].includes(normalizeRole(session.role))
   const canAccessStock = [ROLES.ADMIN, ROLES.AUDITOR].includes(normalizeRole(session.role))
 
   const refreshSession = () => setSession(getSession())
@@ -47,6 +48,7 @@ function App() {
     }
 
     if (moduleKey === 'movements') {
+      if (!canAccessMovements) return
       navigate('/movements')
       return
     }
@@ -100,14 +102,16 @@ function App() {
         />
         <Route
           path="/movements"
-          element={(
-            <AppShell
-              session={session}
-              activeModule="movements"
-              onNavigate={handleNavigate}
-              onLogout={handleLogout}
-            />
-          )}
+          element={canAccessMovements
+            ? (
+              <AppShell
+                session={session}
+                activeModule="movements"
+                onNavigate={handleNavigate}
+                onLogout={handleLogout}
+              />
+              )
+            : <Navigate to="/medicines" replace />}
         />
         <Route
           path="/reports"
