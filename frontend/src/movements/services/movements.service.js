@@ -292,10 +292,19 @@ const resolveUserInfo = (movement = {}, usersByIdentity = {}, usersById = {}) =>
   const userDisplayName = isSystemUser
     ? 'Sistema'
     : (normalizedUser || userLookup?.displayName || 'No disponible')
+
+  const normalizeRawRoleLabel = (value = '') => {
+    const normalizedValue = String(value || '').trim().toUpperCase()
+    if (['SYSTEM', 'SYSTEM_INIT', 'SISTEMA'].includes(normalizedValue)) return 'Automático'
+    return String(value || '').trim()
+  }
+
   const roleLabel = rawRole
     ? (() => {
       const normalizedRoleLabel = getRoleLabel(rawRole)
-      return normalizedRoleLabel === 'Sin rol' ? String(rawRole).trim() : normalizedRoleLabel
+      if (normalizedRoleLabel !== 'Sin rol') return normalizedRoleLabel
+      if (isSystemUser) return 'Automático'
+      return normalizeRawRoleLabel(rawRole)
     })()
     : (
       isSystemUser

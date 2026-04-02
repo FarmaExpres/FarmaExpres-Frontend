@@ -11,9 +11,29 @@ import {
   INITIAL_FILTERS
 } from '../utils/movementsPage.utils'
 
+const MOVEMENTS_FILTER_FORM_STORAGE_KEY = 'movements:filter-form'
+const MOVEMENTS_APPLIED_FILTERS_STORAGE_KEY = 'movements:applied-filters'
+
+const normalizeStoredFilters = (value) => ({
+  type: String(value?.type || '').trim(),
+  fromDate: String(value?.fromDate || '').trim(),
+  toDate: String(value?.toDate || '').trim(),
+  user: String(value?.user || '').trim()
+})
+
+const readStoredFilters = (storageKey) => {
+  try {
+    const rawValue = sessionStorage.getItem(storageKey)
+    if (!rawValue) return INITIAL_FILTERS
+    return normalizeStoredFilters(JSON.parse(rawValue))
+  } catch {
+    return INITIAL_FILTERS
+  }
+}
+
 const MovementsPage = () => {
-  const [filterForm, setFilterForm] = useState(INITIAL_FILTERS)
-  const [appliedFilters, setAppliedFilters] = useState(INITIAL_FILTERS)
+  const [filterForm, setFilterForm] = useState(() => readStoredFilters(MOVEMENTS_FILTER_FORM_STORAGE_KEY))
+  const [appliedFilters, setAppliedFilters] = useState(() => readStoredFilters(MOVEMENTS_APPLIED_FILTERS_STORAGE_KEY))
   const [movements, setMovements] = useState([])
   const [userOptions, setUserOptions] = useState([])
   const [isLoading, setIsLoading] = useState(false)
@@ -113,6 +133,14 @@ const MovementsPage = () => {
   useEffect(() => {
     loadMovements(appliedFilters)
   }, [appliedFilters, loadMovements])
+
+  useEffect(() => {
+    sessionStorage.setItem(MOVEMENTS_FILTER_FORM_STORAGE_KEY, JSON.stringify(filterForm))
+  }, [filterForm])
+
+  useEffect(() => {
+    sessionStorage.setItem(MOVEMENTS_APPLIED_FILTERS_STORAGE_KEY, JSON.stringify(appliedFilters))
+  }, [appliedFilters])
 
   const handleFilterChange = (event) => {
     const { name, value } = event.target
