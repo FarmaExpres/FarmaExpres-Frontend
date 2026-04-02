@@ -15,6 +15,25 @@ const DisableIcon = () => (
   </svg>
 )
 
+const getStockVisualState = (stockValue, minimumStockValue) => {
+  const stock = Number(stockValue)
+  const minimumStock = Number(minimumStockValue)
+
+  if (!Number.isFinite(stock)) {
+    return 'normal'
+  }
+
+  if (Number.isFinite(minimumStock) && minimumStock > 0) {
+    if (stock < minimumStock) {
+      return stock <= minimumStock * 0.5 ? 'critical' : 'warning'
+    }
+    return 'normal'
+  }
+
+  // Respaldo para registros sin stock mínimo válido.
+  return stock < 20 ? 'critical' : 'normal'
+}
+
 const MedicinesTable = ({
   reload,
   searchTerm = '',
@@ -139,11 +158,14 @@ const MedicinesTable = ({
               </td>
             </tr>
           ) : Array.isArray(filteredMedicines) && filteredMedicines.length > 0 ? (
-            filteredMedicines.map((medicine, index) => (
-              <tr
-                key={medicine.id || index}
-                className={medicine.activo === false ? 'bg-[#f6f7fb] text-gray-500' : ''}
-              >
+            filteredMedicines.map((medicine, index) => {
+              const stockState = getStockVisualState(medicine.stock, medicine.stockMinimo)
+
+              return (
+                <tr
+                  key={medicine.id || index}
+                  className={medicine.activo === false ? 'bg-[#f6f7fb] text-gray-500' : ''}
+                >
                 <td className="whitespace-nowrap">
                   <span className="inline-flex h-8 items-center rounded-lg bg-[#eef2fa] px-3 text-xs font-semibold text-[#526180] 2xl:text-[12px]">
                     {medicine.codigo || '---'}
@@ -154,7 +176,15 @@ const MedicinesTable = ({
                   {medicine.nombre || '---'}
                 </td>
 
-                <td className={`whitespace-nowrap text-center ${medicine.stock < 20 ? 'font-bold text-red-500' : 'text-[#283b61]'}`}>
+                <td
+                  className={`whitespace-nowrap text-center ${
+                    stockState === 'critical'
+                      ? 'font-bold text-red-500'
+                      : stockState === 'warning'
+                        ? 'font-semibold text-amber-600'
+                        : 'text-[#283b61]'
+                  }`}
+                >
                   {medicine.stock ?? 0}
                 </td>
 
@@ -198,8 +228,9 @@ const MedicinesTable = ({
                     </button>
                   </div>
                 </td>
-              </tr>
-            ))
+                </tr>
+              )
+            })
           ) : (
             <tr>
               <td colSpan="8" className="p-5 text-center text-gray-400">
