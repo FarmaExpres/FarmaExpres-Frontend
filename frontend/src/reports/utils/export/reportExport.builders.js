@@ -33,6 +33,13 @@ const resolveLowStockStatus = (item = {}) => {
   return level <= 50 ? 'Crítico' : 'Alerta'
 }
 
+const resolveUserActivity = (row = {}) => {
+  const totalMovements = toNumber(row.totalMovements)
+  if (totalMovements >= 20) return 'Alta'
+  if (totalMovements >= 8) return 'Media'
+  return 'Baja'
+}
+
 const toContentWidth = (rows = [], selector, { min = 16, max = 60, padding = 2 } = {}) => {
   const longest = rows.reduce((currentMax, row) => {
     const value = String(selector(row) || '')
@@ -197,10 +204,17 @@ export const buildLowStockWorksheet = (rowsData = []) => ({
 export const buildByUserWorksheet = (rowsData = []) => ({
   rows: buildWorksheetRows({
     reportTitle: 'Por Usuario',
-    header: ['Usuario', 'Rol', 'Movimientos', 'Entradas', 'Salidas'],
-    rows: rowsData.map((row) => [row.user, row.roleLabel, row.totalMovements, row.entrances, row.exits])
+    header: ['Usuario', 'Rol', 'Movimientos', 'Entradas', 'Salidas', 'Actividad'],
+    rows: rowsData.map((row) => [
+      row.user,
+      row.roleLabel,
+      row.totalMovements,
+      row.entrances,
+      row.exits,
+      resolveUserActivity(row)
+    ])
   }),
-  cols: [{ wch: 30 }, { wch: 16 }, { wch: 14 }, { wch: 12 }, { wch: 12 }],
+  cols: [{ wch: 34 }, { wch: 18 }, { wch: 14 }, { wch: 12 }, { wch: 12 }, { wch: 12 }],
   summary: buildSummaryWorksheet({
     reportTitle: 'Por Usuario',
     summaryItems: [
