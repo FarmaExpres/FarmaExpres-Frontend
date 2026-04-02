@@ -16,9 +16,11 @@ import {
   buildMovementsRows,
   buildUsersIndex
 } from '../utils/reportData.utils'
+import { exportReportExcel } from '../utils/reportExport.utils'
 
 const ReportsPage = () => {
   const [activeTab, setActiveTab] = useState('inventory')
+  const [isExporting, setIsExporting] = useState(false)
   const [medicines, setMedicines] = useState([])
   const [movements, setMovements] = useState([])
   const [isLoading, setIsLoading] = useState(false)
@@ -63,12 +65,47 @@ const ReportsPage = () => {
   const lowStockRows = useMemo(() => buildLowStockRows(medicines), [medicines])
   const byUserRows = useMemo(() => buildByUserRows(movements), [movements])
 
+  const exportDisabled = useMemo(() => {
+    if (activeTab === 'inventory') return inventoryRows.length === 0
+    if (activeTab === 'movements') return movementsRows.length === 0
+    if (activeTab === 'expiring') return expiringRows.length === 0
+    if (activeTab === 'lowstock') return lowStockRows.length === 0
+    return byUserRows.length === 0
+  }, [activeTab, byUserRows.length, expiringRows.length, inventoryRows.length, lowStockRows.length, movementsRows.length])
+
+  const handleExportExcel = async () => {
+    if (exportDisabled || isExporting) return
+    setIsExporting(true)
+
+    try {
+      await exportReportExcel({
+        tab: activeTab,
+        inventoryRows,
+        movementsRows,
+        expiringRows,
+        lowStockRows,
+        byUserRows
+      })
+    } finally {
+      setIsExporting(false)
+    }
+  }
+
   return (
     <div className="fe-page-shell">
       <div className="fe-page-head">
         <div>
           <h1 className="fe-page-title">Reportes del Sistema</h1>
         </div>
+
+        <button
+          type="button"
+          onClick={handleExportExcel}
+          disabled={exportDisabled || isExporting}
+          className="fe-btn-primary 2xl:h-12 2xl:px-6 2xl:text-base disabled:opacity-50"
+        >
+          {isExporting ? 'Exportando...' : 'Exportar Excel'}
+        </button>
       </div>
 
       <section className="mb-4 flex flex-wrap gap-2">
