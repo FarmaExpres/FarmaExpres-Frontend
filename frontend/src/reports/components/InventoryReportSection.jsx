@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import { INVENTORY_PAGE_SIZES } from '../config/reportTabs'
 import { formatCurrency, formatCurrencyCell, toNumber } from '../utils/reportFormatters'
 
-const InventoryReportSection = ({ rows = [], isLoading = false }) => {
+const InventoryReportSection = ({ rows = [], isLoading = false, onExport, exportDisabled = false, isExporting = false }) => {
   const [sortBy, setSortBy] = useState('code')
   const [sortDirection, setSortDirection] = useState('asc')
   const [pageSize, setPageSize] = useState(20)
@@ -59,8 +59,20 @@ const InventoryReportSection = ({ rows = [], isLoading = false }) => {
 
       <div className="fe-card overflow-hidden p-0">
         <div className="border-b border-[#e8edf8] bg-[#f7f9ff] px-4 py-3">
-          <h2 className="text-[1.2rem] font-bold text-[#1f2e4d]">Reporte de Inventario Actual</h2>
-          <p className="mt-1 text-sm text-[#6e7d99]">Visualización consolidada de stock, precio unitario y valor económico por producto.</p>
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h2 className="text-[1.2rem] font-bold text-[#1f2e4d]">Reporte de Inventario Actual</h2>
+              <p className="mt-1 text-sm text-[#6e7d99]">Visualización consolidada de stock, precio unitario y valor económico por producto.</p>
+            </div>
+            <button
+              type="button"
+              onClick={onExport}
+              disabled={exportDisabled || isExporting}
+              className="fe-btn-primary h-10 px-4 text-sm disabled:opacity-50"
+            >
+              {isExporting ? 'Exportando...' : 'Exportar Excel'}
+            </button>
+          </div>
         </div>
 
         <div className="fe-table-wrap">

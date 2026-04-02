@@ -23,6 +23,8 @@ const ReportsPage = () => {
   const [isExporting, setIsExporting] = useState(false)
   const [medicines, setMedicines] = useState([])
   const [movements, setMovements] = useState([])
+  const [filteredMovementsRows, setFilteredMovementsRows] = useState([])
+  const [movementsFilterKey, setMovementsFilterKey] = useState('all')
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
 
@@ -65,13 +67,17 @@ const ReportsPage = () => {
   const lowStockRows = useMemo(() => buildLowStockRows(medicines), [medicines])
   const byUserRows = useMemo(() => buildByUserRows(movements), [movements])
 
+  useEffect(() => {
+    setFilteredMovementsRows(movementsRows)
+  }, [movementsRows])
+
   const exportDisabled = useMemo(() => {
     if (activeTab === 'inventory') return inventoryRows.length === 0
-    if (activeTab === 'movements') return movementsRows.length === 0
+    if (activeTab === 'movements') return filteredMovementsRows.length === 0
     if (activeTab === 'expiring') return expiringRows.length === 0
     if (activeTab === 'lowstock') return lowStockRows.length === 0
     return byUserRows.length === 0
-  }, [activeTab, byUserRows.length, expiringRows.length, inventoryRows.length, lowStockRows.length, movementsRows.length])
+  }, [activeTab, byUserRows.length, expiringRows.length, filteredMovementsRows.length, inventoryRows.length, lowStockRows.length])
 
   const handleExportExcel = async () => {
     if (exportDisabled || isExporting) return
@@ -81,7 +87,8 @@ const ReportsPage = () => {
       await exportReportExcel({
         tab: activeTab,
         inventoryRows,
-        movementsRows,
+        movementsRows: activeTab === 'movements' ? filteredMovementsRows : movementsRows,
+        movementsFilterKey: activeTab === 'movements' ? movementsFilterKey : 'all',
         expiringRows,
         lowStockRows,
         byUserRows
@@ -97,15 +104,6 @@ const ReportsPage = () => {
         <div>
           <h1 className="fe-page-title">Reportes del Sistema</h1>
         </div>
-
-        <button
-          type="button"
-          onClick={handleExportExcel}
-          disabled={exportDisabled || isExporting}
-          className="fe-btn-primary 2xl:h-12 2xl:px-6 2xl:text-base disabled:opacity-50"
-        >
-          {isExporting ? 'Exportando...' : 'Exportar Excel'}
-        </button>
       </div>
 
       <section className="mb-4 flex flex-wrap gap-2">
@@ -135,11 +133,53 @@ const ReportsPage = () => {
         </div>
       )}
 
-      {activeTab === 'inventory' && <InventoryReportSection rows={inventoryRows} isLoading={isLoading} />}
-      {activeTab === 'movements' && <MovementsReportSection rows={movementsRows} isLoading={isLoading} />}
-      {activeTab === 'expiring' && <ExpiringReportSection rows={expiringRows} isLoading={isLoading} />}
-      {activeTab === 'lowstock' && <LowStockReportSection rows={lowStockRows} isLoading={isLoading} />}
-      {activeTab === 'byuser' && <ByUserReportSection rows={byUserRows} isLoading={isLoading} />}
+      {activeTab === 'inventory' && (
+        <InventoryReportSection
+          rows={inventoryRows}
+          isLoading={isLoading}
+          onExport={handleExportExcel}
+          exportDisabled={exportDisabled}
+          isExporting={isExporting}
+        />
+      )}
+      {activeTab === 'movements' && (
+        <MovementsReportSection
+          rows={movementsRows}
+          isLoading={isLoading}
+          onRowsForExportChange={setFilteredMovementsRows}
+          onFilterForExportChange={setMovementsFilterKey}
+          onExport={handleExportExcel}
+          exportDisabled={exportDisabled}
+          isExporting={isExporting}
+        />
+      )}
+      {activeTab === 'expiring' && (
+        <ExpiringReportSection
+          rows={expiringRows}
+          isLoading={isLoading}
+          onExport={handleExportExcel}
+          exportDisabled={exportDisabled}
+          isExporting={isExporting}
+        />
+      )}
+      {activeTab === 'lowstock' && (
+        <LowStockReportSection
+          rows={lowStockRows}
+          isLoading={isLoading}
+          onExport={handleExportExcel}
+          exportDisabled={exportDisabled}
+          isExporting={isExporting}
+        />
+      )}
+      {activeTab === 'byuser' && (
+        <ByUserReportSection
+          rows={byUserRows}
+          isLoading={isLoading}
+          onExport={handleExportExcel}
+          exportDisabled={exportDisabled}
+          isExporting={isExporting}
+        />
+      )}
     </div>
   )
 }

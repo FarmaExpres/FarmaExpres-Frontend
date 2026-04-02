@@ -1,6 +1,16 @@
-const ByUserReportSection = ({ rows = [], isLoading = false }) => (
+const ByUserReportSection = ({ rows = [], isLoading = false, onExport, exportDisabled = false, isExporting = false }) => (
   <section className="fe-card p-4">
-    <h2 className="mb-3 text-[1.35rem] font-bold text-[#1f2e4d]">Reporte por Usuario</h2>
+    <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+      <h2 className="text-[1.35rem] font-bold text-[#1f2e4d]">Reporte por Usuario</h2>
+      <button
+        type="button"
+        onClick={onExport}
+        disabled={exportDisabled || isExporting}
+        className="fe-btn-primary h-10 px-4 text-sm disabled:opacity-50"
+      >
+        {isExporting ? 'Exportando...' : 'Exportar Excel'}
+      </button>
+    </div>
     <div className="fe-table-wrap">
       <table className="fe-table text-sm">
         <thead>
@@ -35,4 +45,3 @@ const ByUserReportSection = ({ rows = [], isLoading = false }) => (
 )
 
 export default ByUserReportSection
-
