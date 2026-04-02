@@ -249,16 +249,16 @@ const UsersPage = ({ role, currentUserEmail = '' }) => {
   }
 
   return (
-    <div className="mx-auto max-w-7xl p-4 md:p-5">
-      <div className="mb-4 flex flex-col justify-between gap-3 md:flex-row md:items-center">
+    <div className="fe-page-shell">
+      <div className="fe-page-head">
         <div>
-          <h1 className="fe-section-title">Gestión de Usuarios</h1>
+          <h1 className="fe-page-title">Gestión de Usuarios</h1>
         </div>
 
         {isAdministrator && (
           <button
             onClick={handleOpenCreate}
-            className="fe-btn-primary"
+            className="fe-btn-primary 2xl:h-12 2xl:px-6 2xl:text-base"
           >
             + Nuevo Usuario
           </button>

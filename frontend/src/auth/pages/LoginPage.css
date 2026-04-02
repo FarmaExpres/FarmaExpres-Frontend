@@ -48,7 +48,7 @@
 .fe-login-brand {
   color: #fff;
   padding-right: 24px;
-  animation: feLoginFadeIn 480ms ease both;
+  animation: feLoginFadeIn var(--fe-motion-slow) var(--fe-motion-ease) both;
 }
 
 .fe-login-icon-wrap {
@@ -87,7 +87,7 @@
   backdrop-filter: blur(6px);
   padding: 30px 30px 28px;
   box-shadow: 0 24px 42px rgba(22, 9, 48, 0.3);
-  animation: feLoginFadeInUp 520ms ease;
+  animation: feLoginFadeInUp var(--fe-motion-slow) var(--fe-motion-ease);
 }
 
 .fe-login-form-panel h2 {
@@ -135,7 +135,10 @@
   font-size: 17px;
   color: #243555;
   outline: none;
-  transition: border-color 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+  transition:
+    border-color var(--fe-motion-base) var(--fe-motion-ease),
+    box-shadow var(--fe-motion-base) var(--fe-motion-ease),
+    background var(--fe-motion-base) var(--fe-motion-ease);
 }
 
 .fe-login-input:focus {
@@ -182,7 +185,9 @@
   font-weight: 800;
   padding: 12px 14px;
   cursor: pointer;
-  transition: transform 0.16s ease, filter 0.16s ease;
+  transition:
+    transform var(--fe-motion-fast) var(--fe-motion-ease),
+    filter var(--fe-motion-fast) var(--fe-motion-ease);
   position: relative;
   overflow: hidden;
 }
@@ -198,7 +203,7 @@
   inset: 0 auto 0 -120%;
   width: 42%;
   background: linear-gradient(110deg, transparent 0%, rgba(255, 255, 255, 0.28) 50%, transparent 100%);
-  transition: left 0.38s ease;
+  transition: left var(--fe-motion-slow) var(--fe-motion-ease);
 }
 
 .fe-login-submit:hover::after {
@@ -234,8 +239,7 @@
   position: fixed;
   inset: 0;
   z-index: 50;
-  background: rgba(17, 8, 34, 0.48);
-  backdrop-filter: blur(2px);
+  background: rgba(15, 23, 42, 0.68);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -249,7 +253,7 @@
   background: #f4f6fb;
   padding: 22px 24px;
   box-shadow: 0 16px 36px rgba(24, 13, 44, 0.3);
-  animation: feLoginFadeInUp 280ms ease;
+  animation: feLoginFadeInUp var(--fe-motion-slow) var(--fe-motion-ease);
 }
 
 .fe-login-modal-header {
