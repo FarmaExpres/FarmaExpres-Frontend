@@ -6,7 +6,7 @@ import {
 import { getRoleLabel } from '../../shared/constants/roles'
 import { normalizeIdentity } from '../../shared/utils/text.utils'
 
-const MOVEMENTS_ENDPOINT_CANDIDATES = ['/api/movements', '/api/motions', '/api/Motion', '/movements']
+const MOVEMENTS_ENDPOINT_CANDIDATES = ['/api/motions', '/api/Motion', '/api/movements', '/movements']
 
 const MOVEMENT_TYPE = Object.freeze({
   ENTRANCE: 'ENTRANCE',
@@ -445,9 +445,12 @@ const fetchMovementsInternal = async ({ filters = {}, token, movementMapper }) =
     } catch (error) {
       const normalizedError = normalizeApiError(error, 'No se pudo cargar el historial de movimientos.')
       lastKnownError = normalizedError
+      const authChallengeHeader = String(error?.response?.headers?.['www-authenticate'] || '').toLowerCase()
+      const isBasicAuthChallenge = authChallengeHeader.includes('basic')
 
       // Compatibilidad: si el endpoint no existe en esta versión de backend, se intenta el siguiente.
       if (normalizedError?.status === 404) continue
+      if (normalizedError?.status === 401 && isBasicAuthChallenge) continue
 
       throw normalizedError
     }
