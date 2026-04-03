@@ -1,13 +1,40 @@
 import { normalizeRole, ROLES } from '../constants/roles'
 
+const decodeBase64UrlUtf8 = (payload) => {
+  const normalizedPayload = String(payload || '').replace(/-/g, '+').replace(/_/g, '/')
+  const padding = '='.repeat((4 - (normalizedPayload.length % 4)) % 4)
+  const binary = atob(normalizedPayload + padding)
+
+  try {
+    const bytes = Uint8Array.from(binary, (char) => char.charCodeAt(0))
+    return new TextDecoder('utf-8', { fatal: true }).decode(bytes)
+  } catch {
+    try {
+      return decodeURIComponent(escape(binary))
+    } catch {
+      return binary
+    }
+  }
+}
+
+const repairMojibakeText = (value = '') => {
+  const text = String(value || '')
+  if (!/[ÃÂ]/.test(text)) return text
+
+  try {
+    const bytes = Uint8Array.from(text, (char) => char.charCodeAt(0))
+    return new TextDecoder('utf-8', { fatal: true }).decode(bytes)
+  } catch {
+    return text
+  }
+}
+
 const parseJwtPayload = (token) => {
   try {
     const payload = token.split('.')[1]
     if (!payload) return null
 
-    const normalizedPayload = payload.replace(/-/g, '+').replace(/_/g, '/')
-    const padding = '='.repeat((4 - (normalizedPayload.length % 4)) % 4)
-    const json = atob(normalizedPayload + padding)
+    const json = decodeBase64UrlUtf8(payload)
 
     return JSON.parse(json)
   } catch {
@@ -25,7 +52,7 @@ const getUserFromToken = (token) => {
 
   return {
     email: String(payload?.email || payload?.sub || '').trim(),
-    name: String(payload?.nombre || payload?.name || payload?.fullName || payload?.fullname || '').trim()
+    name: repairMojibakeText(String(payload?.nombre || payload?.name || payload?.fullName || payload?.fullname || '').trim())
   }
 }
 
@@ -103,11 +130,12 @@ export const saveSession = ({ token, role, email, name } = {}) => {
     tokenSession.user.name ||
     buildDisplayNameFromEmail(normalizedEmail)
   ).trim()
+  const safeName = repairMojibakeText(normalizedName)
 
   localStorage.setItem('authToken', sanitizedToken)
   localStorage.setItem('authUserRole', normalizedRole)
   localStorage.setItem('authUserEmail', normalizedEmail)
-  localStorage.setItem('authUserName', normalizedName)
+  localStorage.setItem('authUserName', safeName)
 }
 
 export const getSession = () => {
@@ -127,7 +155,7 @@ export const getSession = () => {
     token,
     user: {
       email: tokenUser.email || localStorage.getItem('authUserEmail') || '',
-      name: tokenUser.name || localStorage.getItem('authUserName') || ''
+      name: tokenUser.name || repairMojibakeText(localStorage.getItem('authUserName') || '')
     },
     role,
     isAuthenticated: Boolean(token)

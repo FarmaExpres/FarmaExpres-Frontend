@@ -4,10 +4,12 @@ import AppLayout from './layout/components/AppLayout'
 import MedicinesPage from './medicines/pages/MedicinesPage'
 import MovementsPage from './movements/pages/MovementsPage'
 import UsersPage from './users/pages/UsersPage'
+import ReportsPage from './reports/pages/ReportsPage'
 import LoginPage from './auth/pages/LoginPage'
 import ProtectedRoute from './shared/routing/ProtectedRoute'
 import PublicOnlyRoute from './shared/routing/PublicOnlyRoute'
 import { clearSession, getSession, isAdmin } from './shared/auth/session'
+import { normalizeRole, ROLES } from './shared/constants/roles'
 
 const AppShell = ({ session, activeModule, onNavigate, onLogout }) => (
   <AppLayout
@@ -22,6 +24,8 @@ const AppShell = ({ session, activeModule, onNavigate, onLogout }) => (
         ? <UsersPage role={session.role} currentUserEmail={session.user.email} />
         : activeModule === 'movements'
           ? <MovementsPage />
+          : activeModule === 'reports'
+            ? <ReportsPage />
           : <MedicinesPage />}
     </div>
   </AppLayout>
@@ -30,6 +34,8 @@ const AppShell = ({ session, activeModule, onNavigate, onLogout }) => (
 function App() {
   const navigate = useNavigate()
   const [session, setSession] = useState(() => getSession())
+  const canAccessMovements = [ROLES.ADMIN, ROLES.AUDITOR].includes(normalizeRole(session.role))
+  const canAccessStock = [ROLES.ADMIN, ROLES.AUDITOR].includes(normalizeRole(session.role))
 
   const refreshSession = () => setSession(getSession())
 
@@ -42,7 +48,14 @@ function App() {
     }
 
     if (moduleKey === 'movements') {
+      if (!canAccessMovements) return
       navigate('/movements')
+      return
+    }
+
+    if (moduleKey === 'reports') {
+      if (!canAccessStock) return
+      navigate('/reports')
       return
     }
 
@@ -89,14 +102,29 @@ function App() {
         />
         <Route
           path="/movements"
-          element={(
-            <AppShell
-              session={session}
-              activeModule="movements"
-              onNavigate={handleNavigate}
-              onLogout={handleLogout}
-            />
-          )}
+          element={canAccessMovements
+            ? (
+              <AppShell
+                session={session}
+                activeModule="movements"
+                onNavigate={handleNavigate}
+                onLogout={handleLogout}
+              />
+              )
+            : <Navigate to="/medicines" replace />}
+        />
+        <Route
+          path="/reports"
+          element={canAccessStock
+            ? (
+              <AppShell
+                session={session}
+                activeModule="reports"
+                onNavigate={handleNavigate}
+                onLogout={handleLogout}
+              />
+              )
+            : <Navigate to="/medicines" replace />}
         />
       </Route>
 

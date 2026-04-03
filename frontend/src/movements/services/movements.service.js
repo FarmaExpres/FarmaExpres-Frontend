@@ -4,8 +4,9 @@ import {
   normalizeApiError
 } from '../../shared/services/api.service'
 import { getRoleLabel } from '../../shared/constants/roles'
+import { normalizeIdentity } from '../../shared/utils/text.utils'
 
-const MOVEMENTS_ENDPOINT_CANDIDATES = ['/api/movements', '/api/motions', '/api/Motion', '/movements']
+const MOVEMENTS_ENDPOINT_CANDIDATES = ['/api/motions', '/api/Motion', '/api/movements', '/movements']
 
 const MOVEMENT_TYPE = Object.freeze({
   ENTRANCE: 'ENTRANCE',
@@ -24,7 +25,7 @@ const getClientTimeZone = () => {
   try {
     const resolvedTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone
     return String(resolvedTimeZone || '').trim() || undefined
-  } catch (error) {
+  } catch {
     return undefined
   }
 }
@@ -146,7 +147,7 @@ const resolveDateDetails = (movement = {}) => {
   }
 
   const parsedDate = new Date(rawDateText)
-  const hasExplicitTimezone = /([zZ]|[+\-]\d{2}:\d{2})$/.test(rawDateText)
+  const hasExplicitTimezone = /([zZ]|[+-]\d{2}:\d{2})$/.test(rawDateText)
   return {
     value: Number.isNaN(parsedDate.getTime()) ? null : parsedDate,
     raw: rawDateText,
@@ -214,12 +215,50 @@ const resolveReason = (movement = {}, normalizedType) => {
   return 'No especificado'
 }
 
-const normalizeIdentity = (value) =>
-  String(value || '')
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .trim()
-    .toLowerCase()
+const parseAdjustmentDetail = (rawDetail) => {
+  if (!rawDetail) return []
+
+  if (Array.isArray(rawDetail)) {
+    return rawDetail.filter((item) => item && typeof item === 'object')
+  }
+
+  if (typeof rawDetail === 'string') {
+    try {
+      const parsed = JSON.parse(rawDetail)
+      return Array.isArray(parsed) ? parsed.filter((item) => item && typeof item === 'object') : []
+    } catch {
+      return []
+    }
+  }
+
+  return []
+}
+
+const formatAdjustmentValue = (value, format) => {
+  if (value === null || value === undefined || value === '') return '---'
+
+  if (format === 'currency') {
+    const numericValue = toNumberOrDefault(value, 0)
+    return `$${numericValue.toLocaleString('es-CO')}`
+  }
+
+  if (format === 'number') {
+    const numericValue = toNumberOrDefault(value, 0)
+    return numericValue.toLocaleString('es-CO')
+  }
+
+  return String(value)
+}
+
+const buildAdjustmentDetailText = (adjustmentDetail = []) =>
+  adjustmentDetail
+    .map((item) => {
+      const label = item?.label || item?.field || 'Campo'
+      const beforeValue = formatAdjustmentValue(item?.before, item?.format)
+      const afterValue = formatAdjustmentValue(item?.after, item?.format)
+      return `${label}: ${beforeValue} -> ${afterValue}`
+    })
+    .join(' | ')
 
 const isSystemSeedUser = (value) => {
   const normalizedValue = normalizeIdentity(value).replace(/[\s-]+/g, '_')
@@ -253,10 +292,19 @@ const resolveUserInfo = (movement = {}, usersByIdentity = {}, usersById = {}) =>
   const userDisplayName = isSystemUser
     ? 'Sistema'
     : (normalizedUser || userLookup?.displayName || 'No disponible')
+
+  const normalizeRawRoleLabel = (value = '') => {
+    const normalizedValue = String(value || '').trim().toUpperCase()
+    if (['SYSTEM', 'SYSTEM_INIT', 'SISTEMA'].includes(normalizedValue)) return 'Automático'
+    return String(value || '').trim()
+  }
+
   const roleLabel = rawRole
     ? (() => {
       const normalizedRoleLabel = getRoleLabel(rawRole)
-      return normalizedRoleLabel === 'Sin rol' ? String(rawRole).trim() : normalizedRoleLabel
+      if (normalizedRoleLabel !== 'Sin rol') return normalizedRoleLabel
+      if (isSystemUser) return 'Automático'
+      return normalizeRawRoleLabel(rawRole)
     })()
     : (
       isSystemUser
@@ -302,6 +350,11 @@ const mapMovement = (movement = {}, productsById = {}, usersByIdentity = {}, use
   const dateValue = dateDetails.value
   const productId = movement?.productId ?? movement?.product?.id ?? movement?.medicineId ?? null
   const signedQuantity = getSignedQuantity(movement?.amount ?? movement?.quantity ?? movement?.cantidad, normalizedType)
+  const adjustmentDetail = parseAdjustmentDetail(movement?.adjustmentDetail ?? movement?.adjustment_detail)
+  const adjustmentSummaryRaw = String(movement?.adjustmentSummary ?? movement?.adjustment_summary ?? '').trim()
+  const adjustmentSummary =
+    adjustmentSummaryRaw ||
+    (adjustmentDetail.length > 0 ? buildAdjustmentDetailText(adjustmentDetail) : '')
 
   const fallbackId = [
     movement?.dateTime ?? movement?.date ?? movement?.fecha ?? 'movement',
@@ -321,6 +374,9 @@ const mapMovement = (movement = {}, productsById = {}, usersByIdentity = {}, use
     medicine: resolveMedicineName(movement, productsById),
     quantity: signedQuantity,
     reason: resolveReason(movement, normalizedType),
+    adjustmentSummary,
+    adjustmentDetail,
+    adjustmentDetailText: buildAdjustmentDetailText(adjustmentDetail),
     user: userInfo.name,
     userId: userInfo.id,
     userRoleLabel: userInfo.roleLabel,
@@ -398,9 +454,12 @@ const fetchMovementsInternal = async ({ filters = {}, token, movementMapper }) =
     } catch (error) {
       const normalizedError = normalizeApiError(error, 'No se pudo cargar el historial de movimientos.')
       lastKnownError = normalizedError
+      const authChallengeHeader = String(error?.response?.headers?.['www-authenticate'] || '').toLowerCase()
+      const isBasicAuthChallenge = authChallengeHeader.includes('basic')
 
       // Compatibilidad: si el endpoint no existe en esta versión de backend, se intenta el siguiente.
       if (normalizedError?.status === 404) continue
+      if (normalizedError?.status === 401 && isBasicAuthChallenge) continue
 
       throw normalizedError
     }

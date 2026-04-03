@@ -106,10 +106,10 @@ Stack principal del frontend:
 
 ### Integración con Backend
 
-El frontend consume dos contextos principales de API:
+El frontend consume un gateway único configurable:
 
-- Inventario: `API_URL`.
-- Autenticación/usuarios: `AUTH_API_URL`.
+- Base URL: `VITE_API_BASE_URL`.
+- Si no se define, utiliza rutas relativas (`/api/...`) para apoyarse en proxy (Vite/Nginx).
 
 Archivo de configuración:
 
@@ -117,9 +117,7 @@ Archivo de configuración:
 
 Variables de entorno:
 
-- `VITE_API_URL`
-- `VITE_AUTH_API_URL`
-- `VITE_DEV_TOKEN`
+- `VITE_API_BASE_URL`
 
 ### Seguridad
 

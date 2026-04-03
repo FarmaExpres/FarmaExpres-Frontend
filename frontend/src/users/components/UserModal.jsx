@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { USER_ROLE_OPTIONS } from '../../shared/constants/roles'
 import { createUser } from '../services/users.service'
+import { isValidBusinessEmail, isValidPersonName, sanitizePersonNameInput } from '../utils/userValidation'
 
 const initialForm = {
   fullName: '',
@@ -12,7 +13,6 @@ const initialForm = {
 
 const MIN_PASSWORD_LENGTH = 8
 
-const isValidEmail = (value) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(String(value || '').trim())
 const isLowercaseEmail = (value) => String(value || '').trim() === String(value || '').trim().toLowerCase()
 
 const validateForm = (values, existingEmails = []) => {
@@ -22,11 +22,13 @@ const validateForm = (values, existingEmails = []) => {
 
   if (!values.fullName.trim()) {
     errors.fullName = 'El nombre completo es obligatorio.'
+  } else if (!isValidPersonName(values.fullName)) {
+    errors.fullName = 'El nombre solo puede contener letras y espacios.'
   }
 
   if (!values.email.trim()) {
     errors.email = 'El correo electrónico es obligatorio.'
-  } else if (!isValidEmail(values.email)) {
+  } else if (!isValidBusinessEmail(values.email)) {
     errors.email = 'El correo electrónico no tiene un formato válido.'
   } else if (!isLowercaseEmail(values.email)) {
     errors.email = 'El correo debe escribirse en minúsculas.'
@@ -59,7 +61,8 @@ const UserModal = ({ isOpen, onClose, onSuccess, onError, existingEmails = [] })
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const handleChange = ({ target: { name, value } }) => {
-    setForm((current) => ({ ...current, [name]: value }))
+    const nextValue = name === 'fullName' ? sanitizePersonNameInput(value) : value
+    setForm((current) => ({ ...current, [name]: nextValue }))
     setErrors((current) => ({ ...current, [name]: undefined }))
   }
 
