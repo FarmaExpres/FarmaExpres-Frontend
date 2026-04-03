@@ -6,7 +6,7 @@ import {
 import { getRoleLabel } from '../../shared/constants/roles'
 import { normalizeIdentity } from '../../shared/utils/text.utils'
 
-const MOVEMENTS_ENDPOINT_CANDIDATES = ['/api/motions', '/api/Motion', '/api/movements', '/movements']
+const MOVEMENTS_ENDPOINT = '/api/movements'
 
 const MOVEMENT_TYPE = Object.freeze({
   ENTRANCE: 'ENTRANCE',
@@ -433,41 +433,24 @@ export const getMovements = ({ filters = {}, productsById = {}, usersByIdentity 
 const fetchMovementsInternal = async ({ filters = {}, token, movementMapper }) => {
   const headers = buildAuthHeaders(token)
   const params = buildMovementQueryParams(filters)
-  let lastKnownError = null
 
-  for (const endpoint of MOVEMENTS_ENDPOINT_CANDIDATES) {
-    try {
-      const response = await inventoryApi.get(endpoint, {
-        headers,
-        params
+  try {
+    const response = await inventoryApi.get(MOVEMENTS_ENDPOINT, {
+      headers,
+      params
+    })
+
+    const movements = normalizeMovementsCollection(response.data)
+      .map(movementMapper)
+      .sort((firstMovement, secondMovement) => {
+        const firstTimestamp = firstMovement.dateValue ? firstMovement.dateValue.getTime() : 0
+        const secondTimestamp = secondMovement.dateValue ? secondMovement.dateValue.getTime() : 0
+        return secondTimestamp - firstTimestamp
       })
 
-      const movements = normalizeMovementsCollection(response.data)
-        .map(movementMapper)
-        .sort((firstMovement, secondMovement) => {
-          const firstTimestamp = firstMovement.dateValue ? firstMovement.dateValue.getTime() : 0
-          const secondTimestamp = secondMovement.dateValue ? secondMovement.dateValue.getTime() : 0
-          return secondTimestamp - firstTimestamp
-        })
-
-      return movements
-    } catch (error) {
-      const normalizedError = normalizeApiError(error, 'No se pudo cargar el historial de movimientos.')
-      lastKnownError = normalizedError
-      const authChallengeHeader = String(error?.response?.headers?.['www-authenticate'] || '').toLowerCase()
-      const isBasicAuthChallenge = authChallengeHeader.includes('basic')
-
-      // Compatibilidad: si el endpoint no existe en esta versión de backend, se intenta el siguiente.
-      if (normalizedError?.status === 404) continue
-      if (normalizedError?.status === 401 && isBasicAuthChallenge) continue
-
-      throw normalizedError
-    }
-  }
-
-  throw lastKnownError || {
-    message: 'No se encontró un endpoint disponible para consultar movimientos.',
-    status: 404
+    return movements
+  } catch (error) {
+    throw normalizeApiError(error, 'No se pudo cargar el historial de movimientos.')
   }
 }
 
