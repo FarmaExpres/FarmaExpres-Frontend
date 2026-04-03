@@ -1,5 +1,9 @@
 import { useEffect, useMemo, useState } from 'react'
-import { getMedicines } from '../../medicines/services/medicines.service'
+import {
+  getActiveInventorySummary,
+  getActiveInventoryTable,
+  getMedicines
+} from '../../medicines/services/medicines.service'
 import { getMovements } from '../../movements/services/movements.service'
 import { getUsers } from '../../users/services/users.service'
 import ByUserReportSection from '../components/ByUserReportSection'
@@ -11,7 +15,6 @@ import { REPORT_TABS } from '../config/reportTabs'
 import {
   buildByUserRows,
   buildExpiringRows,
-  buildInventoryRows,
   buildLowStockRows,
   buildMovementsRows,
   buildUsersIndex
@@ -28,6 +31,8 @@ const ReportsPage = () => {
   })
   const [isExporting, setIsExporting] = useState(false)
   const [medicines, setMedicines] = useState([])
+  const [inventoryRows, setInventoryRows] = useState([])
+  const [inventorySummary, setInventorySummary] = useState(null)
   const [movements, setMovements] = useState([])
   const [filteredMovementsRows, setFilteredMovementsRows] = useState([])
   const [movementsFilterKey, setMovementsFilterKey] = useState('all')
@@ -42,9 +47,11 @@ const ReportsPage = () => {
       setError('')
 
       try {
-        const [medicinesData, usersData] = await Promise.all([
+        const [medicinesData, usersData, inventoryTableData, inventorySummaryData] = await Promise.all([
           getMedicines(),
-          getUsers().catch(() => [])
+          getUsers().catch(() => []),
+          getActiveInventoryTable(),
+          getActiveInventorySummary()
         ])
 
         const { usersByIdentity, usersById } = buildUsersIndex(usersData)
@@ -52,10 +59,14 @@ const ReportsPage = () => {
 
         if (!isMounted) return
         setMedicines(Array.isArray(medicinesData) ? medicinesData : [])
+        setInventoryRows(Array.isArray(inventoryTableData) ? inventoryTableData : [])
+        setInventorySummary(inventorySummaryData || null)
         setMovements(Array.isArray(movementsData) ? movementsData : [])
       } catch (loadError) {
         if (!isMounted) return
         setMedicines([])
+        setInventoryRows([])
+        setInventorySummary(null)
         setMovements([])
         setError(loadError.message || 'No se pudieron cargar los reportes.')
       } finally {
@@ -67,7 +78,6 @@ const ReportsPage = () => {
     return () => { isMounted = false }
   }, [])
 
-  const inventoryRows = useMemo(() => buildInventoryRows(medicines), [medicines])
   const movementsRows = useMemo(() => buildMovementsRows(movements), [movements])
   const expiringRows = useMemo(() => buildExpiringRows(medicines), [medicines])
   const lowStockRows = useMemo(() => buildLowStockRows(medicines), [medicines])
@@ -146,6 +156,7 @@ const ReportsPage = () => {
       {activeTab === 'inventory' && (
         <InventoryReportSection
           rows={inventoryRows}
+          summary={inventorySummary}
           isLoading={isLoading}
           onExport={handleExportExcel}
           exportDisabled={exportDisabled}
