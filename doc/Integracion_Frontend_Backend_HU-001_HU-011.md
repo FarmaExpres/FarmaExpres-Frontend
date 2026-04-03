@@ -204,6 +204,176 @@ Decision temporal:
 
 - el frontend seguira generando estas vistas localmente cuando el endpoint backend no cubra exactamente la necesidad funcional esperada
 
+### Formato visual de fecha de vencimiento y dias restantes
+
+Para la vista de reportes de vencimiento, se define tambien el siguiente criterio de presentacion en frontend:
+
+- si backend envia la fecha de vencimiento en formato ISO completo, por ejemplo `2026-04-10T00:00:00.000Z`, el frontend se encargara de transformarla para mostrar solo la fecha visible en formato de anio, mes y dia
+- el frontend tambien se encargara de calcular y mostrar cuantos dias faltan para el vencimiento usando la fecha recibida desde backend
+
+Esto significa que:
+
+- backend puede seguir entregando la fecha cruda en formato tecnico
+- frontend sera responsable de normalizar la fecha para la interfaz
+- frontend sera responsable de calcular la columna `dias restantes`
+
+Con este criterio se evita acoplar el backend a un formato visual especifico y se mantiene la logica de presentacion en cliente.
+
+### Referencia visual esperada para proximos a vencer
+
+Tomando como referencia la evidencia visual de QA del frontend, la vista final de `Proximos a Vencer` debe comportarse asi:
+
+- la tabla debe mostrar `codigo`, `medicamento`, `vencimiento`, `dias restantes`, `stock` y `estado`
+- la fecha visible en la columna `vencimiento` debe mostrarse solo como `anio-mes-dia`
+- la columna `dias restantes` debe mostrar textos claros para el usuario, por ejemplo:
+  - `43 dia(s) vencido`
+  - `VENCE HOY`
+  - `5 dia(s)`
+- la columna `estado` debe mostrarse como etiqueta visual, por ejemplo:
+  - `Vencido`
+  - `Critico`
+  - `Alto`
+  - `Medio`
+  - `Controlado`
+- el filtro `Todos` debe mostrar la union de categorias visibles en la tabla
+- los contadores superiores deben reflejar como minimo:
+  - medicamentos visibles
+  - vencidos
+  - riesgo alto `0-15 dias`
+  - unidades comprometidas
+
+En esta vista, la logica visual de presentacion y calculo de `dias restantes` seguira siendo responsabilidad del frontend.
+
+---
+
+## Faltantes de backend identificados para la vista de proximos a vencer
+
+Aunque el frontend ya puede consumir endpoints individuales por categoria, aun hay aspectos que el backend debe completar o estabilizar para que la integracion quede totalmente alineada con la necesidad funcional mostrada en la referencia visual.
+
+### 1. Metodo backend para `Todos`
+
+Situacion actual:
+
+- el frontend debe construir `Todos` uniendo varias respuestas
+- backend todavia no tiene un metodo especifico para esta vista exacta de reportes que entregue todos los productos vencidos y proximos a vencer en un solo contrato orientado a UI
+
+Lo que falta implementar en backend:
+
+- un endpoint especializado para listar en una sola respuesta:
+  - vencidos
+  - 0-15 dias
+  - 16-30 dias
+  - 31-60 dias
+
+Como deberia implementarlo backend:
+
+- exponer un metodo dedicado para reportes de vencimiento, no solo para alertas parciales
+- retornar una coleccion unica ya consolidada
+- incluir en la respuesta metadatos de resumen para no obligar al frontend a recalcular todos los contadores si luego se quiere unificar completamente esa responsabilidad
+
+Contrato recomendado de salida:
+
+```json
+{
+  "generatedAt": "2026-04-03T20:00:00.000Z",
+  "summary": {
+    "total": 3,
+    "expired": 1,
+    "highRisk": 2,
+    "compromisedUnits": 139
+  },
+  "items": [
+    {
+      "code": "ACM-001",
+      "name": "Acetaminophen 500",
+      "stock": 22,
+      "expirationDate": "2026-02-18",
+      "range": "EXPIRED"
+    }
+  ]
+}
+```
+
+### 2. Contrato estable para fechas
+
+Situacion actual:
+
+- backend puede devolver fechas en formato ISO completo
+- el frontend puede adaptarlo, pero si la fecha llega con variaciones no controladas puede romper calculos o visualizacion
+
+Lo que falta implementar o formalizar en backend:
+
+- definir un contrato estable para `expirationDate`
+
+Como deberia implementarlo backend:
+
+- mantener un campo unico `expirationDate`
+- devolverlo siempre como fecha valida y consistente
+- preferiblemente entregarlo normalizado como `yyyy-mm-dd` si el backend quiere simplificar el consumo
+- si decide mantener ISO completo, debe hacerlo de forma consistente en todos los endpoints relacionados
+
+### 3. Clasificacion oficial por rango
+
+Situacion actual:
+
+- el frontend ya puede inferir rangos desde los endpoints actuales
+- sin embargo, la referencia visual trabaja con categorias funcionales muy claras
+
+Lo que falta implementar en backend:
+
+- formalizar la categoria o rango funcional de cada item
+
+Como deberia implementarlo backend:
+
+- incluir en cada item un campo semantico como:
+  - `EXPIRED`
+  - `ZERO_TO_FIFTEEN`
+  - `SIXTEEN_TO_THIRTY`
+  - `THIRTYONE_TO_SIXTY`
+
+Esto permitiria:
+
+- simplificar filtros en frontend
+- evitar depender solo del endpoint de origen
+- facilitar futuras vistas o exportaciones
+
+### 4. Resumen backend de tarjetas superiores
+
+Situacion actual:
+
+- el frontend puede calcular las tarjetas superiores localmente
+- pero el backend aun no tiene un contrato especializado para esa vista de resumen
+
+Lo que falta implementar en backend:
+
+- un resumen estable que retorne:
+  - total de medicamentos visibles
+  - total vencidos
+  - total riesgo alto `0-15 dias`
+  - unidades comprometidas
+
+Como deberia implementarlo backend:
+
+- incluir `summary` en el endpoint especializado del reporte
+- calcular `compromisedUnits` como suma del stock de los productos visibles dentro del rango de la vista
+
+### 5. Metodo especializado de reportes en lugar de solo alertas
+
+Situacion actual:
+
+- hoy la integracion se apoya en endpoints de alertas
+- eso sirve para alimentar la vista, pero no representa todavia un contrato explicitamente disenado para reportes
+
+Lo que falta implementar en backend:
+
+- un metodo backend especializado para la vista de `Reporte de Proximos a Vencer`
+
+Como deberia implementarlo backend:
+
+- separar claramente endpoints de alertas operativas y endpoints de reportes
+- dejar el endpoint de reportes orientado a la experiencia del frontend
+- mantener consistencia de nombres, campos y categorias entre microservicio, gateway y frontend
+
 ### Reporte de bajo stock por niveles
 
 Actualmente el frontend necesita separar bajo stock en categorias como:
@@ -213,11 +383,71 @@ Actualmente el frontend necesita separar bajo stock en categorias como:
 
 Situacion actual:
 
-- backend expone alertas de bajo stock, pero aun debe confirmarse si el contrato cubre exactamente la clasificacion visual requerida por frontend
+- backend expone el metodo general de bajo stock
+- backend todavia no cuenta con metodos especializados para `critico` y `alerta`
 
 Decision temporal:
 
-- el frontend seguira aplicando clasificacion local mientras se completa o valida el metodo backend requerido
+- el frontend consumira el endpoint general de bajo stock y seguira aplicando la clasificacion local para separar `critico` y `alerta`
+
+### Faltantes de backend para la vista de bajo stock
+
+Para que la integracion de `Bajo Stock` quede completamente alineada con la vista del frontend, el backend aun debe implementar dos metodos especializados adicionales:
+
+- un metodo para productos en nivel `critico`
+- un metodo para productos en nivel `alerta`
+
+Situacion actual:
+
+- frontend consume el listado general de bajo stock
+- frontend clasifica localmente cada item segun su cobertura respecto al stock minimo
+
+Lo que falta implementar en backend:
+
+- `GET /api/alerts/low-stock/critical`
+- `GET /api/alerts/low-stock/alert`
+
+Como deberia implementarlo backend:
+
+- reutilizar la misma base de consulta del endpoint general de bajo stock
+- mantener el mismo contrato de respuesta ya usado para `GET /api/alerts/low-stock`
+- aplicar en backend la misma regla de clasificacion funcional acordada con frontend
+
+Regla funcional sugerida:
+
+- `critical`: productos cuya cobertura sea menor o igual al `50%` del stock minimo
+- `alert`: productos cuya cobertura sea mayor al `50%` pero sigan por debajo o igual al stock minimo
+
+Contrato recomendado:
+
+```json
+{
+  "generatedAt": "2026-04-03T20:00:00.000Z",
+  "total": 2,
+  "alerts": [
+    {
+      "type": "LOW_STOCK",
+      "severity": "HIGH",
+      "message": "Producto en nivel critico: Ibuprofen 400mg",
+      "product": {
+        "id": "8",
+        "code": "IBU-001",
+        "name": "Ibuprofen 400mg",
+        "stock": 2,
+        "minimumStock": 8,
+        "expirationDate": "2026-04-02",
+        "active": true
+      }
+    }
+  ]
+}
+```
+
+Beneficio esperado:
+
+- permitir que frontend consuma directamente cada filtro visual
+- reducir clasificacion local en cliente
+- mantener consistencia entre tarjetas, tabla y exportaciones futuras
 
 ### Reporte por usuario
 

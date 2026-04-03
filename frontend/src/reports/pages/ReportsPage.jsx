@@ -17,10 +17,10 @@ import InventoryReportSection from '../components/InventoryReportSection'
 import LowStockReportSection from '../components/LowStockReportSection'
 import MovementsReportSection from '../components/MovementsReportSection'
 import { REPORT_TABS } from '../config/reportTabs'
+import { getExpiringReportGroups } from '../services/expiringReports.service'
+import { getLowStockReportRows } from '../services/lowStockReports.service'
 import {
   buildByUserRows,
-  buildExpiringRows,
-  buildLowStockRows,
   buildMovementsRows,
   buildUsersIndex
 } from '../utils/reportData.utils'
@@ -39,6 +39,12 @@ const ReportsPage = () => {
   const [inventoryRows, setInventoryRows] = useState([])
   const [inventorySummary, setInventorySummary] = useState(null)
   const [movements, setMovements] = useState([])
+  const [expiringRows, setExpiringRows] = useState([])
+  const [expiredRows, setExpiredRows] = useState([])
+  const [criticalExpiringRows, setCriticalExpiringRows] = useState([])
+  const [mediumExpiringRows, setMediumExpiringRows] = useState([])
+  const [controlledExpiringRows, setControlledExpiringRows] = useState([])
+  const [lowStockRows, setLowStockRows] = useState([])
   const [entranceMovements, setEntranceMovements] = useState([])
   const [exitMovements, setExitMovements] = useState([])
   const [adjustmentMovements, setAdjustmentMovements] = useState([])
@@ -63,11 +69,13 @@ const ReportsPage = () => {
         ])
 
         const { usersByIdentity, usersById } = buildUsersIndex(usersData)
-        const [movementsData, entranceMovementsData, exitMovementsData, adjustmentMovementsData] = await Promise.all([
+        const [movementsData, entranceMovementsData, exitMovementsData, adjustmentMovementsData, expiringGroups, lowStockReportRows] = await Promise.all([
           getMovements({ usersByIdentity, usersById }),
           getEntranceMovements({ usersByIdentity, usersById }),
           getExitMovements({ usersByIdentity, usersById }),
-          getUpdatedMovements({ usersByIdentity, usersById })
+          getUpdatedMovements({ usersByIdentity, usersById }),
+          getExpiringReportGroups(),
+          getLowStockReportRows()
         ])
 
         if (!isMounted) return
@@ -75,6 +83,12 @@ const ReportsPage = () => {
         setInventoryRows(Array.isArray(inventoryTableData) ? inventoryTableData : [])
         setInventorySummary(inventorySummaryData || null)
         setMovements(Array.isArray(movementsData) ? movementsData : [])
+        setExpiringRows(Array.isArray(expiringGroups?.all) ? expiringGroups.all : [])
+        setExpiredRows(Array.isArray(expiringGroups?.expired) ? expiringGroups.expired : [])
+        setCriticalExpiringRows(Array.isArray(expiringGroups?.critical) ? expiringGroups.critical : [])
+        setMediumExpiringRows(Array.isArray(expiringGroups?.medium) ? expiringGroups.medium : [])
+        setControlledExpiringRows(Array.isArray(expiringGroups?.controlled) ? expiringGroups.controlled : [])
+        setLowStockRows(Array.isArray(lowStockReportRows) ? lowStockReportRows : [])
         setEntranceMovements(Array.isArray(entranceMovementsData) ? entranceMovementsData : [])
         setExitMovements(Array.isArray(exitMovementsData) ? exitMovementsData : [])
         setAdjustmentMovements(Array.isArray(adjustmentMovementsData) ? adjustmentMovementsData : [])
@@ -84,6 +98,12 @@ const ReportsPage = () => {
         setInventoryRows([])
         setInventorySummary(null)
         setMovements([])
+        setExpiringRows([])
+        setExpiredRows([])
+        setCriticalExpiringRows([])
+        setMediumExpiringRows([])
+        setControlledExpiringRows([])
+        setLowStockRows([])
         setEntranceMovements([])
         setExitMovements([])
         setAdjustmentMovements([])
@@ -98,8 +118,6 @@ const ReportsPage = () => {
   }, [])
 
   const movementsRows = useMemo(() => buildMovementsRows(movements), [movements])
-  const expiringRows = useMemo(() => buildExpiringRows(medicines), [medicines])
-  const lowStockRows = useMemo(() => buildLowStockRows(medicines), [medicines])
   const byUserRows = useMemo(() => buildByUserRows(movements), [movements])
 
   useEffect(() => {
@@ -199,6 +217,10 @@ const ReportsPage = () => {
       {activeTab === 'expiring' && (
         <ExpiringReportSection
           rows={expiringRows}
+          expiredRows={expiredRows}
+          criticalRows={criticalExpiringRows}
+          mediumRows={mediumExpiringRows}
+          controlledRows={controlledExpiringRows}
           isLoading={isLoading}
           onExport={handleExportExcel}
           exportDisabled={exportDisabled}

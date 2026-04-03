@@ -28,7 +28,7 @@ const getExpirationVisuals = (daysUntilExpiration) => {
   if (days <= 7) {
     return {
       tone: 'critical',
-      label: 'CrÃ­tico',
+      label: 'Crítico',
       badgeClass: 'bg-rose-100 text-rose-700',
       textClass: 'text-rose-700',
       rowClass: ''
@@ -67,28 +67,33 @@ const getExpirationVisuals = (daysUntilExpiration) => {
 const formatDaysLabel = (daysUntilExpiration) => {
   const days = Number(daysUntilExpiration)
   if (!Number.isFinite(days)) return '---'
-  if (days < 0) return `${Math.abs(days)} dÃ­a(s) vencido`
-  if (days === 0) return 'Vence hoy'
-  return `${days} dÃ­a(s)`
+  if (days < 0) return `${Math.abs(days)} día(s) vencido`
+  if (days === 0) return 'VENCE HOY'
+  return `${days} día(s)`
 }
 
-const ExpiringReportSection = ({ rows = [], isLoading = false, onExport, exportDisabled = false, isExporting = false }) => {
+const ExpiringReportSection = ({
+  rows = [],
+  expiredRows = [],
+  criticalRows = [],
+  mediumRows = [],
+  controlledRows = [],
+  isLoading = false,
+  onExport,
+  exportDisabled = false,
+  isExporting = false
+}) => {
   const [urgencyFilter, setUrgencyFilter] = useState('all')
   const [pageSize, setPageSize] = useState(15)
   const [page, setPage] = useState(1)
 
   const filteredRows = useMemo(() => {
-    if (urgencyFilter === 'all') return rows
-
-    return rows.filter((item) => {
-      const { tone } = getExpirationVisuals(item.daysUntilExpiration)
-      if (urgencyFilter === 'expired') return tone === 'expired'
-      if (urgencyFilter === 'critical') return tone === 'critical' || tone === 'high'
-      if (urgencyFilter === 'medium') return tone === 'medium'
-      if (urgencyFilter === 'controlled') return tone === 'controlled'
-      return true
-    })
-  }, [rows, urgencyFilter])
+    if (urgencyFilter === 'expired') return expiredRows
+    if (urgencyFilter === 'critical') return criticalRows
+    if (urgencyFilter === 'medium') return mediumRows
+    if (urgencyFilter === 'controlled') return controlledRows
+    return rows
+  }, [controlledRows, criticalRows, expiredRows, mediumRows, rows, urgencyFilter])
 
   const summary = useMemo(() => {
     return rows.reduce((acc, item) => {
@@ -122,7 +127,7 @@ const ExpiringReportSection = ({ rows = [], isLoading = false, onExport, exportD
           <p className="mt-2 text-2xl font-extrabold tracking-tight text-red-800">{summary.expired}</p>
         </article>
         <article className="fe-card border border-orange-200 bg-orange-50 p-4">
-          <p className="text-xs font-bold uppercase tracking-wide text-orange-700">Riesgo alto (0-15 dÃ­as)</p>
+          <p className="text-xs font-bold uppercase tracking-wide text-orange-700">Riesgo alto (0-15 días)</p>
           <p className="mt-2 text-2xl font-extrabold tracking-tight text-orange-800">{summary.critical}</p>
         </article>
         <article className="fe-card border border-[#d7e2f8] bg-gradient-to-r from-[#f6f8ff] to-[#eef3ff] p-4">
@@ -135,8 +140,8 @@ const ExpiringReportSection = ({ rows = [], isLoading = false, onExport, exportD
         <div className="border-b border-[#e8edf8] bg-[#f7f9ff] px-4 py-3">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <h2 className="text-[1.2rem] font-bold text-[#1f2e4d]">Reporte de PrÃ³ximos a Vencer</h2>
-              <p className="mt-1 text-sm text-[#6e7d99]">Listado de productos prÃ³ximos a vencer con su nivel de prioridad.</p>
+              <h2 className="text-[1.2rem] font-bold text-[#1f2e4d]">Reporte de Próximos a Vencer</h2>
+              <p className="mt-1 text-sm text-[#6e7d99]">Listado de productos próximos a vencer con su nivel de prioridad.</p>
             </div>
             <button
               type="button"
@@ -179,7 +184,7 @@ const ExpiringReportSection = ({ rows = [], isLoading = false, onExport, exportD
               }}
               className={`fe-badge-chip h-9 px-4 ${urgencyFilter === 'critical' ? 'bg-orange-100 text-orange-700' : 'bg-slate-100 text-slate-700'}`}
             >
-              0-15 dÃ­as
+              0-15 días
             </button>
             <button
               type="button"
@@ -189,7 +194,7 @@ const ExpiringReportSection = ({ rows = [], isLoading = false, onExport, exportD
               }}
               className={`fe-badge-chip h-9 px-4 ${urgencyFilter === 'medium' ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-700'}`}
             >
-              16-30 dÃ­as
+              16-30 días
             </button>
             <button
               type="button"
@@ -199,7 +204,7 @@ const ExpiringReportSection = ({ rows = [], isLoading = false, onExport, exportD
               }}
               className={`fe-badge-chip h-9 px-4 ${urgencyFilter === 'controlled' ? 'bg-blue-100 text-blue-700' : 'bg-slate-100 text-slate-700'}`}
             >
-              31-60 dÃ­as
+              31-60 días
             </button>
           </div>
         </div>
@@ -216,17 +221,17 @@ const ExpiringReportSection = ({ rows = [], isLoading = false, onExport, exportD
             </colgroup>
             <thead>
               <tr>
-                <th className="text-left">CÃ“DIGO</th>
+                <th className="text-left">CÓDIGO</th>
                 <th className="text-left">MEDICAMENTO</th>
                 <th className="text-left">VENCIMIENTO</th>
-                <th className="text-left">DÃAS RESTANTES</th>
+                <th className="text-left">DÍAS RESTANTES</th>
                 <th className="text-left">STOCK</th>
                 <th className="text-left">ESTADO</th>
               </tr>
             </thead>
             <tbody>
               {isLoading ? (
-                <tr><td colSpan="6" className="p-5 text-center text-gray-400">Cargando prÃ³ximos a vencer...</td></tr>
+                <tr><td colSpan="6" className="p-5 text-center text-gray-400">Cargando próximos a vencer...</td></tr>
               ) : paginatedRows.length > 0 ? (
                 paginatedRows.map((item) => {
                   const visuals = getExpirationVisuals(item.daysUntilExpiration)
@@ -243,7 +248,7 @@ const ExpiringReportSection = ({ rows = [], isLoading = false, onExport, exportD
                       <td className={`whitespace-nowrap text-left font-bold ${visuals.textClass}`}>
                         {days === 0 ? (
                           <span className="inline-flex items-center rounded-full bg-red-100 px-2.5 py-1 text-xs font-bold uppercase tracking-wide text-red-700">
-                            Vence hoy
+                            VENCE HOY
                           </span>
                         ) : (
                           formatDaysLabel(item.daysUntilExpiration)
@@ -259,7 +264,7 @@ const ExpiringReportSection = ({ rows = [], isLoading = false, onExport, exportD
                   )
                 })
               ) : (
-                <tr><td colSpan="6" className="p-5 text-center text-gray-400">No hay medicamentos prÃ³ximos a vencer para el filtro seleccionado.</td></tr>
+                <tr><td colSpan="6" className="p-5 text-center text-gray-400">No hay medicamentos próximos a vencer para el filtro seleccionado.</td></tr>
               )}
             </tbody>
           </table>
