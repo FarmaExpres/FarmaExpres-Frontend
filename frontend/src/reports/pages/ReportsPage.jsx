@@ -4,7 +4,12 @@ import {
   getActiveInventoryTable,
   getMedicines
 } from '../../medicines/services/medicines.service'
-import { getMovements } from '../../movements/services/movements.service'
+import {
+  getEntranceMovements,
+  getExitMovements,
+  getMovements,
+  getUpdatedMovements
+} from '../../movements/services/movements.service'
 import { getUsers } from '../../users/services/users.service'
 import ByUserReportSection from '../components/ByUserReportSection'
 import ExpiringReportSection from '../components/ExpiringReportSection'
@@ -34,6 +39,9 @@ const ReportsPage = () => {
   const [inventoryRows, setInventoryRows] = useState([])
   const [inventorySummary, setInventorySummary] = useState(null)
   const [movements, setMovements] = useState([])
+  const [entranceMovements, setEntranceMovements] = useState([])
+  const [exitMovements, setExitMovements] = useState([])
+  const [adjustmentMovements, setAdjustmentMovements] = useState([])
   const [filteredMovementsRows, setFilteredMovementsRows] = useState([])
   const [movementsFilterKey, setMovementsFilterKey] = useState('all')
   const [isLoading, setIsLoading] = useState(false)
@@ -55,19 +63,30 @@ const ReportsPage = () => {
         ])
 
         const { usersByIdentity, usersById } = buildUsersIndex(usersData)
-        const movementsData = await getMovements({ usersByIdentity, usersById })
+        const [movementsData, entranceMovementsData, exitMovementsData, adjustmentMovementsData] = await Promise.all([
+          getMovements({ usersByIdentity, usersById }),
+          getEntranceMovements({ usersByIdentity, usersById }),
+          getExitMovements({ usersByIdentity, usersById }),
+          getUpdatedMovements({ usersByIdentity, usersById })
+        ])
 
         if (!isMounted) return
         setMedicines(Array.isArray(medicinesData) ? medicinesData : [])
         setInventoryRows(Array.isArray(inventoryTableData) ? inventoryTableData : [])
         setInventorySummary(inventorySummaryData || null)
         setMovements(Array.isArray(movementsData) ? movementsData : [])
+        setEntranceMovements(Array.isArray(entranceMovementsData) ? entranceMovementsData : [])
+        setExitMovements(Array.isArray(exitMovementsData) ? exitMovementsData : [])
+        setAdjustmentMovements(Array.isArray(adjustmentMovementsData) ? adjustmentMovementsData : [])
       } catch (loadError) {
         if (!isMounted) return
         setMedicines([])
         setInventoryRows([])
         setInventorySummary(null)
         setMovements([])
+        setEntranceMovements([])
+        setExitMovements([])
+        setAdjustmentMovements([])
         setError(loadError.message || 'No se pudieron cargar los reportes.')
       } finally {
         if (isMounted) setIsLoading(false)
@@ -166,6 +185,9 @@ const ReportsPage = () => {
       {activeTab === 'movements' && (
         <MovementsReportSection
           rows={movementsRows}
+          entranceRows={entranceMovements}
+          exitRows={exitMovements}
+          adjustmentRows={adjustmentMovements}
           isLoading={isLoading}
           onRowsForExportChange={setFilteredMovementsRows}
           onFilterForExportChange={setMovementsFilterKey}

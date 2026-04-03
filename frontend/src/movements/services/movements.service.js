@@ -7,6 +7,9 @@ import { getRoleLabel } from '../../shared/constants/roles'
 import { normalizeIdentity } from '../../shared/utils/text.utils'
 
 const MOVEMENTS_ENDPOINT = '/api/movements'
+const MOVEMENTS_ENTRANCE_ENDPOINT = '/api/movements/entrance'
+const MOVEMENTS_EXIT_ENDPOINT = '/api/movements/exit'
+const MOVEMENTS_UPDATED_ENDPOINT = '/api/movements/updated'
 
 const MOVEMENT_TYPE = Object.freeze({
   ENTRANCE: 'ENTRANCE',
@@ -427,15 +430,30 @@ const buildMovementQueryParams = (filters = {}) => {
 
 export const getMovements = ({ filters = {}, productsById = {}, usersByIdentity = {}, usersById = {}, token } = {}) => {
   const movementMapper = (movement) => mapMovement(movement, productsById, usersByIdentity, usersById)
-  return fetchMovementsInternal({ filters, token, movementMapper })
+  return fetchMovementsInternal({ endpoint: MOVEMENTS_ENDPOINT, filters, token, movementMapper })
 }
 
-const fetchMovementsInternal = async ({ filters = {}, token, movementMapper }) => {
+export const getEntranceMovements = ({ productsById = {}, usersByIdentity = {}, usersById = {}, token } = {}) => {
+  const movementMapper = (movement) => mapMovement(movement, productsById, usersByIdentity, usersById)
+  return fetchMovementsInternal({ endpoint: MOVEMENTS_ENTRANCE_ENDPOINT, token, movementMapper })
+}
+
+export const getExitMovements = ({ productsById = {}, usersByIdentity = {}, usersById = {}, token } = {}) => {
+  const movementMapper = (movement) => mapMovement(movement, productsById, usersByIdentity, usersById)
+  return fetchMovementsInternal({ endpoint: MOVEMENTS_EXIT_ENDPOINT, token, movementMapper })
+}
+
+export const getUpdatedMovements = ({ productsById = {}, usersByIdentity = {}, usersById = {}, token } = {}) => {
+  const movementMapper = (movement) => mapMovement(movement, productsById, usersByIdentity, usersById)
+  return fetchMovementsInternal({ endpoint: MOVEMENTS_UPDATED_ENDPOINT, token, movementMapper })
+}
+
+const fetchMovementsInternal = async ({ endpoint = MOVEMENTS_ENDPOINT, filters = {}, token, movementMapper }) => {
   const headers = buildAuthHeaders(token)
   const params = buildMovementQueryParams(filters)
 
   try {
-    const response = await inventoryApi.get(MOVEMENTS_ENDPOINT, {
+    const response = await inventoryApi.get(endpoint, {
       headers,
       params
     })

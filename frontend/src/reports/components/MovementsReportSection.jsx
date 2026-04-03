@@ -49,6 +49,9 @@ const getAdjustmentDetailText = (movement = {}) => {
 
 const MovementsReportSection = ({
   rows = [],
+  entranceRows = [],
+  exitRows = [],
+  adjustmentRows = [],
   isLoading = false,
   onRowsForExportChange,
   onFilterForExportChange,
@@ -60,16 +63,14 @@ const MovementsReportSection = ({
   const [pageSize, setPageSize] = useState(15)
   const [page, setPage] = useState(1)
 
-  const filteredRows = useMemo(() => {
-    if (typeFilter === 'all') return rows
-    return rows.filter((movement) => {
-      const visuals = getMovementVisuals(movement)
-      if (typeFilter === 'entrance') return visuals.badgeClass.includes('emerald')
-      if (typeFilter === 'exit') return visuals.badgeClass.includes('red')
-      if (typeFilter === 'adjustment') return visuals.badgeClass.includes('blue')
-      return true
-    })
-  }, [rows, typeFilter])
+  const sourceRows = useMemo(() => {
+    if (typeFilter === 'entrance') return entranceRows
+    if (typeFilter === 'exit') return exitRows
+    if (typeFilter === 'adjustment') return adjustmentRows
+    return rows
+  }, [adjustmentRows, entranceRows, exitRows, rows, typeFilter])
+
+  const filteredRows = useMemo(() => sourceRows, [sourceRows])
 
   const totalPages = useMemo(() => Math.max(1, Math.ceil(filteredRows.length / pageSize)), [filteredRows.length, pageSize])
   const safePage = Math.min(page, totalPages)
@@ -78,16 +79,12 @@ const MovementsReportSection = ({
     return filteredRows.slice(start, start + pageSize)
   }, [filteredRows, pageSize, safePage])
 
-  const summary = useMemo(() => {
-    return rows.reduce((acc, movement) => {
-      const { badgeClass } = getMovementVisuals(movement)
-      acc.total += 1
-      if (badgeClass.includes('emerald')) acc.entrances += 1
-      if (badgeClass.includes('red')) acc.exits += 1
-      if (badgeClass.includes('blue')) acc.adjustments += 1
-      return acc
-    }, { total: 0, entrances: 0, exits: 0, adjustments: 0 })
-  }, [rows])
+  const summary = useMemo(() => ({
+    total: rows.length,
+    entrances: entranceRows.length,
+    exits: exitRows.length,
+    adjustments: adjustmentRows.length
+  }), [adjustmentRows.length, entranceRows.length, exitRows.length, rows.length])
 
   useEffect(() => {
     if (typeof onRowsForExportChange === 'function') {
