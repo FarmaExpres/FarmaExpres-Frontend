@@ -16,10 +16,10 @@ import InventoryReportSection from '../components/InventoryReportSection'
 import LowStockReportSection from '../components/LowStockReportSection'
 import MovementsReportSection from '../components/MovementsReportSection'
 import { REPORT_TABS } from '../config/reportTabs'
+import { getByUserReportRows } from '../services/byUserReports.service'
 import { getExpiringReportGroups } from '../services/expiringReports.service'
 import { getLowStockReportGroups } from '../services/lowStockReports.service'
 import {
-  buildByUserRows,
   buildMovementsRows,
   buildUsersIndex
 } from '../utils/reportData.utils'
@@ -48,6 +48,7 @@ const ReportsPage = () => {
   const [entranceMovements, setEntranceMovements] = useState([])
   const [exitMovements, setExitMovements] = useState([])
   const [adjustmentMovements, setAdjustmentMovements] = useState([])
+  const [byUserRows, setByUserRows] = useState([])
   const [filteredMovementsRows, setFilteredMovementsRows] = useState([])
   const [movementsFilterKey, setMovementsFilterKey] = useState('all')
   const [isLoading, setIsLoading] = useState(false)
@@ -68,13 +69,14 @@ const ReportsPage = () => {
         ])
 
         const { usersByIdentity, usersById } = buildUsersIndex(usersData)
-        const [movementsData, entranceMovementsData, exitMovementsData, adjustmentMovementsData, expiringGroups, lowStockGroups] = await Promise.all([
+        const [movementsData, entranceMovementsData, exitMovementsData, adjustmentMovementsData, expiringGroups, lowStockGroups, byUserReportRows] = await Promise.all([
           getMovements({ usersByIdentity, usersById }),
           getEntranceMovements({ usersByIdentity, usersById }),
           getExitMovements({ usersByIdentity, usersById }),
           getUpdatedMovements({ usersByIdentity, usersById }),
           getExpiringReportGroups(),
-          getLowStockReportGroups()
+          getLowStockReportGroups(),
+          getByUserReportRows()
         ])
 
         if (!isMounted) return
@@ -92,6 +94,7 @@ const ReportsPage = () => {
         setEntranceMovements(Array.isArray(entranceMovementsData) ? entranceMovementsData : [])
         setExitMovements(Array.isArray(exitMovementsData) ? exitMovementsData : [])
         setAdjustmentMovements(Array.isArray(adjustmentMovementsData) ? adjustmentMovementsData : [])
+        setByUserRows(Array.isArray(byUserReportRows) ? byUserReportRows : [])
       } catch (loadError) {
         if (!isMounted) return
         setInventoryRows([])
@@ -108,6 +111,7 @@ const ReportsPage = () => {
         setEntranceMovements([])
         setExitMovements([])
         setAdjustmentMovements([])
+        setByUserRows([])
         setError(loadError.message || 'No se pudieron cargar los reportes.')
       } finally {
         if (isMounted) setIsLoading(false)
@@ -119,7 +123,6 @@ const ReportsPage = () => {
   }, [])
 
   const movementsRows = useMemo(() => buildMovementsRows(movements), [movements])
-  const byUserRows = useMemo(() => buildByUserRows(movements), [movements])
 
   useEffect(() => {
     setFilteredMovementsRows(movementsRows)

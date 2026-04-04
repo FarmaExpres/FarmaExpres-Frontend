@@ -43,6 +43,8 @@ const resolveLowStockSuggestion = (item = {}) => {
 }
 
 const resolveUserActivity = (row = {}) => {
+  const backendActivityLevel = String(row.activityLevel || '').trim()
+  if (backendActivityLevel) return backendActivityLevel
   const totalMovements = toNumber(row.totalMovements)
   if (totalMovements >= 20) return 'Alta'
   if (totalMovements >= 8) return 'Media'

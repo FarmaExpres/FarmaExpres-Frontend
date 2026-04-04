@@ -19,6 +19,32 @@ const getRoleTone = (roleLabel = '') => {
 }
 
 const getActivityVisuals = (row = {}) => {
+  const backendActivityLevel = String(row.activityLevel || '').trim().toLowerCase()
+
+  if (backendActivityLevel === 'alta') {
+    return {
+      label: 'Alta',
+      tone: 'high',
+      badgeClass: 'bg-blue-100 text-blue-700'
+    }
+  }
+
+  if (backendActivityLevel === 'media') {
+    return {
+      label: 'Media',
+      tone: 'medium',
+      badgeClass: 'bg-amber-100 text-amber-700'
+    }
+  }
+
+  if (backendActivityLevel === 'baja') {
+    return {
+      label: 'Baja',
+      tone: 'low',
+      badgeClass: 'bg-slate-100 text-slate-700'
+    }
+  }
+
   const totalMovements = toNumber(row.totalMovements)
 
   if (totalMovements >= 20) {
