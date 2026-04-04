@@ -1,6 +1,6 @@
 import { MOVEMENT_TYPES } from '../../movements/services/movements.service'
 import { getRoleLabel } from '../../shared/constants/roles'
-import { getDaysUntilDate, normalizeIdentity, toNumber } from './reportFormatters'
+import { normalizeIdentity, toNumber } from './reportFormatters'
 
 export const buildUsersIndex = (users = []) => {
   const usersByIdentity = {}
@@ -59,16 +59,6 @@ export const buildMovementsRows = (movements = []) =>
   [...movements]
     .sort((first, second) => resolveMovementTimestamp(second) - resolveMovementTimestamp(first))
     .slice(0, 300)
-
-export const buildExpiringRows = (medicines = []) =>
-  medicines
-    .filter((item) => item.activo !== false)
-    .map((item) => ({
-      ...item,
-      daysUntilExpiration: getDaysUntilDate(item.fechavencimiento)
-    }))
-    .filter((item) => item.daysUntilExpiration <= 60)
-    .sort((first, second) => first.daysUntilExpiration - second.daysUntilExpiration)
 
 export const buildLowStockRows = (medicines = []) =>
   medicines

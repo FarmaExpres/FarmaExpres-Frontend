@@ -1,8 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import {
   getActiveInventorySummary,
-  getActiveInventoryTable,
-  getMedicines
+  getActiveInventoryTable
 } from '../../medicines/services/medicines.service'
 import {
   getEntranceMovements,
@@ -35,7 +34,6 @@ const ReportsPage = () => {
     return isValidPersistedTab ? persistedTab : 'inventory'
   })
   const [isExporting, setIsExporting] = useState(false)
-  const [medicines, setMedicines] = useState([])
   const [inventoryRows, setInventoryRows] = useState([])
   const [inventorySummary, setInventorySummary] = useState(null)
   const [movements, setMovements] = useState([])
@@ -61,8 +59,7 @@ const ReportsPage = () => {
       setError('')
 
       try {
-        const [medicinesData, usersData, inventoryTableData, inventorySummaryData] = await Promise.all([
-          getMedicines(),
+        const [usersData, inventoryTableData, inventorySummaryData] = await Promise.all([
           getUsers().catch(() => []),
           getActiveInventoryTable(),
           getActiveInventorySummary()
@@ -79,7 +76,6 @@ const ReportsPage = () => {
         ])
 
         if (!isMounted) return
-        setMedicines(Array.isArray(medicinesData) ? medicinesData : [])
         setInventoryRows(Array.isArray(inventoryTableData) ? inventoryTableData : [])
         setInventorySummary(inventorySummaryData || null)
         setMovements(Array.isArray(movementsData) ? movementsData : [])
@@ -94,7 +90,6 @@ const ReportsPage = () => {
         setAdjustmentMovements(Array.isArray(adjustmentMovementsData) ? adjustmentMovementsData : [])
       } catch (loadError) {
         if (!isMounted) return
-        setMedicines([])
         setInventoryRows([])
         setInventorySummary(null)
         setMovements([])
