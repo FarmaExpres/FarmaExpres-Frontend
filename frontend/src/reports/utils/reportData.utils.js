@@ -1,6 +1,5 @@
-import { MOVEMENT_TYPES } from '../../movements/services/movements.service'
 import { getRoleLabel } from '../../shared/constants/roles'
-import { getDaysUntilDate, normalizeIdentity, toNumber } from './reportFormatters'
+import { normalizeIdentity } from './reportFormatters'
 
 export const buildUsersIndex = (users = []) => {
   const usersByIdentity = {}
@@ -59,43 +58,3 @@ export const buildMovementsRows = (movements = []) =>
   [...movements]
     .sort((first, second) => resolveMovementTimestamp(second) - resolveMovementTimestamp(first))
     .slice(0, 300)
-
-export const buildExpiringRows = (medicines = []) =>
-  medicines
-    .filter((item) => item.activo !== false)
-    .map((item) => ({
-      ...item,
-      daysUntilExpiration: getDaysUntilDate(item.fechavencimiento)
-    }))
-    .filter((item) => item.daysUntilExpiration <= 60)
-    .sort((first, second) => first.daysUntilExpiration - second.daysUntilExpiration)
-
-export const buildLowStockRows = (medicines = []) =>
-  medicines
-    .filter((item) => item.activo !== false && toNumber(item.stock) <= toNumber(item.stockMinimo))
-    .sort((first, second) => (first.stock - first.stockMinimo) - (second.stock - second.stockMinimo))
-
-export const buildByUserRows = (movements = []) => {
-  const summary = new Map()
-
-  movements.forEach((item) => {
-    const key = `${normalizeIdentity(item.user)}|${normalizeIdentity(item.userRoleLabel)}`
-    if (!summary.has(key)) {
-      summary.set(key, {
-        user: item.user || 'No disponible',
-        roleLabel: item.userRoleLabel || 'Sin rol',
-        totalMovements: 0,
-        entrances: 0,
-        exits: 0
-      })
-    }
-
-    const userSummary = summary.get(key)
-    userSummary.totalMovements += 1
-
-    if (item.type === MOVEMENT_TYPES.ENTRANCE) userSummary.entrances += 1
-    if (item.type === MOVEMENT_TYPES.EXIT || item.type === MOVEMENT_TYPES.DELETED) userSummary.exits += 1
-  })
-
-  return Array.from(summary.values()).sort((first, second) => second.totalMovements - first.totalMovements)
-}

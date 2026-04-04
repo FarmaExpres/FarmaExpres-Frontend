@@ -5,6 +5,8 @@ import {
 } from '../../shared/services/api.service'
 
 const PRODUCTS_ENDPOINT = '/api/products'
+const ACTIVE_TABLE_ENDPOINT = '/api/products/active-table'
+const ACTIVE_SUMMARY_ENDPOINT = '/api/products/active-summary'
 
 const toNumberOrDefault = (value, fallback = 0) => {
   const parsedValue = Number(value)
@@ -31,6 +33,20 @@ const mapProduct = (product = {}) => {
     activo: isActive
   }
 }
+
+const mapActiveInventoryRow = (item = {}) => ({
+  id: item?.id ?? item?.code ?? null,
+  codigo: String(item?.code ?? item?.codigo ?? '').trim(),
+  nombre: String(item?.name ?? item?.nombre ?? '').trim(),
+  stock: toNumberOrDefault(item?.stock, 0),
+  precio: toNumberOrDefault(item?.unitPrice ?? item?.precio, 0),
+  totalValue: toNumberOrDefault(item?.totalValue ?? item?.valorTotal, 0)
+})
+
+const mapActiveInventorySummary = (summary = {}) => ({
+  totalStock: toNumberOrDefault(summary?.totalStock, 0),
+  totalInventoryValue: toNumberOrDefault(summary?.totalInventoryValue ?? summary?.totalValue, 0)
+})
 
 const buildProductPayload = (data = {}, includeCode = false) => {
   const payload = {
@@ -97,5 +113,29 @@ export const deactivateMedicine = async (id, token) => {
     })
   } catch (error) {
     throw normalizeApiError(error, 'No se pudo desactivar el medicamento.')
+  }
+}
+
+export const getActiveInventoryTable = async (token) => {
+  try {
+    const response = await inventoryApi.get(ACTIVE_TABLE_ENDPOINT, {
+      headers: buildAuthHeaders(token)
+    })
+
+    return Array.isArray(response.data) ? response.data.map(mapActiveInventoryRow) : []
+  } catch (error) {
+    throw normalizeApiError(error, 'No se pudo obtener la tabla de inventario activo.')
+  }
+}
+
+export const getActiveInventorySummary = async (token) => {
+  try {
+    const response = await inventoryApi.get(ACTIVE_SUMMARY_ENDPOINT, {
+      headers: buildAuthHeaders(token)
+    })
+
+    return mapActiveInventorySummary(response.data)
+  } catch (error) {
+    throw normalizeApiError(error, 'No se pudo obtener el resumen del inventario activo.')
   }
 }

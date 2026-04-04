@@ -2,7 +2,14 @@ import { useMemo, useState } from 'react'
 import { INVENTORY_PAGE_SIZES } from '../config/reportTabs'
 import { formatCurrency, formatCurrencyCell, toNumber } from '../utils/reportFormatters'
 
-const InventoryReportSection = ({ rows = [], isLoading = false, onExport, exportDisabled = false, isExporting = false }) => {
+const InventoryReportSection = ({
+  rows = [],
+  summary = null,
+  isLoading = false,
+  onExport,
+  exportDisabled = false,
+  isExporting = false
+}) => {
   const [sortBy, setSortBy] = useState('code')
   const [sortDirection, setSortDirection] = useState('asc')
   const [pageSize, setPageSize] = useState(20)
@@ -12,7 +19,7 @@ const InventoryReportSection = ({ rows = [], isLoading = false, onExport, export
     const direction = sortDirection === 'asc' ? 1 : -1
     return [...rows].sort((a, b) => {
       if (sortBy === 'stock') return (toNumber(a.stock) - toNumber(b.stock)) * direction
-      if (sortBy === 'totalValue') return ((toNumber(a.stock) * toNumber(a.precio)) - (toNumber(b.stock) * toNumber(b.precio))) * direction
+      if (sortBy === 'totalValue') return (toNumber(a.totalValue) - toNumber(b.totalValue)) * direction
       return String(a.codigo || '').localeCompare(String(b.codigo || ''), 'es', { numeric: true, sensitivity: 'base' }) * direction
     })
   }, [rows, sortBy, sortDirection])
@@ -24,8 +31,13 @@ const InventoryReportSection = ({ rows = [], isLoading = false, onExport, export
     return sortedRows.slice(start, start + pageSize)
   }, [safePage, pageSize, sortedRows])
 
-  const totalUnits = useMemo(() => rows.reduce((sum, item) => sum + toNumber(item.stock), 0), [rows])
-  const totalValue = useMemo(() => rows.reduce((sum, item) => sum + (toNumber(item.stock) * toNumber(item.precio)), 0), [rows])
+  const fallbackTotalUnits = useMemo(() => rows.reduce((sum, item) => sum + toNumber(item.stock), 0), [rows])
+  const fallbackTotalValue = useMemo(
+    () => rows.reduce((sum, item) => sum + (toNumber(item.totalValue) || (toNumber(item.stock) * toNumber(item.precio))), 0),
+    [rows]
+  )
+  const totalUnits = toNumber(summary?.totalStock) || fallbackTotalUnits
+  const totalValue = toNumber(summary?.totalInventoryValue) || fallbackTotalValue
 
   const handleSort = (columnKey) => {
     if (sortBy === columnKey) {
@@ -119,7 +131,7 @@ const InventoryReportSection = ({ rows = [], isLoading = false, onExport, export
                     <td className="truncate font-semibold text-[#23365d]" title={item.nombre || 'Sin nombre'}>{item.nombre || 'Sin nombre'}</td>
                     <td className={`whitespace-nowrap text-left font-semibold tabular-nums ${toNumber(item.stock) < 20 ? 'text-red-600' : 'text-[#283b61]'}`}>{item.stock}</td>
                     <td className="whitespace-nowrap text-left font-semibold tabular-nums text-[#30456f]">{formatCurrencyCell(item.precio)}</td>
-                    <td className="whitespace-nowrap text-left font-bold tabular-nums text-[#20365f]">{formatCurrencyCell(toNumber(item.stock) * toNumber(item.precio))}</td>
+                    <td className="whitespace-nowrap text-left font-bold tabular-nums text-[#20365f]">{formatCurrencyCell(item.totalValue)}</td>
                   </tr>
                 ))
               ) : (

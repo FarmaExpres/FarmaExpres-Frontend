@@ -27,13 +27,24 @@ const resolveExpiringStatus = (daysUntilExpiration) => {
 }
 
 const resolveLowStockStatus = (item = {}) => {
+  const backendStatus = String(item.status || '').trim()
+  if (backendStatus) return backendStatus
   const stock = toNumber(item.stock)
   const minimum = Math.max(toNumber(item.stockMinimo), 1)
   const level = (stock / minimum) * 100
   return level <= 50 ? 'Crítico' : 'Alerta'
 }
 
+const resolveLowStockSuggestion = (item = {}) => {
+  const backendSuggestion = String(item.suggestion || '').trim()
+  if (backendSuggestion) return backendSuggestion
+  const shortage = Math.max((toNumber(item.stockMinimo) * 2) - toNumber(item.stock), 1)
+  return `Reponer ${shortage} unidades`
+}
+
 const resolveUserActivity = (row = {}) => {
+  const backendActivityLevel = String(row.activityLevel || '').trim()
+  if (backendActivityLevel) return backendActivityLevel
   const totalMovements = toNumber(row.totalMovements)
   if (totalMovements >= 20) return 'Alta'
   if (totalMovements >= 8) return 'Media'
@@ -185,10 +196,14 @@ export const buildLowStockWorksheet = (rowsData = []) => ({
   rows: buildWorksheetRows({
     reportTitle: 'Bajo Stock',
     header: ['Codigo', 'Medicamento', 'Stock', 'Minimo', 'Estado', 'Sugerencia de reposicion'],
-    rows: rowsData.map((item) => {
-      const shortage = Math.max((toNumber(item.stockMinimo) * 2) - toNumber(item.stock), 1)
-      return [item.codigo, item.nombre, item.stock, item.stockMinimo, resolveLowStockStatus(item), `Reponer ${shortage} unidades`]
-    })
+    rows: rowsData.map((item) => [
+      item.codigo,
+      item.nombre,
+      item.stock,
+      item.stockMinimo,
+      resolveLowStockStatus(item),
+      resolveLowStockSuggestion(item)
+    ])
   }),
   cols: [{ wch: 14 }, { wch: 34 }, { wch: 10 }, { wch: 10 }, { wch: 14 }, { wch: 36 }],
   summary: buildSummaryWorksheet({

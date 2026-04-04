@@ -6,7 +6,10 @@ import {
 import { getRoleLabel } from '../../shared/constants/roles'
 import { normalizeIdentity } from '../../shared/utils/text.utils'
 
-const MOVEMENTS_ENDPOINT_CANDIDATES = ['/api/motions', '/api/Motion', '/api/movements', '/movements']
+const MOVEMENTS_ENDPOINT = '/api/movements'
+const MOVEMENTS_ENTRANCE_ENDPOINT = '/api/movements/entrance'
+const MOVEMENTS_EXIT_ENDPOINT = '/api/movements/exit'
+const MOVEMENTS_UPDATED_ENDPOINT = '/api/movements/updated'
 
 const MOVEMENT_TYPE = Object.freeze({
   ENTRANCE: 'ENTRANCE',
@@ -427,47 +430,45 @@ const buildMovementQueryParams = (filters = {}) => {
 
 export const getMovements = ({ filters = {}, productsById = {}, usersByIdentity = {}, usersById = {}, token } = {}) => {
   const movementMapper = (movement) => mapMovement(movement, productsById, usersByIdentity, usersById)
-  return fetchMovementsInternal({ filters, token, movementMapper })
+  return fetchMovementsInternal({ endpoint: MOVEMENTS_ENDPOINT, filters, token, movementMapper })
 }
 
-const fetchMovementsInternal = async ({ filters = {}, token, movementMapper }) => {
+export const getEntranceMovements = ({ productsById = {}, usersByIdentity = {}, usersById = {}, token } = {}) => {
+  const movementMapper = (movement) => mapMovement(movement, productsById, usersByIdentity, usersById)
+  return fetchMovementsInternal({ endpoint: MOVEMENTS_ENTRANCE_ENDPOINT, token, movementMapper })
+}
+
+export const getExitMovements = ({ productsById = {}, usersByIdentity = {}, usersById = {}, token } = {}) => {
+  const movementMapper = (movement) => mapMovement(movement, productsById, usersByIdentity, usersById)
+  return fetchMovementsInternal({ endpoint: MOVEMENTS_EXIT_ENDPOINT, token, movementMapper })
+}
+
+export const getUpdatedMovements = ({ productsById = {}, usersByIdentity = {}, usersById = {}, token } = {}) => {
+  const movementMapper = (movement) => mapMovement(movement, productsById, usersByIdentity, usersById)
+  return fetchMovementsInternal({ endpoint: MOVEMENTS_UPDATED_ENDPOINT, token, movementMapper })
+}
+
+const fetchMovementsInternal = async ({ endpoint = MOVEMENTS_ENDPOINT, filters = {}, token, movementMapper }) => {
   const headers = buildAuthHeaders(token)
   const params = buildMovementQueryParams(filters)
-  let lastKnownError = null
 
-  for (const endpoint of MOVEMENTS_ENDPOINT_CANDIDATES) {
-    try {
-      const response = await inventoryApi.get(endpoint, {
-        headers,
-        params
+  try {
+    const response = await inventoryApi.get(endpoint, {
+      headers,
+      params
+    })
+
+    const movements = normalizeMovementsCollection(response.data)
+      .map(movementMapper)
+      .sort((firstMovement, secondMovement) => {
+        const firstTimestamp = firstMovement.dateValue ? firstMovement.dateValue.getTime() : 0
+        const secondTimestamp = secondMovement.dateValue ? secondMovement.dateValue.getTime() : 0
+        return secondTimestamp - firstTimestamp
       })
 
-      const movements = normalizeMovementsCollection(response.data)
-        .map(movementMapper)
-        .sort((firstMovement, secondMovement) => {
-          const firstTimestamp = firstMovement.dateValue ? firstMovement.dateValue.getTime() : 0
-          const secondTimestamp = secondMovement.dateValue ? secondMovement.dateValue.getTime() : 0
-          return secondTimestamp - firstTimestamp
-        })
-
-      return movements
-    } catch (error) {
-      const normalizedError = normalizeApiError(error, 'No se pudo cargar el historial de movimientos.')
-      lastKnownError = normalizedError
-      const authChallengeHeader = String(error?.response?.headers?.['www-authenticate'] || '').toLowerCase()
-      const isBasicAuthChallenge = authChallengeHeader.includes('basic')
-
-      // Compatibilidad: si el endpoint no existe en esta versión de backend, se intenta el siguiente.
-      if (normalizedError?.status === 404) continue
-      if (normalizedError?.status === 401 && isBasicAuthChallenge) continue
-
-      throw normalizedError
-    }
-  }
-
-  throw lastKnownError || {
-    message: 'No se encontró un endpoint disponible para consultar movimientos.',
-    status: 404
+    return movements
+  } catch (error) {
+    throw normalizeApiError(error, 'No se pudo cargar el historial de movimientos.')
   }
 }
 
