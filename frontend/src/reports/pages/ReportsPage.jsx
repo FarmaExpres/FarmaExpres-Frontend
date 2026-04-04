@@ -1,6 +1,14 @@
 import { useEffect, useMemo, useState } from 'react'
-import { getMedicines } from '../../medicines/services/medicines.service'
-import { getMovements } from '../../movements/services/movements.service'
+import {
+  getActiveInventorySummary,
+  getActiveInventoryTable
+} from '../../medicines/services/medicines.service'
+import {
+  getEntranceMovements,
+  getExitMovements,
+  getMovements,
+  getUpdatedMovements
+} from '../../movements/services/movements.service'
 import { getUsers } from '../../users/services/users.service'
 import ByUserReportSection from '../components/ByUserReportSection'
 import ExpiringReportSection from '../components/ExpiringReportSection'
@@ -8,11 +16,10 @@ import InventoryReportSection from '../components/InventoryReportSection'
 import LowStockReportSection from '../components/LowStockReportSection'
 import MovementsReportSection from '../components/MovementsReportSection'
 import { REPORT_TABS } from '../config/reportTabs'
+import { getByUserReportRows } from '../services/byUserReports.service'
+import { getExpiringReportGroups } from '../services/expiringReports.service'
+import { getLowStockReportGroups } from '../services/lowStockReports.service'
 import {
-  buildByUserRows,
-  buildExpiringRows,
-  buildInventoryRows,
-  buildLowStockRows,
   buildMovementsRows,
   buildUsersIndex
 } from '../utils/reportData.utils'
@@ -27,8 +34,21 @@ const ReportsPage = () => {
     return isValidPersistedTab ? persistedTab : 'inventory'
   })
   const [isExporting, setIsExporting] = useState(false)
-  const [medicines, setMedicines] = useState([])
+  const [inventoryRows, setInventoryRows] = useState([])
+  const [inventorySummary, setInventorySummary] = useState(null)
   const [movements, setMovements] = useState([])
+  const [expiringRows, setExpiringRows] = useState([])
+  const [expiredRows, setExpiredRows] = useState([])
+  const [criticalExpiringRows, setCriticalExpiringRows] = useState([])
+  const [mediumExpiringRows, setMediumExpiringRows] = useState([])
+  const [controlledExpiringRows, setControlledExpiringRows] = useState([])
+  const [lowStockRows, setLowStockRows] = useState([])
+  const [criticalLowStockRows, setCriticalLowStockRows] = useState([])
+  const [alertLowStockRows, setAlertLowStockRows] = useState([])
+  const [entranceMovements, setEntranceMovements] = useState([])
+  const [exitMovements, setExitMovements] = useState([])
+  const [adjustmentMovements, setAdjustmentMovements] = useState([])
+  const [byUserRows, setByUserRows] = useState([])
   const [filteredMovementsRows, setFilteredMovementsRows] = useState([])
   const [movementsFilterKey, setMovementsFilterKey] = useState('all')
   const [isLoading, setIsLoading] = useState(false)
@@ -42,21 +62,56 @@ const ReportsPage = () => {
       setError('')
 
       try {
-        const [medicinesData, usersData] = await Promise.all([
-          getMedicines(),
-          getUsers().catch(() => [])
+        const [usersData, inventoryTableData, inventorySummaryData] = await Promise.all([
+          getUsers().catch(() => []),
+          getActiveInventoryTable(),
+          getActiveInventorySummary()
         ])
 
         const { usersByIdentity, usersById } = buildUsersIndex(usersData)
-        const movementsData = await getMovements({ usersByIdentity, usersById })
+        const [movementsData, entranceMovementsData, exitMovementsData, adjustmentMovementsData, expiringGroups, lowStockGroups, byUserReportRows] = await Promise.all([
+          getMovements({ usersByIdentity, usersById }),
+          getEntranceMovements({ usersByIdentity, usersById }),
+          getExitMovements({ usersByIdentity, usersById }),
+          getUpdatedMovements({ usersByIdentity, usersById }),
+          getExpiringReportGroups(),
+          getLowStockReportGroups(),
+          getByUserReportRows()
+        ])
 
         if (!isMounted) return
-        setMedicines(Array.isArray(medicinesData) ? medicinesData : [])
+        setInventoryRows(Array.isArray(inventoryTableData) ? inventoryTableData : [])
+        setInventorySummary(inventorySummaryData || null)
         setMovements(Array.isArray(movementsData) ? movementsData : [])
+        setExpiringRows(Array.isArray(expiringGroups?.all) ? expiringGroups.all : [])
+        setExpiredRows(Array.isArray(expiringGroups?.expired) ? expiringGroups.expired : [])
+        setCriticalExpiringRows(Array.isArray(expiringGroups?.critical) ? expiringGroups.critical : [])
+        setMediumExpiringRows(Array.isArray(expiringGroups?.medium) ? expiringGroups.medium : [])
+        setControlledExpiringRows(Array.isArray(expiringGroups?.controlled) ? expiringGroups.controlled : [])
+        setLowStockRows(Array.isArray(lowStockGroups?.all) ? lowStockGroups.all : [])
+        setCriticalLowStockRows(Array.isArray(lowStockGroups?.critical) ? lowStockGroups.critical : [])
+        setAlertLowStockRows(Array.isArray(lowStockGroups?.alert) ? lowStockGroups.alert : [])
+        setEntranceMovements(Array.isArray(entranceMovementsData) ? entranceMovementsData : [])
+        setExitMovements(Array.isArray(exitMovementsData) ? exitMovementsData : [])
+        setAdjustmentMovements(Array.isArray(adjustmentMovementsData) ? adjustmentMovementsData : [])
+        setByUserRows(Array.isArray(byUserReportRows) ? byUserReportRows : [])
       } catch (loadError) {
         if (!isMounted) return
-        setMedicines([])
+        setInventoryRows([])
+        setInventorySummary(null)
         setMovements([])
+        setExpiringRows([])
+        setExpiredRows([])
+        setCriticalExpiringRows([])
+        setMediumExpiringRows([])
+        setControlledExpiringRows([])
+        setLowStockRows([])
+        setCriticalLowStockRows([])
+        setAlertLowStockRows([])
+        setEntranceMovements([])
+        setExitMovements([])
+        setAdjustmentMovements([])
+        setByUserRows([])
         setError(loadError.message || 'No se pudieron cargar los reportes.')
       } finally {
         if (isMounted) setIsLoading(false)
@@ -67,11 +122,7 @@ const ReportsPage = () => {
     return () => { isMounted = false }
   }, [])
 
-  const inventoryRows = useMemo(() => buildInventoryRows(medicines), [medicines])
   const movementsRows = useMemo(() => buildMovementsRows(movements), [movements])
-  const expiringRows = useMemo(() => buildExpiringRows(medicines), [medicines])
-  const lowStockRows = useMemo(() => buildLowStockRows(medicines), [medicines])
-  const byUserRows = useMemo(() => buildByUserRows(movements), [movements])
 
   useEffect(() => {
     setFilteredMovementsRows(movementsRows)
@@ -146,6 +197,7 @@ const ReportsPage = () => {
       {activeTab === 'inventory' && (
         <InventoryReportSection
           rows={inventoryRows}
+          summary={inventorySummary}
           isLoading={isLoading}
           onExport={handleExportExcel}
           exportDisabled={exportDisabled}
@@ -155,6 +207,9 @@ const ReportsPage = () => {
       {activeTab === 'movements' && (
         <MovementsReportSection
           rows={movementsRows}
+          entranceRows={entranceMovements}
+          exitRows={exitMovements}
+          adjustmentRows={adjustmentMovements}
           isLoading={isLoading}
           onRowsForExportChange={setFilteredMovementsRows}
           onFilterForExportChange={setMovementsFilterKey}
@@ -166,6 +221,10 @@ const ReportsPage = () => {
       {activeTab === 'expiring' && (
         <ExpiringReportSection
           rows={expiringRows}
+          expiredRows={expiredRows}
+          criticalRows={criticalExpiringRows}
+          mediumRows={mediumExpiringRows}
+          controlledRows={controlledExpiringRows}
           isLoading={isLoading}
           onExport={handleExportExcel}
           exportDisabled={exportDisabled}
@@ -175,6 +234,8 @@ const ReportsPage = () => {
       {activeTab === 'lowstock' && (
         <LowStockReportSection
           rows={lowStockRows}
+          criticalRows={criticalLowStockRows}
+          alertRows={alertLowStockRows}
           isLoading={isLoading}
           onExport={handleExportExcel}
           exportDisabled={exportDisabled}
