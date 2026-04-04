@@ -17,7 +17,7 @@ import LowStockReportSection from '../components/LowStockReportSection'
 import MovementsReportSection from '../components/MovementsReportSection'
 import { REPORT_TABS } from '../config/reportTabs'
 import { getExpiringReportGroups } from '../services/expiringReports.service'
-import { getLowStockReportRows } from '../services/lowStockReports.service'
+import { getLowStockReportGroups } from '../services/lowStockReports.service'
 import {
   buildByUserRows,
   buildMovementsRows,
@@ -43,6 +43,8 @@ const ReportsPage = () => {
   const [mediumExpiringRows, setMediumExpiringRows] = useState([])
   const [controlledExpiringRows, setControlledExpiringRows] = useState([])
   const [lowStockRows, setLowStockRows] = useState([])
+  const [criticalLowStockRows, setCriticalLowStockRows] = useState([])
+  const [alertLowStockRows, setAlertLowStockRows] = useState([])
   const [entranceMovements, setEntranceMovements] = useState([])
   const [exitMovements, setExitMovements] = useState([])
   const [adjustmentMovements, setAdjustmentMovements] = useState([])
@@ -66,13 +68,13 @@ const ReportsPage = () => {
         ])
 
         const { usersByIdentity, usersById } = buildUsersIndex(usersData)
-        const [movementsData, entranceMovementsData, exitMovementsData, adjustmentMovementsData, expiringGroups, lowStockReportRows] = await Promise.all([
+        const [movementsData, entranceMovementsData, exitMovementsData, adjustmentMovementsData, expiringGroups, lowStockGroups] = await Promise.all([
           getMovements({ usersByIdentity, usersById }),
           getEntranceMovements({ usersByIdentity, usersById }),
           getExitMovements({ usersByIdentity, usersById }),
           getUpdatedMovements({ usersByIdentity, usersById }),
           getExpiringReportGroups(),
-          getLowStockReportRows()
+          getLowStockReportGroups()
         ])
 
         if (!isMounted) return
@@ -84,7 +86,9 @@ const ReportsPage = () => {
         setCriticalExpiringRows(Array.isArray(expiringGroups?.critical) ? expiringGroups.critical : [])
         setMediumExpiringRows(Array.isArray(expiringGroups?.medium) ? expiringGroups.medium : [])
         setControlledExpiringRows(Array.isArray(expiringGroups?.controlled) ? expiringGroups.controlled : [])
-        setLowStockRows(Array.isArray(lowStockReportRows) ? lowStockReportRows : [])
+        setLowStockRows(Array.isArray(lowStockGroups?.all) ? lowStockGroups.all : [])
+        setCriticalLowStockRows(Array.isArray(lowStockGroups?.critical) ? lowStockGroups.critical : [])
+        setAlertLowStockRows(Array.isArray(lowStockGroups?.alert) ? lowStockGroups.alert : [])
         setEntranceMovements(Array.isArray(entranceMovementsData) ? entranceMovementsData : [])
         setExitMovements(Array.isArray(exitMovementsData) ? exitMovementsData : [])
         setAdjustmentMovements(Array.isArray(adjustmentMovementsData) ? adjustmentMovementsData : [])
@@ -99,6 +103,8 @@ const ReportsPage = () => {
         setMediumExpiringRows([])
         setControlledExpiringRows([])
         setLowStockRows([])
+        setCriticalLowStockRows([])
+        setAlertLowStockRows([])
         setEntranceMovements([])
         setExitMovements([])
         setAdjustmentMovements([])
@@ -225,6 +231,8 @@ const ReportsPage = () => {
       {activeTab === 'lowstock' && (
         <LowStockReportSection
           rows={lowStockRows}
+          criticalRows={criticalLowStockRows}
+          alertRows={alertLowStockRows}
           isLoading={isLoading}
           onExport={handleExportExcel}
           exportDisabled={exportDisabled}

@@ -60,11 +60,6 @@ export const buildMovementsRows = (movements = []) =>
     .sort((first, second) => resolveMovementTimestamp(second) - resolveMovementTimestamp(first))
     .slice(0, 300)
 
-export const buildLowStockRows = (medicines = []) =>
-  medicines
-    .filter((item) => item.activo !== false && toNumber(item.stock) <= toNumber(item.stockMinimo))
-    .sort((first, second) => (first.stock - first.stockMinimo) - (second.stock - second.stockMinimo))
-
 export const buildByUserRows = (movements = []) => {
   const summary = new Map()
 
