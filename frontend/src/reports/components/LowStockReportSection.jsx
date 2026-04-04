@@ -13,9 +13,33 @@ const getStockLevel = (item = {}) => {
   return (stock / min) * 100
 }
 
-const formatCoverage = (item = {}) => `${Math.round(getStockLevel(item))}%`
+const formatCoverage = (item = {}) => {
+  const backendLabel = String(item.coverageLabel || '').trim()
+  if (backendLabel) return backendLabel
+  return `${Math.round(getStockLevel(item))}%`
+}
 
 const getStockVisuals = (item = {}) => {
+  const status = String(item.status || '').trim().toUpperCase()
+
+  if (status === 'CRITICO' || status === 'CRÍTICO') {
+    return {
+      tone: 'critical',
+      label: 'Crítico',
+      badgeClass: 'bg-red-100 text-red-700',
+      textClass: 'text-red-700'
+    }
+  }
+
+  if (status === 'ALERTA') {
+    return {
+      tone: 'alert',
+      label: 'Alerta',
+      badgeClass: 'bg-amber-100 text-amber-700',
+      textClass: 'text-amber-700'
+    }
+  }
+
   const level = getStockLevel(item)
 
   if (level <= 50) {
@@ -36,34 +60,40 @@ const getStockVisuals = (item = {}) => {
 }
 
 const buildSuggestion = (item = {}) => {
+  const backendSuggestion = String(item.suggestion || '').trim()
+  if (backendSuggestion) return backendSuggestion
   const stock = toNumber(item.stock)
   const minimum = toNumber(item.stockMinimo)
   const restockUnits = Math.max((minimum * 2) - stock, 1)
   return `Reponer ${restockUnits} unidades`
 }
 
-const LowStockReportSection = ({ rows = [], isLoading = false, onExport, exportDisabled = false, isExporting = false }) => {
+const LowStockReportSection = ({
+  rows = [],
+  criticalRows = [],
+  alertRows = [],
+  isLoading = false,
+  onExport,
+  exportDisabled = false,
+  isExporting = false
+}) => {
   const [severityFilter, setSeverityFilter] = useState('all')
   const [pageSize, setPageSize] = useState(15)
   const [page, setPage] = useState(1)
 
   const filteredRows = useMemo(() => {
-    if (severityFilter === 'all') return rows
-
-    return rows.filter((item) => {
-      const { tone } = getStockVisuals(item)
-      if (severityFilter === 'critical') return tone === 'critical'
-      if (severityFilter === 'alert') return tone === 'alert'
-      return true
-    })
-  }, [rows, severityFilter])
+    if (severityFilter === 'critical') return criticalRows
+    if (severityFilter === 'alert') return alertRows
+    return rows
+  }, [alertRows, criticalRows, rows, severityFilter])
 
   const summary = useMemo(() => {
     return rows.reduce((acc, item) => {
       const { tone } = getStockVisuals(item)
       const stock = toNumber(item.stock)
-      const min = toNumber(item.stockMinimo)
-      const restockUnits = Math.max((min * 2) - stock, 1)
+      const suggestionText = buildSuggestion(item)
+      const suggestionMatch = suggestionText.match(/(\d+)/)
+      const restockUnits = suggestionMatch ? toNumber(suggestionMatch[1]) : 0
 
       acc.total += 1
       acc.unitsCompromised += stock

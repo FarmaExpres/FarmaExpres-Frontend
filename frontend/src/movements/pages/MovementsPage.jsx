@@ -1,6 +1,12 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import MovementsTable from '../components/MovementsTable'
-import { getMovements, MOVEMENT_TYPES } from '../services/movements.service'
+import {
+  getEntranceMovements,
+  getExitMovements,
+  getMovements,
+  getUpdatedMovements,
+  MOVEMENT_TYPES
+} from '../services/movements.service'
 import { getMedicines } from '../../medicines/services/medicines.service'
 import { getUsers } from '../../users/services/users.service'
 import { getRoleLabel } from '../../shared/constants/roles'
@@ -68,6 +74,13 @@ const filterMovementsLocally = (movements = [], filters = {}) => {
   })
 }
 
+const getMovementsFetcherByType = (movementType) => {
+  if (movementType === MOVEMENT_TYPES.ENTRANCE) return getEntranceMovements
+  if (movementType === MOVEMENT_TYPES.EXIT) return getExitMovements
+  if (movementType === MOVEMENT_TYPES.UPDATED) return getUpdatedMovements
+  return getMovements
+}
+
 const MovementsPage = () => {
   const [filterForm, setFilterForm] = useState(INITIAL_FILTERS)
   const [appliedFilters, setAppliedFilters] = useState(INITIAL_FILTERS)
@@ -112,18 +125,18 @@ const MovementsPage = () => {
     setContractWarning('')
     setDateWarning('')
 
-    try {
-      const [medicines, users] = await Promise.all([
-        getMedicines().catch(() => []),
-        getUsers().catch(() => [])
-      ])
-      const productsById = buildProductsMap(medicines)
-      const { usersByIdentity, usersById, userOptions: nextUserOptions } = buildUsersIndex(users)
-      const movementsData = await getMovements({
-        filters,
-        productsById,
-        usersByIdentity,
-        usersById
+      try {
+        const [medicines, users] = await Promise.all([
+          getMedicines().catch(() => []),
+          getUsers().catch(() => [])
+        ])
+        const productsById = buildProductsMap(medicines)
+        const { usersByIdentity, usersById, userOptions: nextUserOptions } = buildUsersIndex(users)
+        const fetchMovements = getMovementsFetcherByType(filters?.type)
+        const movementsData = await fetchMovements({
+          productsById,
+          usersByIdentity,
+          usersById
       })
       const parsedMovements = Array.isArray(movementsData) ? movementsData : []
       const missingContractCounters = parsedMovements.reduce(
