@@ -126,8 +126,8 @@ const MENU_BY_ROLE = {
   ],
   [ROLES.FARMACEUTICO]: [
     { key: 'dashboard', label: 'Dashboard' },
-    { key: 'inventory', label: 'Inventario' },
-    { key: 'entries', label: 'Entradas' },
+    { key: 'inventory', label: 'Inventario', moduleKey: 'medicines' },
+    { key: 'entries', label: 'Entradas', moduleKey: 'entries' },
     { key: 'exits', label: 'Salidas' },
     { key: 'alerts', label: 'Alertas', moduleKey: 'alerts', badge: '24' },
     { key: 'stock', label: 'Control Stock' }
