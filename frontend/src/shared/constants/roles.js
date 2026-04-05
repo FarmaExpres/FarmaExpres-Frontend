@@ -45,6 +45,28 @@ export const getRoleLabel = (role) => {
   return roleOption?.label || 'Sin rol'
 }
 
+export const canAccessMedicines = (role) => {
+  const normalizedRole = normalizeRole(role)
+  return [ROLES.ADMIN, ROLES.FARMACEUTICO, ROLES.AUDITOR].includes(normalizedRole)
+}
+
+export const canManageMedicines = (role) => normalizeRole(role) === ROLES.ADMIN
+
+export const canAccessMovements = (role) => {
+  const normalizedRole = normalizeRole(role)
+  return [ROLES.ADMIN, ROLES.AUDITOR].includes(normalizedRole)
+}
+
+export const canAccessReports = (role) => {
+  const normalizedRole = normalizeRole(role)
+  return [ROLES.ADMIN, ROLES.AUDITOR].includes(normalizedRole)
+}
+
+export const canAccessAlerts = (role) => {
+  const normalizedRole = normalizeRole(role)
+  return [ROLES.ADMIN, ROLES.FARMACEUTICO].includes(normalizedRole)
+}
+
 export const getDefaultRouteByRole = (role) => {
   const normalizedRole = normalizeRole(role)
 

@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import MedicinesTable from '../components/MedicinesTable'
 import DeactivateMedicineModal from '../components/DeactivateMedicineModal'
 import { deactivateMedicine } from '../services/medicines.service'
+import { canManageMedicines } from '../../shared/constants/roles'
 
 const MEDICINES_SEARCH_STORAGE_KEY = 'medicines:search-term'
 const MEDICINES_SORT_STORAGE_KEY = 'medicines:sort-by'
@@ -44,9 +45,10 @@ const clearStoredReturnContext = () => {
   }
 }
 
-const MedicinesPage = () => {
+const MedicinesPage = ({ role }) => {
   const navigate = useNavigate()
   const location = useLocation()
+  const isReadOnly = !canManageMedicines(role)
   const [medicineToDeactivate, setMedicineToDeactivate] = useState(null)
   const [openDeactivateModal, setOpenDeactivateModal] = useState(false)
   const [isDeactivating, setIsDeactivating] = useState(false)
@@ -106,6 +108,8 @@ const MedicinesPage = () => {
   }, [feedback])
 
   const handleOpenCreate = () => {
+    if (isReadOnly) return
+
     const returnContext = {
       searchTerm,
       sortBy,
@@ -121,6 +125,8 @@ const MedicinesPage = () => {
   }
 
   const handleOpenEdit = (medicine) => {
+    if (isReadOnly) return
+
     if (medicine?.activo === false) {
       setFeedback({
         type: 'error',
@@ -149,6 +155,8 @@ const MedicinesPage = () => {
   }, [])
 
   const handleDeactivate = useCallback((medicine) => {
+    if (isReadOnly) return
+
     if (!medicine?.id) {
       setFeedback({ type: 'error', message: 'No fue posible identificar el medicamento seleccionado.' })
       return
@@ -162,7 +170,7 @@ const MedicinesPage = () => {
     setFeedback(null)
     setMedicineToDeactivate(medicine)
     setOpenDeactivateModal(true)
-  }, [])
+  }, [isReadOnly])
 
   const handleCancelDeactivate = useCallback(() => {
     if (isDeactivating) return
@@ -206,15 +214,17 @@ const MedicinesPage = () => {
     <div className="fe-page-shell">
       <div className="fe-page-head">
         <div>
-          <h1 className="fe-page-title">Gestión de Medicamentos</h1>
+          <h1 className="fe-page-title">{isReadOnly ? 'Inventario' : 'Gestión de Medicamentos'}</h1>
         </div>
 
-        <button
-          onClick={handleOpenCreate}
-          className="fe-btn-primary 2xl:h-12 2xl:px-6 2xl:text-base"
-        >
-          + Agregar medicamento
-        </button>
+        {!isReadOnly && (
+          <button
+            onClick={handleOpenCreate}
+            className="fe-btn-primary 2xl:h-12 2xl:px-6 2xl:text-base"
+          >
+            + Agregar medicamento
+          </button>
+        )}
       </div>
 
       {feedback && (
@@ -251,18 +261,21 @@ const MedicinesPage = () => {
         reload={reloadKey}
         searchTerm={searchTerm}
         sortBy={sortBy}
+        readOnly={isReadOnly}
         onError={handleError}
         onEdit={handleOpenEdit}
         onDeactivate={handleDeactivate}
       />
 
-      <DeactivateMedicineModal
-        isOpen={openDeactivateModal}
-        medicine={medicineToDeactivate}
-        isSubmitting={isDeactivating}
-        onCancel={handleCancelDeactivate}
-        onConfirm={handleConfirmDeactivate}
-      />
+      {!isReadOnly && (
+        <DeactivateMedicineModal
+          isOpen={openDeactivateModal}
+          medicine={medicineToDeactivate}
+          isSubmitting={isDeactivating}
+          onCancel={handleCancelDeactivate}
+          onConfirm={handleConfirmDeactivate}
+        />
+      )}
     </div>
   )
 }
