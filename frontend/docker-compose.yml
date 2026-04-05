@@ -4,6 +4,11 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: farmaexpres_frontend
+    environment:
+      # Configurable por equipo:
+      # - Backend en host: BACKEND_URL=http://host.docker.internal:8080
+      # - Backend en compose: BACKEND_URL=http://backend:8080
+      - BACKEND_URL=${BACKEND_URL:-http://host.docker.internal:8080}
     ports:
       - "5173:80"
     extra_hosts:
