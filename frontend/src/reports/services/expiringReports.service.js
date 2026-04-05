@@ -4,7 +4,7 @@ import {
   normalizeApiError
 } from '../../shared/services/api.service'
 
-const EXPIRING_REPORT_ENDPOINT = '/api/alerts/expiring-report'
+const EXPIRING_REPORT_ENDPOINT = '/api/alerts/expiring-batches/report'
 
 const toNumberOrDefault = (value, fallback = 0) => {
   const parsedValue = Number(value)
@@ -31,6 +31,8 @@ const getDaysUntilDate = (isoDate) => {
 }
 
 const normalizeExpiringCollection = (responseData) => {
+  if (Array.isArray(responseData?.items)) return responseData.items
+  if (Array.isArray(responseData?.data?.items)) return responseData.data.items
   if (Array.isArray(responseData?.reports)) return responseData.reports
   if (Array.isArray(responseData?.data?.reports)) return responseData.data.reports
   if (Array.isArray(responseData?.alerts)) return responseData.alerts
@@ -41,22 +43,42 @@ const normalizeExpiringCollection = (responseData) => {
 
 const mapExpiringItemToRow = (item = {}) => {
   const product = item?.product || item
+  const batch = item?.batch || {}
+  const batchStock = toNumberOrDefault(
+    item?.batchStock ?? item?.expiredBatchStock ?? item?.availableStock,
+    0
+  )
+  const operationalStock = toNumberOrDefault(
+    item?.operationalStock ?? product?.operationalStock ?? product?.stock,
+    0
+  )
   const expirationDate = normalizeExpirationDate(
-    product?.expirationDate ?? product?.fechavencimiento ?? item?.expirationDate ?? ''
+    item?.expirationDate ??
+      item?.batchExpirationDate ??
+      batch?.expirationDate ??
+      product?.expirationDate ??
+      product?.fechavencimiento ??
+      ''
   )
   const daysUntilExpiration = toNumberOrDefault(
-    product?.diasRestantes ?? item?.diasRestantes,
+    product?.diasRestantes ?? item?.diasRestantes ?? item?.daysUntilExpiration,
     getDaysUntilDate(expirationDate)
   )
 
   return {
-    id: product?.id ?? product?.code ?? item?.id ?? null,
-    codigo: String(product?.code ?? product?.codigo ?? '').trim(),
-    nombre: String(product?.name ?? product?.nombre ?? '').trim(),
-    stock: toNumberOrDefault(product?.stock, 0),
+    id:
+      item?.id ??
+      `${item?.productId ?? product?.id ?? product?.code ?? 'product'}-${item?.batchId ?? batch?.id ?? 'batch'}`,
+    codigo: String(item?.productCode ?? product?.code ?? product?.codigo ?? '').trim(),
+    nombre: String(item?.productName ?? product?.name ?? product?.nombre ?? '').trim(),
+    loteId: item?.batchId ?? batch?.id ?? null,
+    loteCodigo: String(item?.batchCode ?? batch?.code ?? '').trim(),
+    stock: batchStock,
+    batchStock,
+    operationalStock,
     fechavencimiento: expirationDate,
     daysUntilExpiration,
-    expirationStatus: String(product?.estado ?? item?.estado ?? '').trim()
+    expirationStatus: String(item?.status ?? product?.estado ?? item?.estado ?? '').trim()
   }
 }
 
@@ -64,7 +86,7 @@ const dedupeRows = (rows = []) => {
   const rowsByKey = new Map()
 
   rows.forEach((row) => {
-    const key = String(row?.codigo || row?.id || `${row?.nombre}-${row?.fechavencimiento}`).trim()
+    const key = String(row?.loteId ?? row?.loteCodigo ?? row?.id ?? `${row?.codigo}-${row?.fechavencimiento}`).trim()
     if (!key) return
     rowsByKey.set(key, row)
   })
@@ -89,13 +111,17 @@ const fetchExpiringRows = async (token) => {
   const response = await inventoryApi.get(EXPIRING_REPORT_ENDPOINT, {
     headers: buildAuthHeaders(token)
   })
-
   return normalizeExpiringCollection(response.data).map(mapExpiringItemToRow)
 }
 
 export const getExpiringReportGroups = async (token) => {
   try {
-    const allRows = dedupeRows(await fetchExpiringRows(token))
+    const rawRows = dedupeRows(await fetchExpiringRows(token))
+    const allRows = rawRows.filter((row) => {
+      const groupKey = getExpiringGroupKey(row)
+      if (groupKey !== 'expired') return true
+      return Number(row?.batchStock ?? row?.stock ?? 0) > 0
+    })
     const groupedRows = allRows.reduce((acc, row) => {
       const groupKey = getExpiringGroupKey(row)
       if (groupKey !== 'all') acc[groupKey].push(row)

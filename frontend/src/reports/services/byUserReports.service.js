@@ -11,6 +11,17 @@ const toNumberOrDefault = (value, fallback = 0) => {
   return Number.isFinite(parsedValue) ? parsedValue : fallback
 }
 
+const normalizeIdentity = (value = '') =>
+  String(value || '')
+    .trim()
+    .toLowerCase()
+    .replace(/[\s-]+/g, '_')
+
+const isSystemIdentity = (value = '') => {
+  const normalizedValue = normalizeIdentity(value)
+  return normalizedValue === 'system' || normalizedValue === 'system_init' || normalizedValue === 'sistema'
+}
+
 const normalizeUsersActivityCollection = (responseData) => {
   if (Array.isArray(responseData?.reports)) return responseData.reports
   if (Array.isArray(responseData?.data?.reports)) return responseData.data.reports
@@ -20,15 +31,21 @@ const normalizeUsersActivityCollection = (responseData) => {
   return []
 }
 
-const mapUserActivityItem = (item = {}) => ({
-  userId: item?.userId ?? null,
-  user: String(item?.userName ?? item?.user ?? 'No disponible').trim() || 'No disponible',
-  roleLabel: String(item?.userRole ?? item?.roleLabel ?? 'Sin rol').trim() || 'Sin rol',
-  totalMovements: toNumberOrDefault(item?.totalMovements, 0),
-  entrances: toNumberOrDefault(item?.totalEntrances ?? item?.entrances, 0),
-  exits: toNumberOrDefault(item?.totalExits ?? item?.exits, 0),
-  activityLevel: String(item?.activityLevel ?? '').trim()
-})
+const mapUserActivityItem = (item = {}) => {
+  const rawUser = String(item?.userName ?? item?.user ?? '').trim()
+  const rawRole = String(item?.userRole ?? item?.roleLabel ?? '').trim()
+  const systemIdentity = isSystemIdentity(rawUser) || isSystemIdentity(rawRole)
+
+  return {
+    userId: item?.userId ?? null,
+    user: systemIdentity ? 'Sistema' : (rawUser || 'No disponible'),
+    roleLabel: systemIdentity ? 'Automático' : (rawRole || 'Sin rol'),
+    totalMovements: toNumberOrDefault(item?.totalMovements, 0),
+    entrances: toNumberOrDefault(item?.totalEntrances ?? item?.entrances, 0),
+    exits: toNumberOrDefault(item?.totalExits ?? item?.exits, 0),
+    activityLevel: String(item?.activityLevel ?? '').trim()
+  }
+}
 
 const dedupeRows = (rows = []) => {
   const rowsByKey = new Map()
