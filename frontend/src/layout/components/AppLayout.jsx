@@ -1,12 +1,13 @@
 import Sidebar from './Sidebar'
 
-const AppLayout = ({ role, user, activeModule, onNavigate, onLogout, children }) => {
+const AppLayout = ({ role, user, activeModule, alertsCount = 0, onNavigate, onLogout, children }) => {
   return (
     <div className="min-h-screen bg-[#f0f2f7] md:flex md:h-screen md:overflow-hidden">
       <Sidebar
         role={role}
         user={user}
         activeModule={activeModule}
+        alertsCount={alertsCount}
         onNavigate={onNavigate}
         onLogout={onLogout}
       />
