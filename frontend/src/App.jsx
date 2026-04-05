@@ -4,6 +4,8 @@ import AppLayout from './layout/components/AppLayout'
 import MedicinesPage from './medicines/pages/MedicinesPage'
 import MedicineCreatePage from './medicines/pages/MedicineCreatePage'
 import MedicineEditPage from './medicines/pages/MedicineEditPage'
+import EntriesPage from './movements/pages/EntriesPage'
+import ExitsPage from './movements/pages/ExitsPage'
 import MovementsPage from './movements/pages/MovementsPage'
 import UsersPage from './users/pages/UsersPage'
 import ReportsPage from './reports/pages/ReportsPage'
@@ -15,6 +17,8 @@ import PublicOnlyRoute from './shared/routing/PublicOnlyRoute'
 import { clearSession, getSession, isAdmin } from './shared/auth/session'
 import {
   canAccessAlerts,
+  canAccessEntries,
+  canAccessExits,
   canAccessMedicines,
   canAccessMovements,
   canAccessReports,
@@ -45,6 +49,8 @@ function App() {
   const [session, setSession] = useState(() => getSession())
   const defaultRoute = getDefaultRouteByRole(session.role)
   const canAccessMedicinesModule = canAccessMedicines(session.role)
+  const canAccessEntriesModule = canAccessEntries(session.role)
+  const canAccessExitsModule = canAccessExits(session.role)
   const canAccessMovementsModule = canAccessMovements(session.role)
   const canAccessReportsModule = canAccessReports(session.role)
   const canAccessAlertsModule = canAccessAlerts(session.role)
@@ -73,6 +79,18 @@ function App() {
     if (moduleKey === 'movements') {
       if (!canAccessMovementsModule) return
       navigate('/movements')
+      return
+    }
+
+    if (moduleKey === 'entries') {
+      if (!canAccessEntriesModule) return
+      navigate('/entradas')
+      return
+    }
+
+    if (moduleKey === 'exits') {
+      if (!canAccessExitsModule) return
+      navigate('/salidas')
       return
     }
 
@@ -217,6 +235,46 @@ function App() {
               />
               )
             : <Navigate to={defaultRoute} replace />}
+        />
+        <Route
+          path="/entries"
+          element={canAccessEntriesModule
+            ? (
+              <AppShell
+                session={session}
+                activeModule="entries"
+                routePath={location.pathname}
+                onNavigate={handleNavigate}
+                onLogout={handleLogout}
+                alertsCount={alertsCount}
+                content={<EntriesPage />}
+              />
+              )
+            : <Navigate to={defaultRoute} replace />}
+        />
+        <Route
+          path="/entradas"
+          element={<Navigate to="/entries" replace />}
+        />
+        <Route
+          path="/exits"
+          element={canAccessExitsModule
+            ? (
+              <AppShell
+                session={session}
+                activeModule="exits"
+                routePath={location.pathname}
+                onNavigate={handleNavigate}
+                onLogout={handleLogout}
+                alertsCount={alertsCount}
+                content={<ExitsPage />}
+              />
+              )
+            : <Navigate to={defaultRoute} replace />}
+        />
+        <Route
+          path="/salidas"
+          element={<Navigate to="/exits" replace />}
         />
         <Route
           path="/movements"
