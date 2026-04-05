@@ -44,21 +44,22 @@ const MovementsTable = ({ movements = [], isLoading = false }) => (
     <table className="fe-table fe-table-compact table-fixed w-full text-[12.5px] lg:text-sm">
       <thead>
         <tr>
-          <th className="fe-col-min-sm w-[13%] text-left 2xl:w-[12%]">FECHA</th>
+          <th className="fe-col-min-sm w-[11%] text-left 2xl:w-[10%]">FECHA</th>
           <th className="hidden w-[9%] text-left 2xl:table-cell">HORA</th>
-          <th className="fe-col-min-xs w-[9%] text-left 2xl:w-[9%]">TIPO</th>
-          <th className="fe-col-min-md w-[18%] text-left 2xl:w-[18%]">MEDICAMENTO</th>
+          <th className="fe-col-min-xs w-[8%] text-left 2xl:w-[8%]">TIPO</th>
+          <th className="fe-col-min-md w-[17%] text-left 2xl:w-[16%]">MEDICAMENTO</th>
+          <th className="fe-col-min-sm w-[12%] text-left 2xl:w-[12%]">LOTE</th>
           <th className="fe-col-min-xxs w-[8%] text-center 2xl:w-[8%]">CANTIDAD</th>
-          <th className="fe-col-min-lg w-[24%] text-left 2xl:w-[21%]">MOTIVO</th>
-          <th className="fe-col-min-md w-[16%] text-left 2xl:w-[15%]">USUARIO</th>
-          <th className="fe-col-min-sm w-[12%] text-center 2xl:w-[8%]">ESTADO</th>
+          <th className="fe-col-min-lg w-[19%] text-left 2xl:w-[18%]">MOTIVO</th>
+          <th className="fe-col-min-md w-[15%] text-left 2xl:w-[14%]">USUARIO</th>
+          <th className="fe-col-min-sm w-[11%] text-center 2xl:w-[8%]">ESTADO</th>
         </tr>
       </thead>
 
       <tbody>
         {isLoading ? (
           <tr>
-            <td colSpan="8" className="p-5 text-center text-gray-400">
+            <td colSpan="9" className="p-5 text-center text-gray-400">
               Cargando historial de movimientos...
             </td>
           </tr>
@@ -86,6 +87,10 @@ const MovementsTable = ({ movements = [], isLoading = false }) => (
               </td>
               <td className="truncate" title={movement.medicine || 'No disponible'}>
                 {movement.medicine || 'No disponible'}
+              </td>
+              <td className="whitespace-nowrap" title={movement.batchCode || 'Sin lote'}>
+                <p className="truncate font-semibold text-[#2f3f62]">{movement.batchCode || 'Sin lote'}</p>
+                <p className="truncate text-[11px] font-medium text-[#8c97b3]">{movement.batchExpirationDate || 'Sin vencimiento'}</p>
               </td>
               <td className={`whitespace-nowrap text-center font-bold ${getQuantityClassName(movement.quantity)}`}>
                 {formatQuantity(movement.quantity)}
@@ -122,7 +127,7 @@ const MovementsTable = ({ movements = [], isLoading = false }) => (
           ))
         ) : (
           <tr>
-            <td colSpan="8" className="p-5 text-center text-gray-400">
+            <td colSpan="9" className="p-5 text-center text-gray-400">
               No hay movimientos para los filtros aplicados.
             </td>
           </tr>

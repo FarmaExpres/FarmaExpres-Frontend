@@ -1,21 +1,99 @@
 import { useCallback, useEffect, useState } from 'react'
+import { useLocation, useNavigate } from 'react-router-dom'
 import MedicinesTable from '../components/MedicinesTable'
-import MedicineModal from '../components/MedicineModal'
-import MedicineEditModal from '../components/MedicineEditModal'
 import DeactivateMedicineModal from '../components/DeactivateMedicineModal'
 import { deactivateMedicine } from '../services/medicines.service'
 
+const MEDICINES_SEARCH_STORAGE_KEY = 'medicines:search-term'
+const MEDICINES_SORT_STORAGE_KEY = 'medicines:sort-by'
+const MEDICINES_RETURN_CONTEXT_STORAGE_KEY = 'medicines:return-context'
+
+const readStoredValue = (key, fallback) => {
+  try {
+    const value = sessionStorage.getItem(key)
+    return value ?? fallback
+  } catch {
+    return fallback
+  }
+}
+
+const readStoredReturnContext = () => {
+  try {
+    const raw = sessionStorage.getItem(MEDICINES_RETURN_CONTEXT_STORAGE_KEY)
+    if (!raw) return null
+    const parsed = JSON.parse(raw)
+    return parsed && typeof parsed === 'object' ? parsed : null
+  } catch {
+    return null
+  }
+}
+
+const storeReturnContext = (context) => {
+  try {
+    sessionStorage.setItem(MEDICINES_RETURN_CONTEXT_STORAGE_KEY, JSON.stringify(context))
+  } catch {
+    // no-op
+  }
+}
+
+const clearStoredReturnContext = () => {
+  try {
+    sessionStorage.removeItem(MEDICINES_RETURN_CONTEXT_STORAGE_KEY)
+  } catch {
+    // no-op
+  }
+}
+
 const MedicinesPage = () => {
-  const [openCreateModal, setOpenCreateModal] = useState(false)
-  const [openEditModal, setOpenEditModal] = useState(false)
-  const [selectedMedicine, setSelectedMedicine] = useState(null)
+  const navigate = useNavigate()
+  const location = useLocation()
   const [medicineToDeactivate, setMedicineToDeactivate] = useState(null)
   const [openDeactivateModal, setOpenDeactivateModal] = useState(false)
   const [isDeactivating, setIsDeactivating] = useState(false)
-  const [searchTerm, setSearchTerm] = useState('')
-  const [sortBy, setSortBy] = useState('code')
+  const [searchTerm, setSearchTerm] = useState(() => readStoredValue(MEDICINES_SEARCH_STORAGE_KEY, ''))
+  const [sortBy, setSortBy] = useState(() => readStoredValue(MEDICINES_SORT_STORAGE_KEY, 'code'))
   const [reloadKey, setReloadKey] = useState(0)
   const [feedback, setFeedback] = useState(null)
+
+  useEffect(() => {
+    const feedbackFromNavigation = location.state?.feedback
+    const restoreContext = location.state?.restoreContext || readStoredReturnContext()
+
+    if (feedbackFromNavigation) {
+      setFeedback(feedbackFromNavigation)
+    }
+
+    if (restoreContext) {
+      setSearchTerm(String(restoreContext.searchTerm || ''))
+      setSortBy(String(restoreContext.sortBy || 'code'))
+
+      const scrollY = Number(restoreContext.scrollY)
+      if (Number.isFinite(scrollY) && scrollY >= 0) {
+        window.requestAnimationFrame(() => window.scrollTo({ top: scrollY, behavior: 'auto' }))
+      }
+      clearStoredReturnContext()
+    }
+
+    if (feedbackFromNavigation || restoreContext) {
+      navigate(location.pathname, { replace: true, state: null })
+    }
+  }, [location.pathname, location.state, navigate])
+
+  useEffect(() => {
+    try {
+      sessionStorage.setItem(MEDICINES_SEARCH_STORAGE_KEY, searchTerm)
+    } catch {
+      // no-op: storage could be unavailable in some contexts
+    }
+  }, [searchTerm])
+
+  useEffect(() => {
+    try {
+      sessionStorage.setItem(MEDICINES_SORT_STORAGE_KEY, sortBy)
+    } catch {
+      // no-op: storage could be unavailable in some contexts
+    }
+  }, [sortBy])
 
   useEffect(() => {
     if (!feedback) return undefined
@@ -28,12 +106,18 @@ const MedicinesPage = () => {
   }, [feedback])
 
   const handleOpenCreate = () => {
-    setFeedback(null)
-    setOpenCreateModal(true)
-  }
+    const returnContext = {
+      searchTerm,
+      sortBy,
+      scrollY: window.scrollY
+    }
+    storeReturnContext(returnContext)
 
-  const handleCloseCreateModal = () => {
-    setOpenCreateModal(false)
+    navigate('/medicines/new', {
+      state: {
+        returnContext
+      }
+    })
   }
 
   const handleOpenEdit = (medicine) => {
@@ -45,28 +129,20 @@ const MedicinesPage = () => {
       return
     }
 
-    setFeedback(null)
-    setSelectedMedicine(medicine)
-    setOpenEditModal(true)
+    const returnContext = {
+      searchTerm,
+      sortBy,
+      scrollY: window.scrollY
+    }
+    storeReturnContext(returnContext)
+
+    navigate(`/medicines/${medicine.id}/edit`, {
+      state: {
+        medicine,
+        returnContext
+      }
+    })
   }
-
-  const handleCloseEditModal = () => {
-    setOpenEditModal(false)
-    setSelectedMedicine(null)
-  }
-
-  const handleCreateSuccess = useCallback((message) => {
-    setOpenCreateModal(false)
-    setReloadKey((current) => current + 1)
-    setFeedback({ type: 'success', message })
-  }, [])
-
-  const handleUpdateSuccess = useCallback((message) => {
-    setOpenEditModal(false)
-    setSelectedMedicine(null)
-    setReloadKey((current) => current + 1)
-    setFeedback({ type: 'success', message })
-  }, [])
 
   const handleError = useCallback((message) => {
     setFeedback({ type: 'error', message })
@@ -178,21 +254,6 @@ const MedicinesPage = () => {
         onError={handleError}
         onEdit={handleOpenEdit}
         onDeactivate={handleDeactivate}
-      />
-
-      <MedicineModal
-        isOpen={openCreateModal}
-        onClose={handleCloseCreateModal}
-        onSuccess={handleCreateSuccess}
-        onError={handleError}
-      />
-
-      <MedicineEditModal
-        isOpen={openEditModal}
-        medicine={selectedMedicine}
-        onClose={handleCloseEditModal}
-        onSuccess={handleUpdateSuccess}
-        onError={handleError}
       />
 
       <DeactivateMedicineModal
