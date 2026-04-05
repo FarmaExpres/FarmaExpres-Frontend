@@ -54,3 +54,9 @@ Documento QA/HU asociado:
 Carpeta sugerida de imágenes:
 
 - `doc/images/HU-FE-10/`
+
+Archivos de evidencia disponibles:
+
+- `doc/images/HU-FE-10/01-acceso-inventario.png`
+- `doc/images/HU-FE-10/02-restriccion-farmaceutico-inventario.png`
+- `doc/images/HU-FE-10/03-inventario.png`
