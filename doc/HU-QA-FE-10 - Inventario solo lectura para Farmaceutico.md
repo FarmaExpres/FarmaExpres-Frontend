@@ -164,7 +164,7 @@ Se habilitará el acceso del rol **Farmacéutico** al módulo de inventario exis
 - **Acción ejecutada:** Iniciar sesión como farmacéutico y hacer clic en **Inventario**.
 - **Resultado esperado:** Se abre la vista de inventario correctamente.
 - **Resultado obtenido:** Se abre la vista de inventario correctamente desde el sidebar para Farmacéutico.
-- **Evidencia:** `doc/images/HU-FE-10/01-acceso-inventario.png`
+- ![CP-HU-FE-10-01](doc/images/HU-FE-10/01-acceso-inventario.png)
 
 ### CP-HU-FE-10-02 - Visualización de tabla de inventario
 
@@ -172,7 +172,7 @@ Se habilitará el acceso del rol **Farmacéutico** al módulo de inventario exis
 - **Acción ejecutada:** Revisar la tabla cargada en el módulo Inventario.
 - **Resultado esperado:** Se muestran columnas de consulta como código, nombre, stock útil, stock mínimo, precio, referencia FEFO y estado.
 - **Resultado obtenido:** Se visualiza la tabla de inventario con columnas operativas de consulta.
-- **Evidencia:** `doc/images/HU-FE-10/03-inventario.png`
+- ![CP-HU-FE-10-02](doc/images/HU-FE-10/03-inventario.png)
 
 ### CP-HU-FE-10-03 - Ocultamiento de acciones de edición
 
@@ -188,7 +188,7 @@ Se habilitará el acceso del rol **Farmacéutico** al módulo de inventario exis
 - **Acción ejecutada:** Revisar la columna de acciones en la tabla.
 - **Resultado esperado:** No se muestran botones de desactivar/eliminar para el rol Farmacéutico.
 - **Resultado obtenido:** La tabla en modo consulta no renderiza acciones de desactivación/eliminación para el rol Farmacéutico.
-- **Evidencia:** `doc/images/HU-FE-10/02-restriccion-farmaceutico-inventario.png`
+- ![CP-HU-FE-10-04](doc/images/HU-FE-10/02-restriccion-farmaceutico-inventario.png)
 
 ### CP-HU-FE-10-05 - Protección de rutas de modificación
 
@@ -196,7 +196,7 @@ Se habilitará el acceso del rol **Farmacéutico** al módulo de inventario exis
 - **Acción ejecutada:** Intentar navegar manualmente a rutas de crear o editar medicamentos.
 - **Resultado esperado:** El sistema bloquea el acceso o redirige a una ruta permitida.
 - **Resultado obtenido:** Las rutas de crear y editar quedan protegidas y redirigen al listado permitido.
-- **Evidencia:** Validación funcional implementada en frontend.
+
 
 ### CP-HU-FE-10-06 - Acceso completo se mantiene para Administrador
 
@@ -204,7 +204,7 @@ Se habilitará el acceso del rol **Farmacéutico** al módulo de inventario exis
 - **Acción ejecutada:** Iniciar sesión como administrador y abrir Inventario.
 - **Resultado esperado:** El Administrador mantiene acceso completo con acciones disponibles.
 - **Resultado obtenido:** El rol Administrador conserva el acceso completo al módulo.
-- **Evidencia:** Validación funcional implementada en frontend.
+
 
 ## 2.1 Evidencias recopiladas
 
