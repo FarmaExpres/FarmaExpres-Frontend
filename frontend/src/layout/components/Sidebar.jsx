@@ -134,7 +134,7 @@ const MENU_BY_ROLE = {
   ],
   [ROLES.AUDITOR]: [
     { key: 'dashboard', label: 'Dashboard' },
-    { key: 'inventory', label: 'Inventario' },
+    { key: 'inventory', label: 'Inventario', moduleKey: 'medicines' },
     { key: 'movements', label: 'Movimientos', moduleKey: 'movements' },
     { key: 'reports', label: 'Reportes', moduleKey: 'reports' },
     { key: 'audit', label: 'Auditoria' }
