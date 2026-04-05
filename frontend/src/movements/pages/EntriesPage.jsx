@@ -34,6 +34,8 @@ const toSortedMedicines = (medicines = []) => (
   )
 )
 
+const filterActiveMedicines = (medicines = []) => medicines.filter((medicine) => medicine?.activo !== false)
+
 const buildAutomaticBatchCode = (medicine, expirationDate) => {
   const medicineCode = String(medicine?.codigo || medicine?.nombre || 'MED').trim()
     .toUpperCase()
@@ -61,7 +63,10 @@ const EntriesPage = () => {
   const [error, setError] = useState('')
   const [successMessage, setSuccessMessage] = useState('')
 
-  const medicineOptions = useMemo(() => toSortedMedicines(medicines), [medicines])
+  const medicineOptions = useMemo(
+    () => toSortedMedicines(filterActiveMedicines(medicines)),
+    [medicines]
+  )
   const selectedMedicine = useMemo(
     () => medicineOptions.find((medicine) => String(medicine.id) === String(form.productId)) || null,
     [form.productId, medicineOptions]

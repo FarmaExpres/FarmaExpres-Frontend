@@ -465,9 +465,10 @@ const buildInventoryEntryPayload = (data = {}) => {
 const buildInventoryExitPayload = (data = {}) => {
   const productId = Number(data?.productId)
   const amount = Number(data?.amount)
-  const reason = String(data?.reason || '').trim()
+  const rawReason = String(data?.reason || '').trim()
   const observation = String(data?.observation ?? data?.observacion ?? '').trim()
   const normalizedQuantity = Number.isFinite(amount) ? amount : 0
+  const reason = rawReason.toUpperCase() === 'VENTA' ? 'Dispensacion' : rawReason
 
   return {
     productId: Number.isFinite(productId) ? productId : null,

@@ -33,6 +33,28 @@ const toSortedMedicines = (medicines = []) => (
   )
 )
 
+const normalizeDateValue = (value) => {
+  const rawValue = String(value || '').trim()
+  const dateOnlyMatch = rawValue.match(/^(\d{4})-(\d{2})-(\d{2})$/)
+
+  if (!dateOnlyMatch) return null
+
+  const [, year, month, day] = dateOnlyMatch
+  return new Date(Number(year), Number(month) - 1, Number(day))
+}
+
+const isMedicineAvailableForExit = (medicine = {}) => {
+  if (medicine?.activo === false) return false
+
+  const expirationDate = normalizeDateValue(medicine?.proximoVencimiento)
+  if (!expirationDate) return true
+
+  const today = new Date()
+  const todayAtMidnight = new Date(today.getFullYear(), today.getMonth(), today.getDate())
+
+  return expirationDate >= todayAtMidnight
+}
+
 const ExitsPage = () => {
   const [form, setForm] = useState(INITIAL_FORM)
   const [medicines, setMedicines] = useState([])
@@ -42,7 +64,10 @@ const ExitsPage = () => {
   const [error, setError] = useState('')
   const [successMessage, setSuccessMessage] = useState('')
 
-  const medicineOptions = useMemo(() => toSortedMedicines(medicines), [medicines])
+  const medicineOptions = useMemo(
+    () => toSortedMedicines(medicines.filter(isMedicineAvailableForExit)),
+    [medicines]
+  )
   const selectedMedicine = useMemo(
     () => medicineOptions.find((medicine) => String(medicine.id) === String(form.productId)) || null,
     [form.productId, medicineOptions]
