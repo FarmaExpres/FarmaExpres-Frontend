@@ -40,6 +40,13 @@ const toNumberOrDefault = (value, fallback = 0) => {
   return Number.isFinite(parsedValue) ? parsedValue : fallback
 }
 
+const normalizeDateOnly = (value) => {
+  const rawValue = String(value || '').trim()
+  if (!rawValue) return ''
+  const dateOnlyMatch = rawValue.match(/^(\d{4}-\d{2}-\d{2})/)
+  return dateOnlyMatch ? dateOnlyMatch[1] : rawValue
+}
+
 const normalizeMovementType = (value) => {
   const normalizedValue = String(value || '').trim().toUpperCase()
 
@@ -387,6 +394,11 @@ const mapMovement = (movement = {}, productsById = {}, usersByIdentity = {}, use
     status: normalizedStatus,
     statusLabel: getStatusLabel(normalizedStatus),
     productId,
+    batchId: movement?.batchId ?? movement?.batch?.id ?? null,
+    batchCode: String(movement?.batchCode ?? movement?.batch?.code ?? '').trim(),
+    batchExpirationDate: normalizeDateOnly(
+      movement?.batchExpirationDate ?? movement?.expirationDate ?? movement?.batch?.expirationDate
+    ),
     rawDateValue: dateDetails.raw,
     dateParseMode: dateDetails.parseMode,
     hasExplicitTimezone: dateDetails.hasExplicitTimezone,

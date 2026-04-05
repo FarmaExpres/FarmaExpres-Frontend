@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { login } from '../services/auth.service'
 import { saveSession } from '../../shared/auth/session'
+import { getDefaultRouteByRole } from '../../shared/constants/roles'
 import FarmaShieldIconLogin from '../../shared/ui/icons/FarmaShieldIconLogin'
 import './LoginPage.css'
 
@@ -12,7 +13,7 @@ const LoginPage = ({ onLoginSuccess }) => {
   const location = useLocation()
   const fromPath = useMemo(() => {
     const from = location?.state?.from
-    return typeof from === 'string' && from.trim() ? from : '/medicines'
+    return typeof from === 'string' && from.trim() ? from : ''
   }, [location?.state?.from])
 
   const [form, setForm] = useState({ email: '', password: '' })
@@ -58,7 +59,8 @@ const LoginPage = ({ onLoginSuccess }) => {
       const loginData = await login(form)
       saveSession(loginData)
       onLoginSuccess?.()
-      navigate(fromPath, { replace: true })
+      const defaultRoute = getDefaultRouteByRole(loginData?.role)
+      navigate(fromPath || defaultRoute, { replace: true })
     } catch (error) {
       setRequestError(error?.message || 'No fue posible iniciar sesión. Intenta nuevamente.')
     } finally {

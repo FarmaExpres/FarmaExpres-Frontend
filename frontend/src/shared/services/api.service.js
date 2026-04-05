@@ -15,7 +15,8 @@ const handleAuthFailure = (error) => {
   const requestUrl = String(error?.config?.url || '')
   const isLoginRequest = /\/api\/auth\/login$/i.test(requestUrl)
 
-  if ((status === 401 || status === 403) && !isLoginRequest) {
+  // Solo 401 invalida sesión. 403 se maneja en UI como "sin permisos" sin expulsar al usuario.
+  if (status === 401 && !isLoginRequest) {
     clearSession()
     if (typeof window !== 'undefined' && window.location.pathname !== '/login') {
       window.location.replace('/login')
@@ -60,7 +61,7 @@ export const normalizeApiError = (error, fallbackMessage) => {
     /forbidden|denegado|permiso|acceso/i.test(backendMessage)
 
   const userFriendlyMessage = isForbidden
-    ? 'No tienes permisos para realizar esta acción. Se requiere rol Administrador.'
+    ? 'No tienes permisos para realizar esta acción con tu rol actual.'
     : isUnauthorized
       ? 'Tu sesión expiró o el token no es válido. Inicia sesión nuevamente y actualiza el token.'
       : backendMessage

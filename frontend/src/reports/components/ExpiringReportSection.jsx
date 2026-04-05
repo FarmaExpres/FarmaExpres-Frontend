@@ -95,6 +95,7 @@ const ExpiringReportSection = ({
     if (urgencyFilter === 'controlled') return controlledRows
     return rows
   }, [controlledRows, criticalRows, expiredRows, mediumRows, rows, urgencyFilter])
+  const stockColumnLabel = urgencyFilter === 'expired' ? 'STOCK VENC.' : 'STOCK LOTE'
 
   const summary = useMemo(() => {
     return rows.reduce((acc, item) => {
@@ -219,7 +220,8 @@ const ExpiringReportSection = ({
           <table className="fe-table table-fixed text-sm">
             <colgroup>
               <col className="w-[132px]" />
-              <col className="w-[35%]" />
+              <col className="w-[26%]" />
+              <col className="w-[150px]" />
               <col className="w-[148px]" />
               <col className="w-[188px]" />
               <col className="w-[116px]" />
@@ -229,15 +231,16 @@ const ExpiringReportSection = ({
               <tr>
                 <th className="text-left">CODIGO</th>
                 <th className="text-left">MEDICAMENTO</th>
+                <th className="text-left">LOTE</th>
                 <th className="text-left">VENCIMIENTO</th>
                 <th className="text-left">DIAS RESTANTES</th>
-                <th className="text-left">STOCK</th>
+                <th className="text-left">{stockColumnLabel}</th>
                 <th className="text-left">ESTADO</th>
               </tr>
             </thead>
             <tbody>
               {isLoading ? (
-                <tr><td colSpan="6" className="p-5 text-center text-gray-400">Cargando proximos a vencer...</td></tr>
+                <tr><td colSpan="7" className="p-5 text-center text-gray-400">Cargando proximos a vencer...</td></tr>
               ) : paginatedRows.length > 0 ? (
                 paginatedRows.map((item) => {
                   const visuals = getExpirationVisuals(item.daysUntilExpiration)
@@ -251,6 +254,7 @@ const ExpiringReportSection = ({
                         </span>
                       </td>
                       <td className="truncate font-semibold text-[#23365d]" title={item.nombre || 'Sin nombre'}>{item.nombre || 'Sin nombre'}</td>
+                      <td className="whitespace-nowrap text-left font-medium text-[#30456f]">{item.loteCodigo || 'Sin lote'}</td>
                       <td className="whitespace-nowrap text-left font-medium text-[#30456f]">{item.fechavencimiento || '---'}</td>
                       <td className={`whitespace-nowrap text-left font-bold ${visuals.textClass}`}>
                         {days === 0 ? (
@@ -261,7 +265,12 @@ const ExpiringReportSection = ({
                           formatDaysLabel(item.daysUntilExpiration)
                         )}
                       </td>
-                      <td className="whitespace-nowrap text-left font-semibold text-[#283b61]">{item.stock ?? 0}</td>
+                      <td
+                        className="whitespace-nowrap text-left font-semibold text-[#283b61]"
+                        title={`Stock operativo producto: ${item.operationalStock ?? 0}`}
+                      >
+                        {item.batchStock ?? item.stock ?? 0}
+                      </td>
                       <td className="whitespace-nowrap text-left">
                         <span className={`fe-badge-chip ${visuals.badgeClass}`}>
                           {visuals.label}
@@ -271,7 +280,7 @@ const ExpiringReportSection = ({
                   )
                 })
               ) : (
-                <tr><td colSpan="6" className="p-5 text-center text-gray-400">No hay medicamentos proximos a vencer para el filtro seleccionado.</td></tr>
+                <tr><td colSpan="7" className="p-5 text-center text-gray-400">No hay medicamentos proximos a vencer para el filtro seleccionado.</td></tr>
               )}
             </tbody>
           </table>

@@ -44,3 +44,11 @@ export const getRoleLabel = (role) => {
   const roleOption = USER_ROLE_OPTIONS.find((option) => option.value === normalizedRole)
   return roleOption?.label || 'Sin rol'
 }
+
+export const getDefaultRouteByRole = (role) => {
+  const normalizedRole = normalizeRole(role)
+
+  if (normalizedRole === ROLES.AUDITOR) return '/movements'
+  if (normalizedRole === ROLES.FARMACEUTICO) return '/alerts'
+  return '/medicines'
+}
