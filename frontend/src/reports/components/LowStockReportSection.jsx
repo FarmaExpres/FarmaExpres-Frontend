@@ -7,19 +7,34 @@ const toNumber = (value) => {
   return Number.isFinite(parsed) ? parsed : 0
 }
 
-const getStockLevel = (item = {}) => {
-  const stock = toNumber(item.stock)
-  const min = Math.max(toNumber(item.stockMinimo), 1)
-  return (stock / min) * 100
-}
-
 const formatCoverage = (item = {}) => {
   const backendLabel = String(item.coverageLabel || '').trim()
   if (backendLabel) return backendLabel
-  return `${Math.round(getStockLevel(item))}%`
+  const backendCoverage = Number(item.coverage)
+  if (Number.isFinite(backendCoverage)) return `${Math.round(backendCoverage)}%`
+  return '---'
 }
 
 const getStockVisuals = (item = {}) => {
+  const severity = String(item.severity || '').trim().toUpperCase()
+  if (severity === 'CRITICO' || severity === 'CRÍTICO') {
+    return {
+      tone: 'critical',
+      label: 'Crítico',
+      badgeClass: 'bg-red-100 text-red-700',
+      textClass: 'text-red-700'
+    }
+  }
+
+  if (severity === 'ALERTA') {
+    return {
+      tone: 'alert',
+      label: 'Alerta',
+      badgeClass: 'bg-amber-100 text-amber-700',
+      textClass: 'text-amber-700'
+    }
+  }
+
   const status = String(item.status || '').trim().toUpperCase()
 
   if (status === 'CRITICO' || status === 'CRÍTICO') {
@@ -40,22 +55,11 @@ const getStockVisuals = (item = {}) => {
     }
   }
 
-  const level = getStockLevel(item)
-
-  if (level <= 50) {
-    return {
-      tone: 'critical',
-      label: 'Crítico',
-      badgeClass: 'bg-red-100 text-red-700',
-      textClass: 'text-red-700'
-    }
-  }
-
   return {
-    tone: 'alert',
-    label: 'Alerta',
-    badgeClass: 'bg-amber-100 text-amber-700',
-    textClass: 'text-amber-700'
+    tone: 'neutral',
+    label: 'Sin clasificación',
+    badgeClass: 'bg-slate-100 text-slate-700',
+    textClass: 'text-slate-700'
   }
 }
 
@@ -190,17 +194,19 @@ const LowStockReportSection = ({
           <table className="fe-table table-fixed text-sm">
             <colgroup>
               <col className="w-[132px]" />
-              <col className="w-[30%]" />
+              <col className="w-[20%]" />
+              <col className="w-[140px]" />
               <col className="w-[104px]" />
               <col className="w-[104px]" />
               <col className="w-[120px]" />
               <col className="w-[120px]" />
-              <col className="w-[26%]" />
+              <col className="w-[20%]" />
             </colgroup>
             <thead>
               <tr>
                 <th className="text-left">CÓDIGO</th>
                 <th className="text-left">MEDICAMENTO</th>
+                <th className="text-left">LOTE</th>
                 <th className="text-left">STOCK</th>
                 <th className="text-left">MÍNIMO</th>
                 <th className="text-left">COBERTURA</th>
@@ -210,7 +216,7 @@ const LowStockReportSection = ({
             </thead>
             <tbody>
               {isLoading ? (
-                <tr><td colSpan="7" className="p-5 text-center text-gray-400">Cargando bajo stock...</td></tr>
+                <tr><td colSpan="8" className="p-5 text-center text-gray-400">Cargando bajo stock...</td></tr>
               ) : paginatedRows.length > 0 ? (
                 paginatedRows.map((item) => {
                   const visuals = getStockVisuals(item)
@@ -222,7 +228,13 @@ const LowStockReportSection = ({
                         </span>
                       </td>
                       <td className="truncate font-semibold text-[#23365d]" title={item.nombre || 'Sin nombre'}>{item.nombre || 'Sin nombre'}</td>
-                      <td className={`whitespace-nowrap text-left font-semibold ${visuals.textClass}`}>{toNumber(item.stock)}</td>
+                      <td className="whitespace-nowrap text-left font-medium text-[#30456f]">{item.loteCodigo || 'Sin lote'}</td>
+                      <td
+                        className={`whitespace-nowrap text-left font-semibold ${visuals.textClass}`}
+                        title={`Stock operativo producto: ${item.operationalStock ?? 0}`}
+                      >
+                        {toNumber(item.batchStock ?? item.stock)}
+                      </td>
                       <td className="whitespace-nowrap text-left font-semibold text-[#2f4269]">{toNumber(item.stockMinimo)}</td>
                       <td className={`whitespace-nowrap text-left font-semibold ${visuals.textClass}`}>{formatCoverage(item)}</td>
                       <td className="whitespace-nowrap text-left">
@@ -233,7 +245,7 @@ const LowStockReportSection = ({
                   )
                 })
               ) : (
-                <tr><td colSpan="7" className="p-5 text-center text-gray-400">No hay productos en bajo stock para el filtro seleccionado.</td></tr>
+                <tr><td colSpan="8" className="p-5 text-center text-gray-400">No hay productos en bajo stock para el filtro seleccionado.</td></tr>
               )}
             </tbody>
           </table>

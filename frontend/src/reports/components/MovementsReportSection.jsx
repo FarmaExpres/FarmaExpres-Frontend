@@ -185,21 +185,21 @@ const MovementsReportSection = ({
         <div className="fe-table-wrap">
           <table className="fe-table table-fixed text-sm">
             <colgroup>
-              <col className="w-[11%]" />
+              <col className="w-[14%]" />
               <col className="w-[8%]" />
-              <col className="w-[9%]" />
+              <col className="w-[16%]" />
+              <col className="w-[14%]" />
+              <col className="w-[8%]" />
+              <col className="w-[22%]" />
               <col className="w-[18%]" />
-              <col className="w-[8%]" />
-              <col className="w-[19%]" />
-              <col className="w-[27%]" />
             </colgroup>
             <thead>
               <tr>
-                <th className="text-left">FECHA</th>
-                <th className="text-left">HORA</th>
+                <th className="text-left">FECHA / HORA</th>
                 <th className="text-left">TIPO</th>
                 <th className="text-left">MEDICAMENTO</th>
-                <th className="text-left">CANTIDAD</th>
+                <th className="text-left">LOTE</th>
+                <th className="text-left">CANT.</th>
                 <th className="text-left">MOTIVO</th>
                 <th className="text-left">USUARIO</th>
               </tr>
@@ -213,23 +213,29 @@ const MovementsReportSection = ({
 
                   return (
                     <tr key={item.id || `${item.date}-${item.time}-${index}`}>
-                      <td className="whitespace-nowrap">{item.date || '---'}</td>
-                      <td className="whitespace-nowrap">{item.time || '---'}</td>
+                      <td className="whitespace-nowrap">
+                        <p className="truncate">{item.date || '---'}</p>
+                        <p className="truncate text-xs text-[#8c97b3]">{item.time || '---'}</p>
+                      </td>
                       <td className="whitespace-nowrap">
                         <span className={`fe-badge-chip ${visuals.badgeClass}`}>
                           {item.typeLabel || 'Sin tipo'}
                         </span>
                       </td>
                       <td className="font-medium text-[#23365d]">{item.medicine || 'No disponible'}</td>
+                      <td title={item.batchCode || 'Sin lote'}>
+                        <p className="truncate font-semibold text-[#2f3f62]">{item.batchCode || 'Sin lote'}</p>
+                        <p className="truncate text-xs text-[#8c97b3]">{item.batchExpirationDate || 'Sin vencimiento'}</p>
+                      </td>
                       <td className={`whitespace-nowrap text-left font-bold tabular-nums ${visuals.quantityClass}`}>
                         {formatQuantity(item.quantity)}
                       </td>
                       <td title={getAdjustmentDetailText(item) || getReasonText(item)}>
-                        <p className={`max-w-[250px] truncate ${item.type === 'UPDATED' ? 'font-semibold text-blue-700' : 'text-[#30456f]'}`}>
+                        <p className={`max-w-[220px] truncate ${item.type === 'UPDATED' ? 'font-semibold text-blue-700' : 'text-[#30456f]'}`}>
                           {getReasonText(item)}
                         </p>
                         {item.type === 'UPDATED' && (
-                          <p className="max-w-[250px] truncate text-xs text-[#6f86b8]">
+                          <p className="max-w-[220px] truncate text-xs text-[#6f86b8]">
                             {item.adjustmentDetail?.length > 0
                               ? `${item.adjustmentDetail.length} cambio(s): ${getAdjustmentDetailText(item)}`
                               : getAdjustmentDetailText(item)}
