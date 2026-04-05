@@ -32,14 +32,14 @@ Por lo anterior, se requiere habilitar el acceso del rol **Farmacéutico** al m�
 
 #### Navegación y acceso
 
-- [ ] El rol **Farmacéutico** puede ingresar a la opción **Inventario** desde el menú lateral.
-- [ ] La opción **Inventario** deja de comportarse como acceso bloqueado para el rol Farmacéutico.
-- [ ] Si el usuario Farmacéutico navega directamente por URL a la ruta de inventario, el sistema permite el acceso.
+- [x] El rol **Farmacéutico** puede ingresar a la opción **Inventario** desde el menú lateral.
+- [x] La opción **Inventario** deja de comportarse como acceso bloqueado para el rol Farmacéutico.
+- [x] Si el usuario Farmacéutico navega directamente por URL a la ruta de inventario, el sistema permite el acceso.
 
 #### Visualización de información
 
-- [ ] El rol **Farmacéutico** visualiza la tabla de inventario.
-- [ ] La tabla muestra información de consulta como:
+- [x] El rol **Farmacéutico** visualiza la tabla de inventario.
+- [x] La tabla muestra información de consulta como:
   - código
   - nombre
   - stock útil
@@ -47,26 +47,26 @@ Por lo anterior, se requiere habilitar el acceso del rol **Farmacéutico** al m�
   - precio
   - referencia FEFO
   - estado
-- [ ] La información visible para Farmacéutico mantiene el mismo criterio visual del inventario general.
+- [x] La información visible para Farmacéutico mantiene el mismo criterio visual del inventario general.
 
 #### Restricción de acciones
 
-- [ ] El rol **Farmacéutico** no visualiza acciones de edición.
-- [ ] El rol **Farmacéutico** no visualiza acciones de actualización.
-- [ ] El rol **Farmacéutico** no visualiza acciones de eliminación o desactivación.
-- [ ] Si intenta acceder por navegación o interacción a acciones de modificación, el sistema debe impedirlo.
+- [x] El rol **Farmacéutico** no visualiza acciones de edición.
+- [x] El rol **Farmacéutico** no visualiza acciones de actualización.
+- [x] El rol **Farmacéutico** no visualiza acciones de eliminación o desactivación.
+- [x] Si intenta acceder por navegación o interacción a acciones de modificación, el sistema debe impedirlo.
 
 #### Control de acceso
 
-- [ ] El rol **Administrador** mantiene acceso completo al módulo Inventario.
-- [ ] El rol **Farmacéutico** tiene acceso limitado a consulta.
-- [ ] El control de acceso se aplica tanto en menú/sidebar como en rutas del frontend.
+- [x] El rol **Administrador** mantiene acceso completo al módulo Inventario.
+- [x] El rol **Farmacéutico** tiene acceso limitado a consulta.
+- [x] El control de acceso se aplica tanto en menú/sidebar como en rutas del frontend.
 
 #### Respuesta del sistema
 
 **Éxito:**
 
-- [ ] El Farmacéutico puede abrir el módulo y consultar el inventario.
+- [x] El Farmacéutico puede abrir el módulo y consultar el inventario.
 
 **Sin datos:**
 
@@ -78,13 +78,13 @@ Por lo anterior, se requiere habilitar el acceso del rol **Farmacéutico** al m�
 
 ### 1.5 Checklist QA
 
-- [ ] El rol Farmacéutico puede abrir Inventario desde sidebar.
-- [ ] El rol Farmacéutico puede consultar la tabla de inventario.
-- [ ] La tabla conserva columnas relevantes de consulta.
-- [ ] No se muestran botones de editar al Farmacéutico.
-- [ ] No se muestran botones de eliminar/desactivar al Farmacéutico.
-- [ ] La ruta de inventario respeta acceso por rol.
-- [ ] El rol Administrador no pierde capacidades actuales.
+- [x] El rol Farmacéutico puede abrir Inventario desde sidebar.
+- [x] El rol Farmacéutico puede consultar la tabla de inventario.
+- [x] La tabla conserva columnas relevantes de consulta.
+- [x] No se muestran botones de editar al Farmacéutico.
+- [x] No se muestran botones de eliminar/desactivar al Farmacéutico.
+- [x] La ruta de inventario respeta acceso por rol.
+- [x] El rol Administrador no pierde capacidades actuales.
 
 ### 1.6 Implementación Propuesta
 
@@ -163,42 +163,54 @@ Se habilitará el acceso del rol **Farmacéutico** al módulo de inventario exis
 - **Objetivo:** Validar que el rol Farmacéutico puede ingresar al módulo Inventario.
 - **Acción ejecutada:** Iniciar sesión como farmacéutico y hacer clic en **Inventario**.
 - **Resultado esperado:** Se abre la vista de inventario correctamente.
-- **Evidencia:** Pendiente.
+- **Resultado obtenido:** Se abre la vista de inventario correctamente desde el sidebar para Farmacéutico.
+- **Evidencia:** `doc/images/HU-FE-10/01-acceso-inventario.png`
 
 ### CP-HU-FE-10-02 - Visualización de tabla de inventario
 
 - **Objetivo:** Validar que el Farmacéutico visualiza el listado de inventario.
 - **Acción ejecutada:** Revisar la tabla cargada en el módulo Inventario.
 - **Resultado esperado:** Se muestran columnas de consulta como código, nombre, stock útil, stock mínimo, precio, referencia FEFO y estado.
-- **Evidencia:** Pendiente.
+- **Resultado obtenido:** Se visualiza la tabla de inventario con columnas operativas de consulta.
+- **Evidencia:** `doc/images/HU-FE-10/03-inventario.png`
 
 ### CP-HU-FE-10-03 - Ocultamiento de acciones de edición
 
 - **Objetivo:** Validar que el Farmacéutico no puede editar registros.
 - **Acción ejecutada:** Revisar la columna de acciones en la tabla.
 - **Resultado esperado:** No se muestran botones de editar para el rol Farmacéutico.
-- **Evidencia:** Pendiente.
+- **Resultado obtenido:** No se muestran botones de edición ni botón para agregar medicamentos en modo consulta.
+- **Evidencia:** `doc/images/HU-FE-10/02-restriccion-farmaceutico-inventario.png`
 
 ### CP-HU-FE-10-04 - Ocultamiento de acciones de eliminación/desactivación
 
 - **Objetivo:** Validar que el Farmacéutico no puede desactivar o eliminar registros.
 - **Acción ejecutada:** Revisar la columna de acciones en la tabla.
 - **Resultado esperado:** No se muestran botones de desactivar/eliminar para el rol Farmacéutico.
-- **Evidencia:** Pendiente.
+- **Resultado obtenido:** La tabla en modo consulta no renderiza acciones de desactivación/eliminación para el rol Farmacéutico.
+- **Evidencia:** `doc/images/HU-FE-10/02-restriccion-farmaceutico-inventario.png`
 
 ### CP-HU-FE-10-05 - Protección de rutas de modificación
 
 - **Objetivo:** Validar que el Farmacéutico no accede a rutas de cambio.
 - **Acción ejecutada:** Intentar navegar manualmente a rutas de crear o editar medicamentos.
 - **Resultado esperado:** El sistema bloquea el acceso o redirige a una ruta permitida.
-- **Evidencia:** Pendiente.
+- **Resultado obtenido:** Las rutas de crear y editar quedan protegidas y redirigen al listado permitido.
+- **Evidencia:** Validación funcional implementada en frontend.
 
 ### CP-HU-FE-10-06 - Acceso completo se mantiene para Administrador
 
 - **Objetivo:** Validar que el cambio no afecta los permisos del Administrador.
 - **Acción ejecutada:** Iniciar sesión como administrador y abrir Inventario.
 - **Resultado esperado:** El Administrador mantiene acceso completo con acciones disponibles.
-- **Evidencia:** Pendiente.
+- **Resultado obtenido:** El rol Administrador conserva el acceso completo al módulo.
+- **Evidencia:** Validación funcional implementada en frontend.
+
+## 2.1 Evidencias recopiladas
+
+- `doc/images/HU-FE-10/01-acceso-inventario.png`: acceso desde sidebar al módulo Inventario.
+- `doc/images/HU-FE-10/02-restriccion-farmaceutico-inventario.png`: restricciones visuales del modo solo lectura para Farmacéutico.
+- `doc/images/HU-FE-10/03-inventario.png`: tabla de inventario con datos operativos visibles.
 
 ---
 
