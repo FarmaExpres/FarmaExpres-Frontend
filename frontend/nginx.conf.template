@@ -5,9 +5,9 @@ server {
   root /usr/share/nginx/html;
   index index.html;
 
-  # En despliegue docker (Nginx) todo el frontend consume solo el API Gateway.
+  # Frontend consume API por /api y se enruta al backend configurable.
   location /api {
-    proxy_pass http://host.docker.internal:8080;
+    proxy_pass ${BACKEND_URL};
     proxy_http_version 1.1;
     proxy_set_header Host $host;
     proxy_set_header X-Real-IP $remote_addr;

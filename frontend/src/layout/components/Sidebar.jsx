@@ -120,8 +120,8 @@ const MENU_BY_ROLE = {
     { key: 'medicines', label: 'Medicamentos', moduleKey: 'medicines' },
     { key: 'users', label: 'Usuarios', moduleKey: 'users' },
     { key: 'movements', label: 'Movimientos', moduleKey: 'movements' },
-    { key: 'reports', label: 'Reportes' },
-    { key: 'alerts', label: 'Alertas', badge: '24' },
+    { key: 'reports', label: 'Reportes', moduleKey: 'reports' },
+    { key: 'alerts', label: 'Alertas', moduleKey: 'alerts', badge: '24' },
     { key: 'stock', label: 'Control Stock' }
   ],
   [ROLES.FARMACEUTICO]: [
@@ -129,14 +129,14 @@ const MENU_BY_ROLE = {
     { key: 'inventory', label: 'Inventario' },
     { key: 'entries', label: 'Entradas' },
     { key: 'exits', label: 'Salidas' },
-    { key: 'alerts', label: 'Alertas', badge: '24' },
+    { key: 'alerts', label: 'Alertas', moduleKey: 'alerts', badge: '24' },
     { key: 'stock', label: 'Control Stock' }
   ],
   [ROLES.AUDITOR]: [
     { key: 'dashboard', label: 'Dashboard' },
     { key: 'inventory', label: 'Inventario' },
     { key: 'movements', label: 'Movimientos', moduleKey: 'movements' },
-    { key: 'reports', label: 'Reportes' },
+    { key: 'reports', label: 'Reportes', moduleKey: 'reports' },
     { key: 'audit', label: 'Auditoria' }
   ]
 }
@@ -156,11 +156,12 @@ const getDefaultNameByRole = (role) => {
   return 'Usuario Administrador'
 }
 
-const Sidebar = ({ activeModule, role, user, onNavigate, onLogout }) => {
+const Sidebar = ({ activeModule, role, user, alertsCount = 0, onNavigate, onLogout }) => {
   const normalizedRole = normalizeRole(role) || ROLES.ADMIN
   const roleMenu = MENU_BY_ROLE[normalizedRole] || MENU_BY_ROLE[ROLES.ADMIN]
   const displayName = (user?.name || '').trim() || getDefaultNameByRole(normalizedRole)
   const initials = getInitials(displayName) || 'US'
+  const formattedAlertsCount = alertsCount > 99 ? '99+' : String(Math.max(0, Number(alertsCount) || 0))
 
   return (
     <aside className="w-full border-r border-[#e7e9ef] bg-[#f6f7fb] md:sticky md:top-0 md:h-screen md:w-[218px] md:flex md:flex-col md:overflow-y-auto lg:w-[234px] xl:w-[258px]">
@@ -183,6 +184,7 @@ const Sidebar = ({ activeModule, role, user, onNavigate, onLogout }) => {
           const Icon = iconMap[item.key] || IconGrid
           const isActive = item.moduleKey && activeModule === item.moduleKey
           const isInteractive = Boolean(item.moduleKey)
+          const badge = item.key === 'alerts' ? formattedAlertsCount : item.badge
 
           return (
             <button
@@ -202,13 +204,13 @@ const Sidebar = ({ activeModule, role, user, onNavigate, onLogout }) => {
                 <span className="font-semibold">{item.label}</span>
               </span>
 
-              {item.badge && (
+              {badge && (
                 <span
                   className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${
                     isActive ? 'bg-white/20 text-white' : 'bg-[#ffe4ea] text-[#f95d74]'
                   }`}
                 >
-                  {item.badge}
+                  {badge}
                 </span>
               )}
             </button>

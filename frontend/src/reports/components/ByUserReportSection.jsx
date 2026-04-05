@@ -14,7 +14,9 @@ const getRoleTone = (roleLabel = '') => {
 
   if (normalizedRole.includes('admin')) return { key: 'admin', badgeClass: 'bg-violet-100 text-violet-700' }
   if (normalizedRole.includes('audit')) return { key: 'auditor', badgeClass: 'bg-fuchsia-100 text-fuchsia-700' }
-  if (normalizedRole.includes('auto')) return { key: 'automatic', badgeClass: 'bg-slate-200 text-slate-700' }
+  if (normalizedRole.includes('auto') || normalizedRole.includes('system') || normalizedRole.includes('sistema')) {
+    return { key: 'automatic', badgeClass: 'bg-slate-200 text-slate-700' }
+  }
   return { key: 'operator', badgeClass: 'bg-teal-100 text-teal-700' }
 }
 

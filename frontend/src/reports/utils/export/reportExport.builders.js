@@ -27,12 +27,12 @@ const resolveExpiringStatus = (daysUntilExpiration) => {
 }
 
 const resolveLowStockStatus = (item = {}) => {
+  const backendSeverity = String(item.severity || item.lowStockLevel || '').trim()
+  if (backendSeverity) return backendSeverity
+
   const backendStatus = String(item.status || '').trim()
   if (backendStatus) return backendStatus
-  const stock = toNumber(item.stock)
-  const minimum = Math.max(toNumber(item.stockMinimo), 1)
-  const level = (stock / minimum) * 100
-  return level <= 50 ? 'Crítico' : 'Alerta'
+  return 'Sin clasificación'
 }
 
 const resolveLowStockSuggestion = (item = {}) => {
@@ -51,14 +51,32 @@ const resolveUserActivity = (row = {}) => {
   return 'Baja'
 }
 
-const toContentWidth = (rows = [], selector, { min = 16, max = 60, padding = 2 } = {}) => {
+const toContentWidth = (rows = [], selector, { min = 16, max = 60, padding = 2, header = '' } = {}) => {
   const longest = rows.reduce((currentMax, row) => {
     const value = String(selector(row) || '')
     return Math.max(currentMax, value.length)
-  }, 0)
+  }, String(header || '').length)
 
   return Math.max(min, Math.min(max, longest + padding))
 }
+
+const resolveBatchCode = (item = {}) =>
+  String(
+    item?.loteCodigo ??
+    item?.batchCode ??
+    item?.batch?.code ??
+    item?.lotCode ??
+    ''
+  ).trim()
+
+const resolveBatchExpiration = (item = {}) =>
+  String(
+    item?.batchExpirationDate ??
+    item?.fechavencimiento ??
+    item?.expirationDate ??
+    item?.batch?.expirationDate ??
+    ''
+  ).trim()
 
 const buildWorksheetRows = ({ reportTitle, header, rows }) => ([
   ['Reporte', reportTitle],
@@ -101,7 +119,13 @@ export const buildInventoryWorksheet = (rowsData = []) => {
 
   return {
     rows: buildWorksheetRows({ reportTitle: 'Inventario Actual', header, rows }),
-    cols: [{ wch: 14 }, { wch: 36 }, { wch: 12 }, { wch: 20 }, { wch: 22 }],
+    cols: [
+      { wch: toContentWidth(rowsData, (item) => item.codigo, { min: 12, max: 22, header: header[0] }) },
+      { wch: toContentWidth(rowsData, (item) => item.nombre, { min: 24, max: 46, header: header[1] }) },
+      { wch: toContentWidth(rowsData, (item) => String(toNumber(item.stock)), { min: 10, max: 16, header: header[2] }) },
+      { wch: toContentWidth(rowsData, (item) => String(toNumber(item.precio)), { min: 18, max: 24, header: header[3] }) },
+      { wch: 22 }
+    ],
     formulas: rowsData.length > 0
       ? { valueTotalColumn: 5, stockColumn: 3, priceColumn: 4, dataStartRow, dataEndRow, totalRow }
       : null,
@@ -127,94 +151,131 @@ export const buildInventoryWorksheet = (rowsData = []) => {
   }
 }
 
-export const buildMovementsWorksheet = (rowsData = [], movementsFilterKey = 'all') => ({
-  rows: buildWorksheetRows({
-    reportTitle: 'Movimientos',
-    header: ['Fecha', 'Hora', 'Tipo', 'Medicamento', 'Cantidad', 'Motivo', 'Detalle Ajuste', 'Usuario'],
-    rows: rowsData.map((item) => [
-      item.date,
-      item.time,
-      item.typeLabel,
-      item.medicine,
-      item.quantity,
-      item.type === 'UPDATED' ? (item.reason || 'Ajuste de producto') : (item.reason || 'No especificado'),
-      item.type === 'UPDATED'
-        ? (item.adjustmentDetailText || item.adjustmentSummary || 'Sin detalle específico del ajuste')
-        : '',
-      item.user
-    ])
-  }),
-  cols: [
-    { wch: 12 },
-    { wch: 10 },
-    { wch: 12 },
-    { wch: 30 },
-    { wch: 12 },
-    { wch: toContentWidth(rowsData, (item) => (item.type === 'UPDATED' ? (item.reason || 'Ajuste de producto') : (item.reason || 'No especificado')), { min: 28, max: 50 }) },
-    { wch: toContentWidth(rowsData, (item) => (item.type === 'UPDATED' ? (item.adjustmentDetailText || item.adjustmentSummary || 'Sin detalle específico del ajuste') : ''), { min: 34, max: 72 }) },
-    { wch: 22 }
-  ],
+export const buildMovementsWorksheet = (rowsData = [], movementsFilterKey = 'all') => {
+  const header = ['Fecha', 'Hora', 'Tipo', 'Medicamento', 'Cantidad', 'Código de lote', 'Vencimiento de lote', 'Motivo', 'Detalle de ajuste', 'Usuario']
+
+  return ({
+    rows: buildWorksheetRows({
+      reportTitle: 'Movimientos',
+      header,
+      rows: rowsData.map((item) => [
+        item.date,
+        item.time,
+        item.typeLabel,
+        item.medicine,
+        item.quantity,
+        resolveBatchCode(item) || 'Sin lote',
+        resolveBatchExpiration(item) || '---',
+        item.type === 'UPDATED' ? (item.reason || 'Ajuste de producto') : (item.reason || 'No especificado'),
+        item.type === 'UPDATED'
+          ? (item.adjustmentDetailText || item.adjustmentSummary || 'Sin detalle específico del ajuste')
+          : '',
+        item.user
+      ])
+    }),
+    cols: [
+      { wch: toContentWidth(rowsData, (item) => item.date, { min: 12, max: 16, header: header[0] }) },
+      { wch: toContentWidth(rowsData, (item) => item.time, { min: 10, max: 14, header: header[1] }) },
+      { wch: toContentWidth(rowsData, (item) => item.typeLabel, { min: 10, max: 16, header: header[2] }) },
+      { wch: toContentWidth(rowsData, (item) => item.medicine, { min: 22, max: 40, header: header[3] }) },
+      { wch: toContentWidth(rowsData, (item) => String(item.quantity ?? ''), { min: 12, max: 16, header: header[4] }) },
+      { wch: toContentWidth(rowsData, (item) => resolveBatchCode(item) || 'Sin lote', { min: 16, max: 24, header: header[5] }) },
+      { wch: toContentWidth(rowsData, (item) => resolveBatchExpiration(item) || '---', { min: 16, max: 22, header: header[6] }) },
+      { wch: toContentWidth(rowsData, (item) => (item.type === 'UPDATED' ? (item.reason || 'Ajuste de producto') : (item.reason || 'No especificado')), { min: 24, max: 52, header: header[7] }) },
+      { wch: toContentWidth(rowsData, (item) => (item.type === 'UPDATED' ? (item.adjustmentDetailText || item.adjustmentSummary || 'Sin detalle específico del ajuste') : ''), { min: 30, max: 72, header: header[8] }) },
+      { wch: toContentWidth(rowsData, (item) => item.user, { min: 18, max: 30, header: header[9] }) }
+    ],
   summary: buildSummaryWorksheet({
     reportTitle: 'Movimientos',
     summaryItems: [{ label: 'Registros exportados', value: rowsData.length }]
   }),
   numericColumns: [5],
-  wrapTextColumns: [6, 7],
+  wrapTextColumns: [8, 9],
   theme: REPORT_THEMES.movements,
   fileName: `reporte-movimientos-${MOVEMENTS_FILTER_SUFFIX[movementsFilterKey] || MOVEMENTS_FILTER_SUFFIX.all}-${getFileTimestamp()}.xlsx`,
   sheetName: 'Movimientos'
-})
+  })
+}
 
-export const buildExpiringWorksheet = (rowsData = []) => ({
-  rows: buildWorksheetRows({
-    reportTitle: 'Proximos a Vencer',
-    header: ['Codigo', 'Medicamento', 'Vencimiento', 'Dias restantes', 'Stock', 'Estado'],
-    rows: rowsData.map((item) => {
-      const daysUntilExpiration = getDaysUntilDate(item.fechavencimiento)
-      return [
-        item.codigo,
-        item.nombre,
-        item.fechavencimiento || '---',
-        daysUntilExpiration,
-        item.stock,
-        resolveExpiringStatus(daysUntilExpiration)
-      ]
-    })
-  }),
-  cols: [{ wch: 14 }, { wch: 36 }, { wch: 16 }, { wch: 16 }, { wch: 10 }, { wch: 14 }],
+export const buildExpiringWorksheet = (rowsData = []) => {
+  const header = ['Codigo', 'Medicamento', 'Lote', 'Vencimiento', 'Dias restantes', 'Stock', 'Estado']
+
+  return ({
+    rows: buildWorksheetRows({
+      reportTitle: 'Proximos a Vencer',
+      header,
+      rows: rowsData.map((item) => {
+        const expirationDate = resolveBatchExpiration(item) || '---'
+        const daysUntilExpiration = getDaysUntilDate(expirationDate)
+        return [
+          item.codigo,
+          item.nombre,
+          resolveBatchCode(item) || 'Sin lote',
+          expirationDate,
+          daysUntilExpiration,
+          item.batchStock ?? item.stock,
+          resolveExpiringStatus(daysUntilExpiration)
+        ]
+      })
+    }),
+    cols: [
+      { wch: toContentWidth(rowsData, (item) => item.codigo, { min: 12, max: 20, header: header[0] }) },
+      { wch: toContentWidth(rowsData, (item) => item.nombre, { min: 22, max: 40, header: header[1] }) },
+      { wch: toContentWidth(rowsData, (item) => resolveBatchCode(item) || 'Sin lote', { min: 14, max: 24, header: header[2] }) },
+      { wch: toContentWidth(rowsData, (item) => resolveBatchExpiration(item) || '---', { min: 14, max: 20, header: header[3] }) },
+      { wch: toContentWidth(rowsData, (item) => String(getDaysUntilDate(resolveBatchExpiration(item) || '')), { min: 14, max: 18, header: header[4] }) },
+      { wch: toContentWidth(rowsData, (item) => String(item.batchStock ?? item.stock ?? ''), { min: 10, max: 14, header: header[5] }) },
+      { wch: toContentWidth(rowsData, (item) => resolveExpiringStatus(getDaysUntilDate(resolveBatchExpiration(item) || '---')), { min: 12, max: 18, header: header[6] }) }
+    ],
   summary: buildSummaryWorksheet({
     reportTitle: 'Proximos a Vencer',
     summaryItems: [{ label: 'Productos en ventana de vencimiento', value: rowsData.length }]
   }),
-  numericColumns: [4, 5],
+  numericColumns: [5, 6],
   theme: REPORT_THEMES.expiring,
   fileName: `reporte-proximos-vencer-${getFileTimestamp()}.xlsx`,
   sheetName: 'ProximosVencer'
-})
+  })
+}
 
-export const buildLowStockWorksheet = (rowsData = []) => ({
-  rows: buildWorksheetRows({
-    reportTitle: 'Bajo Stock',
-    header: ['Codigo', 'Medicamento', 'Stock', 'Minimo', 'Estado', 'Sugerencia de reposicion'],
-    rows: rowsData.map((item) => [
-      item.codigo,
-      item.nombre,
-      item.stock,
-      item.stockMinimo,
-      resolveLowStockStatus(item),
-      resolveLowStockSuggestion(item)
-    ])
-  }),
-  cols: [{ wch: 14 }, { wch: 34 }, { wch: 10 }, { wch: 10 }, { wch: 14 }, { wch: 36 }],
+export const buildLowStockWorksheet = (rowsData = []) => {
+  const header = ['Codigo', 'Medicamento', 'Lote', 'Vencimiento lote', 'Stock', 'Minimo', 'Estado', 'Sugerencia de reposicion']
+
+  return ({
+    rows: buildWorksheetRows({
+      reportTitle: 'Bajo Stock',
+      header,
+      rows: rowsData.map((item) => [
+        item.codigo,
+        item.nombre,
+        resolveBatchCode(item) || 'Sin lote',
+        resolveBatchExpiration(item) || '---',
+        item.batchStock ?? item.stock,
+        item.stockMinimo,
+        resolveLowStockStatus(item),
+        resolveLowStockSuggestion(item)
+      ])
+    }),
+    cols: [
+      { wch: toContentWidth(rowsData, (item) => item.codigo, { min: 12, max: 20, header: header[0] }) },
+      { wch: toContentWidth(rowsData, (item) => item.nombre, { min: 22, max: 40, header: header[1] }) },
+      { wch: toContentWidth(rowsData, (item) => resolveBatchCode(item) || 'Sin lote', { min: 14, max: 24, header: header[2] }) },
+      { wch: toContentWidth(rowsData, (item) => resolveBatchExpiration(item) || '---', { min: 14, max: 20, header: header[3] }) },
+      { wch: toContentWidth(rowsData, (item) => String(item.batchStock ?? item.stock ?? ''), { min: 10, max: 14, header: header[4] }) },
+      { wch: toContentWidth(rowsData, (item) => String(item.stockMinimo ?? ''), { min: 10, max: 14, header: header[5] }) },
+      { wch: toContentWidth(rowsData, (item) => resolveLowStockStatus(item), { min: 12, max: 18, header: header[6] }) },
+      { wch: toContentWidth(rowsData, (item) => resolveLowStockSuggestion(item), { min: 26, max: 52, header: header[7] }) }
+    ],
   summary: buildSummaryWorksheet({
     reportTitle: 'Bajo Stock',
     summaryItems: [{ label: 'Productos en bajo stock', value: rowsData.length }]
   }),
-  numericColumns: [3, 4],
+  numericColumns: [5, 6],
   theme: REPORT_THEMES.lowstock,
   fileName: `reporte-bajo-stock-${getFileTimestamp()}.xlsx`,
   sheetName: 'BajoStock'
-})
+  })
+}
 
 export const buildByUserWorksheet = (rowsData = []) => ({
   rows: buildWorksheetRows({
@@ -229,7 +290,14 @@ export const buildByUserWorksheet = (rowsData = []) => ({
       resolveUserActivity(row)
     ])
   }),
-  cols: [{ wch: 34 }, { wch: 18 }, { wch: 14 }, { wch: 12 }, { wch: 12 }, { wch: 12 }],
+  cols: [
+    { wch: toContentWidth(rowsData, (row) => row.user, { min: 20, max: 38, header: 'Usuario' }) },
+    { wch: toContentWidth(rowsData, (row) => row.roleLabel, { min: 12, max: 22, header: 'Rol' }) },
+    { wch: toContentWidth(rowsData, (row) => String(row.totalMovements ?? ''), { min: 12, max: 16, header: 'Movimientos' }) },
+    { wch: toContentWidth(rowsData, (row) => String(row.entrances ?? ''), { min: 10, max: 14, header: 'Entradas' }) },
+    { wch: toContentWidth(rowsData, (row) => String(row.exits ?? ''), { min: 10, max: 14, header: 'Salidas' }) },
+    { wch: toContentWidth(rowsData, (row) => resolveUserActivity(row), { min: 10, max: 14, header: 'Actividad' }) }
+  ],
   summary: buildSummaryWorksheet({
     reportTitle: 'Por Usuario',
     summaryItems: [
