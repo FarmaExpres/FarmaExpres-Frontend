@@ -57,6 +57,11 @@ export const canAccessEntries = (role) => {
   return [ROLES.ADMIN, ROLES.FARMACEUTICO].includes(normalizedRole)
 }
 
+export const canAccessExits = (role) => {
+  const normalizedRole = normalizeRole(role)
+  return [ROLES.ADMIN, ROLES.FARMACEUTICO].includes(normalizedRole)
+}
+
 export const canAccessMovements = (role) => {
   const normalizedRole = normalizeRole(role)
   return [ROLES.ADMIN, ROLES.AUDITOR].includes(normalizedRole)

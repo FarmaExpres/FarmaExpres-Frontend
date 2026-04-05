@@ -4,19 +4,26 @@
 
 Habilitar al rol **Farmaceutico** el acceso a los modulos **Entradas** y **Salidas**, permitiendo registrar movimientos y consultar el historial visible de ambos flujos consumiendo los endpoints del backend.
 
-## Cambios a implementar
+## Cambios implementados
 
-- Habilitar navegacion desde sidebar para los items **Entradas** y **Salidas** del rol Farmaceutico.
-- Permitir acceso del rol Farmaceutico a las rutas de registro de entradas y salidas.
-- Integrar consumo `POST` para registrar movimientos:
+- Se habilito navegacion desde sidebar para los items **Entradas** y **Salidas** del rol Farmaceutico.
+- Se permitio acceso del rol Farmaceutico a las rutas de registro de entradas y salidas.
+- Se integraron rutas operativas y aliases:
+  - `/entries`
+  - `/entradas`
+  - `/exits`
+  - `/salidas`
+- Se integro consumo `POST` para registrar movimientos:
   - `POST /api/movements/entries`
   - `POST /api/movements/exits`
-- Integrar consumo `GET` para consultar el historial mostrado en:
+- Se integro consumo `GET` para consultar el historial mostrado en:
   - **Ultimas Entradas**
   - **Ultimas Salidas**
-- Renderizar formularios operativos y tablas de historial en las vistas correspondientes.
-- Actualizar automaticamente el historial despues de cada registro exitoso.
-- Mostrar estados de carga, exito, error y vacio sin romper la experiencia del usuario.
+- Se renderizaron formularios operativos y tablas de historial en las vistas correspondientes.
+- Se actualiza automaticamente el historial despues de cada registro exitoso.
+- Se muestran estados de carga, exito, error y vacio sin romper la experiencia del usuario.
+- En **Entradas**, el motivo se controla con selector y el lote se genera automaticamente.
+- En **Entradas** y **Salidas**, la observacion es opcional.
 
 ## Reglas funcionales integradas
 
@@ -26,25 +33,31 @@ Habilitar al rol **Farmaceutico** el acceso a los modulos **Entradas** y **Salid
 - La interfaz debe mostrar como minimo fecha, medicamento, cantidad, motivo y usuario en los historiales.
 - El control de acceso debe respetarse tanto en sidebar como en rutas protegidas.
 
-## Que se modificara
+## Que se modifico
 
 - `frontend/src/layout/components/Sidebar.jsx`
-  - Habilitar acceso interactivo a **Entradas** y **Salidas** para Farmaceutico.
+  - Se habilito acceso interactivo a **Entradas** y **Salidas** para Farmaceutico.
 
 - `frontend/src/App.jsx`
-  - Ajustar rutas y proteccion RBAC para las vistas operativas.
+  - Se ajustaron rutas, aliases y proteccion RBAC para las vistas operativas.
 
 - `frontend/src/shared/constants/roles.js`
-  - Ajustar permisos por rol si la matriz se centraliza alli.
+  - Se agregaron permisos para acceso a entradas y salidas.
 
 - `frontend/src/movements/services/movements.service.js`
-  - Agregar consumo de `POST` y `GET` para entradas y salidas.
+  - Se agrego consumo de `POST` y `GET` para entradas y salidas.
 
 - `frontend/src/movements/pages/`
-  - Crear o adaptar paginas para formularios y tablas de historial.
+  - Se crearon paginas para formularios y tablas de historial.
+
+- `frontend/src/movements/pages/EntriesPage.jsx`
+  - Vista de registro de entradas con formulario, selector de motivo, observacion opcional y tabla de historial.
+
+- `frontend/src/movements/pages/ExitsPage.jsx`
+  - Vista de registro de salidas con formulario, selector de motivo, observacion opcional y tabla de historial.
 
 - `frontend/src/movements/components/`
-  - Crear o adaptar componentes de captura y visualizacion.
+  - Se reutilizo la tabla de movimientos para visualizar historiales recientes.
 
 ## Resultado esperado
 
@@ -52,3 +65,10 @@ Habilitar al rol **Farmaceutico** el acceso a los modulos **Entradas** y **Salid
 - Puede registrar movimientos contra backend.
 - Puede observar en pantalla el historial cargado por `GET` para entradas y salidas.
 - La experiencia queda alineada con las pantallas mostradas en el diseno funcional.
+
+## Estado actual
+
+- **Entradas** y **Salidas** quedaron habilitadas funcionalmente para el rol **Farmaceutico**.
+- El historial visible se alimenta desde backend usando endpoints dedicados para entradas y salidas.
+- El formulario de **Entradas** contempla `expirationDate`, motivo controlado y lote automatico.
+- El formulario de **Salidas** contempla motivo controlado y observacion opcional.
