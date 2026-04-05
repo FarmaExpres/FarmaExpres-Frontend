@@ -128,7 +128,7 @@ const MENU_BY_ROLE = {
     { key: 'dashboard', label: 'Dashboard' },
     { key: 'inventory', label: 'Inventario', moduleKey: 'medicines' },
     { key: 'entries', label: 'Entradas', moduleKey: 'entries' },
-    { key: 'exits', label: 'Salidas' },
+    { key: 'exits', label: 'Salidas', moduleKey: 'exits' },
     { key: 'alerts', label: 'Alertas', moduleKey: 'alerts', badge: '24' },
     { key: 'stock', label: 'Control Stock' }
   ],
