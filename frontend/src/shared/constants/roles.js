@@ -52,6 +52,11 @@ export const canAccessMedicines = (role) => {
 
 export const canManageMedicines = (role) => normalizeRole(role) === ROLES.ADMIN
 
+export const canAccessEntries = (role) => {
+  const normalizedRole = normalizeRole(role)
+  return [ROLES.ADMIN, ROLES.FARMACEUTICO].includes(normalizedRole)
+}
+
 export const canAccessMovements = (role) => {
   const normalizedRole = normalizeRole(role)
   return [ROLES.ADMIN, ROLES.AUDITOR].includes(normalizedRole)
