@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { getMedicines } from '../services/medicines.service'
+import { getMedicines, getMedicinesFefoSnapshot } from '../services/medicines.service'
 
 const EditIcon = () => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-3.5 w-3.5">
@@ -34,6 +34,26 @@ const getStockVisualState = (stockValue, minimumStockValue) => {
   return stock < 20 ? 'critical' : 'normal'
 }
 
+const formatDisplayDate = (value) => {
+  const rawValue = String(value || '').trim()
+  if (!rawValue) return ''
+  const date = new Date(`${rawValue}T00:00:00`)
+  if (Number.isNaN(date.getTime())) return rawValue
+  return date.toLocaleDateString('es-CO')
+}
+
+const isExpiredDate = (value) => {
+  const rawValue = String(value || '').trim()
+  if (!rawValue) return false
+
+  const targetDate = new Date(`${rawValue}T00:00:00`)
+  if (Number.isNaN(targetDate.getTime())) return false
+
+  const today = new Date()
+  const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate())
+  return targetDate < startOfToday
+}
+
 const MedicinesTable = ({
   reload,
   searchTerm = '',
@@ -44,6 +64,7 @@ const MedicinesTable = ({
 }) => {
   const [medicines, setMedicines] = useState([])
   const [isLoading, setIsLoading] = useState(false)
+  const [fefoByMedicineId, setFefoByMedicineId] = useState({})
 
   const normalizedSearchTerm = searchTerm.trim().toLowerCase()
   const filteredMedicines = useMemo(() => {
@@ -134,6 +155,44 @@ const MedicinesTable = ({
     }
   }, [reload, onError])
 
+  useEffect(() => {
+    let isMounted = true
+
+    const loadFefoReferences = async () => {
+      if (!Array.isArray(medicines) || medicines.length === 0) {
+        if (isMounted) setFefoByMedicineId({})
+        return
+      }
+
+      try {
+        const snapshots = await getMedicinesFefoSnapshot()
+        if (!isMounted) return
+
+        const nextMap = {}
+        snapshots.forEach((item) => {
+          if (!item?.medicineId) return
+          nextMap[item.medicineId] = {
+            expirationDate: String(item?.expirationDate || '').trim(),
+            batchCode: String(item?.batchCode || '').trim(),
+            activeBatchesCount: Number(item?.activeBatchesCount ?? 0),
+            operationalStock: Number(item?.operationalStock ?? 0)
+          }
+        })
+
+        setFefoByMedicineId(nextMap)
+      } catch {
+        // Si el snapshot FEFO falla, se conserva render con la información base del producto.
+        if (isMounted) setFefoByMedicineId({})
+      }
+    }
+
+    loadFefoReferences()
+
+    return () => {
+      isMounted = false
+    }
+  }, [medicines])
+
   return (
     <div className="fe-card fe-table-wrap">
       <table className="fe-table text-sm 2xl:text-[15px]">
@@ -141,10 +200,12 @@ const MedicinesTable = ({
           <tr>
             <th className="text-left">CÓDIGO</th>
             <th className="text-left">NOMBRE</th>
-            <th className="text-center">STOCK</th>
+            <th className="text-center" title="Stock utilizable (operativo)">
+              STOCK UTIL.
+            </th>
             <th className="text-center">STOCK MÍNIMO</th>
             <th className="text-center">PRECIO</th>
-            <th className="text-center">VENCIMIENTO</th>
+            <th className="text-left">REFERENCIA FEFO</th>
             <th className="text-center">ESTADO</th>
             <th className="text-center">ACCIONES</th>
           </tr>
@@ -159,7 +220,22 @@ const MedicinesTable = ({
             </tr>
           ) : Array.isArray(filteredMedicines) && filteredMedicines.length > 0 ? (
             filteredMedicines.map((medicine, index) => {
-              const stockState = getStockVisualState(medicine.stock, medicine.stockMinimo)
+              const fefoReference = fefoByMedicineId[String(medicine?.id)] || null
+              const operationalStock = Number(fefoReference?.operationalStock ?? medicine?.stock ?? 0)
+              const stockState = getStockVisualState(operationalStock, medicine.stockMinimo)
+              const referenceDate =
+                fefoReference?.expirationDate ||
+                medicine.proximoVencimiento ||
+                ''
+              const referenceBatchCode =
+                fefoReference?.batchCode ||
+                medicine.loteFefo ||
+                ''
+              const activeBatchesCount = Number(
+                fefoReference?.activeBatchesCount ?? medicine.lotesActivos ?? 0
+              )
+              const hasReferenceDate = Boolean(referenceDate)
+              const isExpiredReference = hasReferenceDate && isExpiredDate(referenceDate)
 
               return (
                 <tr
@@ -185,13 +261,29 @@ const MedicinesTable = ({
                         : 'text-[#283b61]'
                   }`}
                 >
-                  {medicine.stock ?? 0}
+                  {operationalStock}
                 </td>
 
                 <td className="whitespace-nowrap text-center">{medicine.stockMinimo ?? 0}</td>
 
                 <td className="whitespace-nowrap text-center font-semibold text-[#30456f]">$ {medicine.precio ?? 0}</td>
-                <td className="whitespace-nowrap text-center text-red-500">{medicine.fechavencimiento || '---'}</td>
+                <td className="max-w-[250px] py-2">
+                  <div className="flex flex-col text-left leading-tight">
+                    <span className="text-sm font-semibold text-[#30456f]">
+                      <span className={isExpiredReference ? 'text-red-600' : 'text-[#30456f]'}>
+                        {hasReferenceDate ? formatDisplayDate(referenceDate) : 'Sin lote activo'}
+                      </span>
+                    </span>
+                    <span className={`mt-1 text-xs ${isExpiredReference ? 'text-red-500' : 'text-[#6f83aa]'}`}>
+                      Lote: {referenceBatchCode || 'Sin lote activo'}
+                    </span>
+                    {activeBatchesCount > 0 && hasReferenceDate && (
+                      <span className="mt-0.5 text-[11px] text-[#8b9cc0]">
+                        {activeBatchesCount} lote(s) activo(s)
+                      </span>
+                    )}
+                  </div>
+                </td>
                 <td className="whitespace-nowrap text-center">
                   <span
                     className={`inline-flex h-8 min-w-[86px] items-center justify-center rounded-lg px-3 text-xs font-semibold 2xl:text-[12px] ${
