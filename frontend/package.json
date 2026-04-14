@@ -5,6 +5,15 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:dev": "vite --mode dev",
+    "dev:qa": "vite --mode qa",
+    "dev:main": "vite --mode main",
+    "docker:up:dev": "docker compose --env-file .env.dev up -d --build",
+    "docker:up:qa": "docker compose --env-file .env.qa up -d --build",
+    "docker:up:main": "docker compose --env-file .env.main up -d --build",
+    "docker:down:dev": "docker compose --env-file .env.dev down",
+    "docker:down:qa": "docker compose --env-file .env.qa down",
+    "docker:down:main": "docker compose --env-file .env.main down",
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview"
