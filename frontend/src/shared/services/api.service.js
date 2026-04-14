@@ -10,6 +10,12 @@ export const authApi = axios.create({
   baseURL: AUTH_API_URL
 })
 
+const redirectToLogin = () => {
+  if (typeof window === 'undefined') return
+  if (window.location.pathname === '/login') return
+  window.location.replace('/login')
+}
+
 const handleAuthFailure = (error) => {
   const status = error?.response?.status
   const requestUrl = String(error?.config?.url || '')
@@ -18,9 +24,7 @@ const handleAuthFailure = (error) => {
   // Solo 401 invalida sesión. 403 se maneja en UI como "sin permisos" sin expulsar al usuario.
   if (status === 401 && !isLoginRequest) {
     clearSession()
-    if (typeof window !== 'undefined' && window.location.pathname !== '/login') {
-      window.location.replace('/login')
-    }
+    redirectToLogin()
   }
 
   return Promise.reject(error)
@@ -33,6 +37,8 @@ export const buildAuthHeaders = (token) => {
   const authToken = (token || getAuthToken()).trim()
 
   if (!authToken) {
+    clearSession()
+    redirectToLogin()
     throw new Error('No hay token de autenticación. Inicia sesión o configura VITE_DEV_TOKEN.')
   }
 

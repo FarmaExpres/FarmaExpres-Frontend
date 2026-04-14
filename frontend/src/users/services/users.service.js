@@ -3,20 +3,57 @@ import { getRoleApiCandidates } from '../../shared/constants/roles'
 
 const USERS_ENDPOINT = '/api/users'
 
-const mapStatusToUi = (status, active) => {
-  if (typeof active === 'boolean') return active ? 'ACTIVO' : 'INACTIVO'
+const INACTIVE_STATUS_KEYS = new Set([
+  'INACTIVE',
+  'INACTIVO',
+  'DISABLED',
+  'DESHABILITADO',
+  'BLOCKED',
+  'BLOQUEADO',
+  'LOCKED',
+  'SUSPENDED',
+  'SUSPENDIDO'
+])
+
+const ACTIVE_STATUS_KEYS = new Set([
+  'ACTIVE',
+  'ACTIVO',
+  'ENABLED',
+  'HABILITADO',
+  'UNBLOCKED',
+  'UNLOCKED'
+])
+
+const toBooleanOrNull = (value) => {
+  if (typeof value === 'boolean') return value
+  if (typeof value === 'number') return value === 1 ? true : (value === 0 ? false : null)
+
+  const normalizedValue = String(value || '').trim().toLowerCase()
+  if (!normalizedValue) return null
+  if (['true', '1', 'yes', 'y', 'si', 'sí', 'activo', 'active', 'enabled', 'habilitado', 'unlocked'].includes(normalizedValue)) return true
+  if (['false', '0', 'no', 'n', 'inactivo', 'inactive', 'disabled', 'deshabilitado', 'blocked', 'bloqueado', 'locked'].includes(normalizedValue)) return false
+  return null
+}
+
+export const normalizeUserStatus = (status, active) => {
+  const activeFlag = toBooleanOrNull(active)
+  if (activeFlag !== null) return activeFlag ? 'ACTIVO' : 'INACTIVO'
 
   const normalizedStatus = String(status || '').trim().toUpperCase()
-  if (['INACTIVE', 'INACTIVO', 'BLOCKED', 'BLOQUEADO'].includes(normalizedStatus)) return 'INACTIVO'
+  if (INACTIVE_STATUS_KEYS.has(normalizedStatus)) return 'INACTIVO'
+  if (ACTIVE_STATUS_KEYS.has(normalizedStatus)) return 'ACTIVO'
   return 'ACTIVO'
 }
 
 const mapUser = (user = {}) => ({
-  id: user?.id,
+  id: user?.id ?? user?.userId ?? null,
   nombre: String(user?.name ?? user?.nombre ?? '').trim(),
   email: String(user?.email ?? '').trim().toLowerCase(),
   rol: String(user?.role ?? user?.rol ?? '').trim().toUpperCase(),
-  estado: mapStatusToUi(user?.status ?? user?.estado, user?.active ?? user?.activo)
+  estado: normalizeUserStatus(
+    user?.status ?? user?.estado ?? user?.state,
+    user?.active ?? user?.activo ?? user?.isActive ?? user?.enabled
+  )
 })
 
 export const getUsers = async (token) => {
@@ -104,7 +141,17 @@ export const toggleUserStatus = async ({ id, isActive }, token) => {
       headers: buildAuthHeaders(token)
     })
 
-    return mapUser(response.data || { id, active: isActive })
+    const payload = response?.data?.user || response?.data?.data || response?.data || {}
+    const mappedUser = mapUser(payload)
+
+    return {
+      ...mappedUser,
+      id: mappedUser.id ?? id,
+      estado: normalizeUserStatus(
+        payload?.status ?? payload?.estado ?? payload?.state,
+        payload?.active ?? payload?.activo ?? payload?.isActive ?? payload?.enabled ?? isActive
+      )
+    }
   } catch (error) {
     throw normalizeApiError(error, 'No se pudo actualizar el estado del usuario.')
   }

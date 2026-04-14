@@ -58,6 +58,7 @@ const MedicinesTable = ({
   reload,
   searchTerm = '',
   sortBy = 'code',
+  readOnly = false,
   onError,
   onEdit,
   onDeactivate
@@ -207,14 +208,14 @@ const MedicinesTable = ({
             <th className="text-center">PRECIO</th>
             <th className="text-left">REFERENCIA FEFO</th>
             <th className="text-center">ESTADO</th>
-            <th className="text-center">ACCIONES</th>
+            {!readOnly && <th className="text-center">ACCIONES</th>}
           </tr>
         </thead>
 
         <tbody>
           {isLoading ? (
             <tr>
-              <td colSpan="8" className="p-5 text-center text-gray-400">
+              <td colSpan={readOnly ? 7 : 8} className="p-5 text-center text-gray-400">
                 Cargando medicamentos...
               </td>
             </tr>
@@ -295,37 +296,39 @@ const MedicinesTable = ({
                     {medicine.activo === false ? 'Inactivo' : 'Activo'}
                   </span>
                 </td>
-                <td className="whitespace-nowrap">
-                  <div className="flex justify-center gap-2">
-                    <button
-                      type="button"
-                      onClick={() => onEdit?.(medicine)}
-                      title="Editar medicamento"
-                      aria-label="Editar medicamento"
-                      disabled={!medicine?.id || medicine.activo === false}
-                      className="inline-flex h-8 w-8 items-center justify-center rounded-md bg-[#316dff] text-white transition hover:bg-[#295de0] disabled:cursor-not-allowed disabled:opacity-50"
-                    >
-                      <EditIcon />
-                    </button>
+                {!readOnly && (
+                  <td className="whitespace-nowrap">
+                    <div className="flex justify-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => onEdit?.(medicine)}
+                        title="Editar medicamento"
+                        aria-label="Editar medicamento"
+                        disabled={!medicine?.id || medicine.activo === false}
+                        className="inline-flex h-8 w-8 items-center justify-center rounded-md bg-[#316dff] text-white transition hover:bg-[#295de0] disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        <EditIcon />
+                      </button>
 
-                    <button
-                      type="button"
-                      onClick={() => onDeactivate?.(medicine)}
-                      title="Desactivar medicamento"
-                      aria-label="Desactivar medicamento"
-                      disabled={!medicine?.id || medicine.activo === false}
-                      className="inline-flex h-8 w-8 items-center justify-center rounded-md bg-[#eb4e68] text-white transition hover:bg-[#d9405a] disabled:cursor-not-allowed disabled:opacity-50"
-                    >
-                      <DisableIcon />
-                    </button>
-                  </div>
-                </td>
+                      <button
+                        type="button"
+                        onClick={() => onDeactivate?.(medicine)}
+                        title="Desactivar medicamento"
+                        aria-label="Desactivar medicamento"
+                        disabled={!medicine?.id || medicine.activo === false}
+                        className="inline-flex h-8 w-8 items-center justify-center rounded-md bg-[#eb4e68] text-white transition hover:bg-[#d9405a] disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        <DisableIcon />
+                      </button>
+                    </div>
+                  </td>
+                )}
                 </tr>
               )
             })
           ) : (
             <tr>
-              <td colSpan="8" className="p-5 text-center text-gray-400">
+              <td colSpan={readOnly ? 7 : 8} className="p-5 text-center text-gray-400">
                 {Array.isArray(medicines) && medicines.length > 0
                   ? 'No se encontraron coincidencias para la búsqueda.'
                   : 'No hay medicamentos registrados'}

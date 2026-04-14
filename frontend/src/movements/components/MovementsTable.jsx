@@ -18,6 +18,18 @@ const formatQuantity = (quantity) => {
   return '0'
 }
 
+const getReasonText = (movement = {}) => {
+  if (movement.type === 'UPDATED') return movement.reason || 'Ajuste de producto'
+  return movement.reason || 'No especificado'
+}
+
+const getAdjustmentDetailPreview = (movement = {}) => {
+  if (movement.type !== 'UPDATED') return ''
+  if (movement.adjustmentDetailText) return movement.adjustmentDetailText
+  if (movement.adjustmentSummary) return movement.adjustmentSummary
+  return 'Sin detalle específico del ajuste'
+}
+
 const StatusMarkedIcon = () => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-3.5 w-3.5">
     <path d="M12 3 2.8 20h18.4L12 3Z" />
@@ -83,8 +95,17 @@ const MovementsTable = ({ movements = [], isLoading = false }) => (
               <td className={`whitespace-nowrap text-center font-bold ${getQuantityClassName(movement.quantity)}`}>
                 {formatQuantity(movement.quantity)}
               </td>
-              <td title={movement.reason || 'No especificado'}>
-                <span className="block truncate">{movement.reason || 'No especificado'}</span>
+              <td title={getAdjustmentDetailPreview(movement) || getReasonText(movement)}>
+                <p className={`truncate ${movement.type === 'UPDATED' ? 'font-semibold text-blue-700' : ''}`}>
+                  {getReasonText(movement)}
+                </p>
+                {movement.type === 'UPDATED' && (
+                  <p className="truncate text-[11px] font-medium text-[#6f86b8]">
+                    {movement.adjustmentDetail?.length > 0
+                      ? `${movement.adjustmentDetail.length} cambio(s): ${getAdjustmentDetailPreview(movement)}`
+                      : getAdjustmentDetailPreview(movement)}
+                  </p>
+                )}
               </td>
               <td title={movement.user || 'No disponible'}>
                 <p className="truncate font-semibold text-[#2f3f62]">{movement.user || 'No disponible'}</p>

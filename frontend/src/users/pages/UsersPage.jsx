@@ -4,7 +4,7 @@ import UserModal from '../components/UserModal'
 import UserEditModal from '../components/UserEditModal'
 import UserPasswordModal from '../components/UserPasswordModal'
 import { isAdmin } from '../../shared/auth/session'
-import { changeUserPassword, getUsers, toggleUserStatus, updateUser } from '../services/users.service'
+import { changeUserPassword, getUsers, normalizeUserStatus, toggleUserStatus, updateUser } from '../services/users.service'
 import { normalizeRole, ROLES } from '../../shared/constants/roles'
 
 const normalizeUser = (user) => ({
@@ -12,7 +12,7 @@ const normalizeUser = (user) => ({
   nombre: user?.nombre || user?.name || '',
   email: user?.email || '',
   rol: user?.rol || user?.role || '',
-  estado: user?.estado || user?.status || (user?.active === false ? 'INACTIVO' : 'ACTIVO')
+  estado: normalizeUserStatus(user?.estado ?? user?.status, user?.active ?? user?.activo)
 })
 
 const UsersPage = ({ role, currentUserEmail = '' }) => {

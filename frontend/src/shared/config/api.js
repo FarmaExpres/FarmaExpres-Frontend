@@ -2,12 +2,11 @@ const resolveApiBaseUrl = () => {
   const explicitBaseUrl = String(import.meta.env.VITE_API_BASE_URL || '').trim()
   if (explicitBaseUrl) return explicitBaseUrl
 
-  // En desarrollo se usa proxy local para evitar CORS.
-  // Se deja base vacía porque los servicios ya incluyen el prefijo /api en sus endpoints.
-  if (import.meta.env.DEV) return ''
-
-  // En build/producción se usa gateway directo por defecto.
-  return 'http://localhost:8080'
+  // Base vacía para usar rutas relativas (/api/...) y evitar CORS:
+  // - En desarrollo: Vite proxy enruta al backend.
+  // - En Docker/Nginx: Nginx proxy enruta al backend.
+  // Si se requiere otro host, definir VITE_API_BASE_URL explícitamente.
+  return ''
 }
 
 const API_BASE_URL = resolveApiBaseUrl()
