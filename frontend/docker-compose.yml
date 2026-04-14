@@ -1,16 +1,25 @@
+name: ${COMPOSE_PROJECT_NAME:-farmaexpres-frontend}
+
 services:
   frontend:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: farmaexpres_frontend
+    container_name: ${FRONTEND_CONTAINER_NAME:-farmaexpres-frontend-dev}
+    image: ${FRONTEND_IMAGE_NAME:-farmaexpres-frontend:dev}
     environment:
-      # Configurable por equipo:
-      # - Backend en host: BACKEND_URL=http://host.docker.internal:8080
-      # - Backend en compose: BACKEND_URL=http://backend:8080
-      - BACKEND_URL=${BACKEND_URL:-http://host.docker.internal:8080}
+      # Debe apuntar al api-gateway del backend del mismo ambiente.
+      # En red Docker interna el gateway escucha en 8080 para todos los ambientes.
+      - BACKEND_URL=${BACKEND_URL:-http://api-gateway:8080}
     ports:
-      - "5173:80"
+      - "${FRONTEND_PORT:-3000}:80"
     extra_hosts:
       - "host.docker.internal:host-gateway"
+    networks:
+      - backend_env_network
     restart: unless-stopped
+
+networks:
+  backend_env_network:
+    external: true
+    name: ${BACKEND_NETWORK}
