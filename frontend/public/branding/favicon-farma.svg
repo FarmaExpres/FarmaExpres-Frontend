@@ -1,0 +1,23 @@
+<svg width="96" height="96" viewBox="0 0 96 96" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="feShieldBg" x1="8" y1="8" x2="88" y2="88" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#8E5DFF" />
+      <stop offset="1" stop-color="#5F27CF" />
+    </linearGradient>
+  </defs>
+
+  <rect x="8" y="8" width="80" height="80" rx="20" fill="url(#feShieldBg)" />
+  <rect x="8" y="8" width="80" height="80" rx="20" stroke="rgba(255,255,255,0.22)" stroke-width="1.5" />
+
+  <g transform="translate(0,-4)">
+    <path
+      d="M48 25L69 37V52.6C69 66.2 60.5 75.9 48 81C35.5 75.9 27 66.2 27 52.6V37L48 25Z"
+      stroke="#FFFFFF"
+      stroke-width="5.2"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    />
+    <path d="M48 40V60" stroke="#FFFFFF" stroke-width="5.2" stroke-linecap="round" />
+    <path d="M39.3 50H56.7" stroke="#FFFFFF" stroke-width="5.2" stroke-linecap="round" />
+  </g>
+</svg>

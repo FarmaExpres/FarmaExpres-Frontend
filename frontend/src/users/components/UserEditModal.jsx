@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { USER_ROLE_OPTIONS } from '../../shared/constants/roles'
+import { isValidBusinessEmail, isValidPersonName, sanitizePersonNameInput } from '../utils/userValidation'
 
-const isValidEmail = (value) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(String(value || '').trim())
 const isLowercaseEmail = (value) => String(value || '').trim() === String(value || '').trim().toLowerCase()
 
 const buildInitialForm = (user) => ({
@@ -28,8 +28,9 @@ const UserEditModal = ({ isOpen, onClose, user, onSubmit, existingEmails = [], i
     const normalizedEmail = form.email.trim().toLowerCase()
 
     if (!form.fullName.trim()) nextErrors.fullName = 'El nombre completo es obligatorio.'
+    else if (!isValidPersonName(form.fullName)) nextErrors.fullName = 'El nombre solo puede contener letras y espacios.'
     if (!form.email.trim()) nextErrors.email = 'El correo electrónico es obligatorio.'
-    else if (!isValidEmail(form.email)) nextErrors.email = 'El correo electrónico no tiene un formato válido.'
+    else if (!isValidBusinessEmail(form.email)) nextErrors.email = 'El correo electrónico no tiene un formato válido.'
     else if (!isLowercaseEmail(form.email)) nextErrors.email = 'El correo debe escribirse en minúsculas.'
     else if (existingEmailSet.has(normalizedEmail)) nextErrors.email = 'El correo ya está registrado.'
     if (!form.role) nextErrors.role = 'Debes seleccionar un rol.'
@@ -38,7 +39,8 @@ const UserEditModal = ({ isOpen, onClose, user, onSubmit, existingEmails = [], i
   }
 
   const handleChange = ({ target: { name, value } }) => {
-    setForm((current) => ({ ...current, [name]: value }))
+    const nextValue = name === 'fullName' ? sanitizePersonNameInput(value) : value
+    setForm((current) => ({ ...current, [name]: nextValue }))
     setErrors((current) => ({ ...current, [name]: undefined }))
   }
 

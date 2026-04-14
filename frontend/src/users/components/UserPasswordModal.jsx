@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 
 const MIN_PASSWORD_LENGTH = 8
 
@@ -16,17 +16,6 @@ const UserPasswordModal = ({ isOpen, onClose, user, onSubmit, isSubmitting = fal
     newPassword: false,
     confirmPassword: false
   })
-
-  useEffect(() => {
-    if (!isOpen) return
-    setForm(buildInitialForm())
-    setErrors({})
-    setShowPassword({
-      currentPassword: false,
-      newPassword: false,
-      confirmPassword: false
-    })
-  }, [isOpen, user?.id])
 
   if (!isOpen || !user) return null
 

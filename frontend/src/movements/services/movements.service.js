@@ -7,6 +7,8 @@ import { getRoleLabel } from '../../shared/constants/roles'
 import { normalizeIdentity } from '../../shared/utils/text.utils'
 
 const MOVEMENTS_ENDPOINT = '/api/movements'
+const MOVEMENTS_ENTRIES_ENDPOINT = '/api/movements/entries'
+const MOVEMENTS_EXITS_ENDPOINT = '/api/movements/exits'
 const MOVEMENTS_ENTRANCE_ENDPOINT = '/api/movements/entrance'
 const MOVEMENTS_EXIT_ENDPOINT = '/api/movements/exit'
 const MOVEMENTS_UPDATED_ENDPOINT = '/api/movements/updated'
@@ -440,6 +442,43 @@ const buildMovementQueryParams = (filters = {}) => {
   return nextParams
 }
 
+const buildInventoryEntryPayload = (data = {}) => {
+  const productId = Number(data?.productId)
+  const amount = Number(data?.amount)
+  const reason = String(data?.reason || '').trim()
+  const batchCode = String(data?.batchCode || '').trim()
+  const expirationDate = String(data?.expirationDate || '').trim()
+  const observation = String(data?.observation ?? data?.observacion ?? '').trim()
+  const normalizedQuantity = Number.isFinite(amount) ? amount : 0
+
+  return {
+    productId: Number.isFinite(productId) ? productId : null,
+    amount: normalizedQuantity,
+    quantity: normalizedQuantity,
+    reason,
+    ...(observation ? { observation, observacion: observation } : {}),
+    ...(batchCode ? { batchCode } : {}),
+    ...(expirationDate ? { expirationDate } : {})
+  }
+}
+
+const buildInventoryExitPayload = (data = {}) => {
+  const productId = Number(data?.productId)
+  const amount = Number(data?.amount)
+  const rawReason = String(data?.reason || '').trim()
+  const observation = String(data?.observation ?? data?.observacion ?? '').trim()
+  const normalizedQuantity = Number.isFinite(amount) ? amount : 0
+  const reason = rawReason.toUpperCase() === 'VENTA' ? 'Dispensacion' : rawReason
+
+  return {
+    productId: Number.isFinite(productId) ? productId : null,
+    amount: normalizedQuantity,
+    quantity: normalizedQuantity,
+    reason,
+    ...(observation ? { observation, observacion: observation } : {})
+  }
+}
+
 export const getMovements = ({ filters = {}, productsById = {}, usersByIdentity = {}, usersById = {}, token } = {}) => {
   const movementMapper = (movement) => mapMovement(movement, productsById, usersByIdentity, usersById)
   return fetchMovementsInternal({ endpoint: MOVEMENTS_ENDPOINT, filters, token, movementMapper })
@@ -458,6 +497,32 @@ export const getExitMovements = ({ productsById = {}, usersByIdentity = {}, user
 export const getUpdatedMovements = ({ productsById = {}, usersByIdentity = {}, usersById = {}, token } = {}) => {
   const movementMapper = (movement) => mapMovement(movement, productsById, usersByIdentity, usersById)
   return fetchMovementsInternal({ endpoint: MOVEMENTS_UPDATED_ENDPOINT, token, movementMapper })
+}
+
+export const registerInventoryEntry = async (data, token) => {
+  try {
+    const payload = buildInventoryEntryPayload(data)
+    const response = await inventoryApi.post(MOVEMENTS_ENTRIES_ENDPOINT, payload, {
+      headers: buildAuthHeaders(token)
+    })
+
+    return response?.data ?? null
+  } catch (error) {
+    throw normalizeApiError(error, 'No se pudo registrar la entrada de inventario.')
+  }
+}
+
+export const registerInventoryExit = async (data, token) => {
+  try {
+    const payload = buildInventoryExitPayload(data)
+    const response = await inventoryApi.post(MOVEMENTS_EXITS_ENDPOINT, payload, {
+      headers: buildAuthHeaders(token)
+    })
+
+    return response?.data ?? null
+  } catch (error) {
+    throw normalizeApiError(error, 'No se pudo registrar la salida de inventario.')
+  }
 }
 
 const fetchMovementsInternal = async ({ endpoint = MOVEMENTS_ENDPOINT, filters = {}, token, movementMapper }) => {

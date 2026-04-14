@@ -4,6 +4,8 @@ import AppLayout from './layout/components/AppLayout'
 import MedicinesPage from './medicines/pages/MedicinesPage'
 import MedicineCreatePage from './medicines/pages/MedicineCreatePage'
 import MedicineEditPage from './medicines/pages/MedicineEditPage'
+import EntriesPage from './movements/pages/EntriesPage'
+import ExitsPage from './movements/pages/ExitsPage'
 import MovementsPage from './movements/pages/MovementsPage'
 import UsersPage from './users/pages/UsersPage'
 import ReportsPage from './reports/pages/ReportsPage'
@@ -13,7 +15,16 @@ import LoginPage from './auth/pages/LoginPage'
 import ProtectedRoute from './shared/routing/ProtectedRoute'
 import PublicOnlyRoute from './shared/routing/PublicOnlyRoute'
 import { clearSession, getSession, isAdmin } from './shared/auth/session'
-import { getDefaultRouteByRole, normalizeRole, ROLES } from './shared/constants/roles'
+import {
+  canAccessAlerts,
+  canAccessEntries,
+  canAccessExits,
+  canAccessMedicines,
+  canAccessMovements,
+  canAccessReports,
+  canManageMedicines,
+  getDefaultRouteByRole
+} from './shared/constants/roles'
 
 const LAST_MEDICINES_ROUTE_STORAGE_KEY = 'medicines:last-route'
 
@@ -37,9 +48,13 @@ function App() {
   const location = useLocation()
   const [session, setSession] = useState(() => getSession())
   const defaultRoute = getDefaultRouteByRole(session.role)
-  const canAccessMovements = [ROLES.ADMIN, ROLES.AUDITOR].includes(normalizeRole(session.role))
-  const canAccessStock = [ROLES.ADMIN, ROLES.AUDITOR].includes(normalizeRole(session.role))
-  const canAccessAlerts = [ROLES.ADMIN, ROLES.FARMACEUTICO].includes(normalizeRole(session.role))
+  const canAccessMedicinesModule = canAccessMedicines(session.role)
+  const canAccessEntriesModule = canAccessEntries(session.role)
+  const canAccessExitsModule = canAccessExits(session.role)
+  const canAccessMovementsModule = canAccessMovements(session.role)
+  const canAccessReportsModule = canAccessReports(session.role)
+  const canAccessAlertsModule = canAccessAlerts(session.role)
+  const canManageMedicinesModule = canManageMedicines(session.role)
   const [alertsCount, setAlertsCount] = useState(0)
 
   const refreshSession = () => setSession(getSession())
@@ -62,19 +77,31 @@ function App() {
     }
 
     if (moduleKey === 'movements') {
-      if (!canAccessMovements) return
+      if (!canAccessMovementsModule) return
       navigate('/movements')
       return
     }
 
+    if (moduleKey === 'entries') {
+      if (!canAccessEntriesModule) return
+      navigate('/entradas')
+      return
+    }
+
+    if (moduleKey === 'exits') {
+      if (!canAccessExitsModule) return
+      navigate('/salidas')
+      return
+    }
+
     if (moduleKey === 'reports') {
-      if (!canAccessStock) return
+      if (!canAccessReportsModule) return
       navigate('/reports')
       return
     }
 
     if (moduleKey === 'alerts') {
-      if (!canAccessAlerts) return
+      if (!canAccessAlertsModule) return
       navigate('/alerts')
       return
     }
@@ -104,7 +131,7 @@ function App() {
     let refreshIntervalId = null
 
     const fetchAlertsCount = async () => {
-      if (!session.isAuthenticated || !canAccessAlerts) {
+      if (!session.isAuthenticated || !canAccessAlertsModule) {
         if (isMounted) setAlertsCount(0)
         return
       }
@@ -127,7 +154,7 @@ function App() {
 
     fetchAlertsCount()
 
-    if (session.isAuthenticated && canAccessAlerts) {
+    if (session.isAuthenticated && canAccessAlertsModule) {
       refreshIntervalId = window.setInterval(fetchAlertsCount, 60000)
     }
 
@@ -135,7 +162,7 @@ function App() {
       isMounted = false
       if (refreshIntervalId) window.clearInterval(refreshIntervalId)
     }
-  }, [session.isAuthenticated, session.role, canAccessAlerts])
+  }, [session.isAuthenticated, session.role, canAccessAlertsModule])
 
   return (
     <Routes>
@@ -147,45 +174,51 @@ function App() {
         <Route path="/" element={<Navigate to={defaultRoute} replace />} />
         <Route
           path="/medicines"
-          element={(
-            <AppShell
-              session={session}
-              activeModule="medicines"
-              routePath={location.pathname}
-              onNavigate={handleNavigate}
-              onLogout={handleLogout}
-              alertsCount={alertsCount}
-              content={<MedicinesPage />}
-            />
-          )}
+          element={canAccessMedicinesModule
+            ? (
+              <AppShell
+                session={session}
+                activeModule="medicines"
+                routePath={location.pathname}
+                onNavigate={handleNavigate}
+                onLogout={handleLogout}
+                alertsCount={alertsCount}
+                content={<MedicinesPage role={session.role} />}
+              />
+              )
+            : <Navigate to={defaultRoute} replace />}
         />
         <Route
           path="/medicines/new"
-          element={(
-            <AppShell
-              session={session}
-              activeModule="medicines"
-              routePath={location.pathname}
-              onNavigate={handleNavigate}
-              onLogout={handleLogout}
-              alertsCount={alertsCount}
-              content={<MedicineCreatePage />}
-            />
-          )}
+          element={canManageMedicinesModule
+            ? (
+              <AppShell
+                session={session}
+                activeModule="medicines"
+                routePath={location.pathname}
+                onNavigate={handleNavigate}
+                onLogout={handleLogout}
+                alertsCount={alertsCount}
+                content={<MedicineCreatePage />}
+              />
+              )
+            : <Navigate to="/medicines" replace />}
         />
         <Route
           path="/medicines/:medicineId/edit"
-          element={(
-            <AppShell
-              session={session}
-              activeModule="medicines"
-              routePath={location.pathname}
-              onNavigate={handleNavigate}
-              onLogout={handleLogout}
-              alertsCount={alertsCount}
-              content={<MedicineEditPage />}
-            />
-          )}
+          element={canManageMedicinesModule
+            ? (
+              <AppShell
+                session={session}
+                activeModule="medicines"
+                routePath={location.pathname}
+                onNavigate={handleNavigate}
+                onLogout={handleLogout}
+                alertsCount={alertsCount}
+                content={<MedicineEditPage />}
+              />
+              )
+            : <Navigate to="/medicines" replace />}
         />
         <Route
           path="/users"
@@ -204,8 +237,48 @@ function App() {
             : <Navigate to={defaultRoute} replace />}
         />
         <Route
+          path="/entries"
+          element={canAccessEntriesModule
+            ? (
+              <AppShell
+                session={session}
+                activeModule="entries"
+                routePath={location.pathname}
+                onNavigate={handleNavigate}
+                onLogout={handleLogout}
+                alertsCount={alertsCount}
+                content={<EntriesPage />}
+              />
+              )
+            : <Navigate to={defaultRoute} replace />}
+        />
+        <Route
+          path="/entradas"
+          element={<Navigate to="/entries" replace />}
+        />
+        <Route
+          path="/exits"
+          element={canAccessExitsModule
+            ? (
+              <AppShell
+                session={session}
+                activeModule="exits"
+                routePath={location.pathname}
+                onNavigate={handleNavigate}
+                onLogout={handleLogout}
+                alertsCount={alertsCount}
+                content={<ExitsPage />}
+              />
+              )
+            : <Navigate to={defaultRoute} replace />}
+        />
+        <Route
+          path="/salidas"
+          element={<Navigate to="/exits" replace />}
+        />
+        <Route
           path="/movements"
-          element={canAccessMovements
+          element={canAccessMovementsModule
             ? (
               <AppShell
                 session={session}
@@ -221,7 +294,7 @@ function App() {
         />
         <Route
           path="/reports"
-          element={canAccessStock
+          element={canAccessReportsModule
             ? (
               <AppShell
                 session={session}
@@ -237,7 +310,7 @@ function App() {
         />
         <Route
           path="/alerts"
-          element={canAccessAlerts
+          element={canAccessAlertsModule
             ? (
               <AppShell
                 session={session}
