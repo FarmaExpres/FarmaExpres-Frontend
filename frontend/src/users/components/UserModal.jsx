@@ -112,7 +112,7 @@ const UserModal = ({ isOpen, onClose, onSuccess, onError, existingEmails = [] })
           ✕
         </button>
 
-        <h2 className="mb-1 text-xl font-bold text-[#1b2946]">Crear Usuario</h2>
+        <h2 className="mb-1 text-xl font-bold text-[#1b2946]">Crear usuario</h2>
         <p className="mb-5 text-sm text-[#7583a0]">Registra un nuevo usuario y define sus permisos de acceso.</p>
 
         <div className="grid grid-cols-1 gap-4">
@@ -196,7 +196,7 @@ const UserModal = ({ isOpen, onClose, onSuccess, onError, existingEmails = [] })
             disabled={isSubmitting}
             className="fe-btn-primary"
           >
-            {isSubmitting ? 'Creando...' : 'Crear Usuario'}
+            {isSubmitting ? 'Creando...' : 'Crear usuario'}
           </button>
         </div>
       </div>

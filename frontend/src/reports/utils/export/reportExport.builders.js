@@ -108,7 +108,7 @@ const buildSummaryWorksheet = ({ reportTitle, summaryItems = [] }) => {
 }
 
 export const buildInventoryWorksheet = (rowsData = []) => {
-  const header = ['Codigo', 'Nombre', 'Stock', 'Precio Unitario (COP)', 'Valor Total (COP)']
+  const header = ['Código', 'Nombre', 'Stock', 'Precio Unitario (COP)', 'Valor Total (COP)']
   const rows = rowsData.map((item) => [item.codigo, item.nombre, toNumber(item.stock), toNumber(item.precio), null])
   rows.push([])
   rows.push(['', '', '', 'TOTAL GENERAL', null])
@@ -118,7 +118,7 @@ export const buildInventoryWorksheet = (rowsData = []) => {
   const totalRow = rowsData.length > 0 ? rowsData.length + 6 : null
 
   return {
-    rows: buildWorksheetRows({ reportTitle: 'Inventario Actual', header, rows }),
+    rows: buildWorksheetRows({ reportTitle: 'Inventario actual', header, rows }),
     cols: [
       { wch: toContentWidth(rowsData, (item) => item.codigo, { min: 12, max: 22, header: header[0] }) },
       { wch: toContentWidth(rowsData, (item) => item.nombre, { min: 24, max: 46, header: header[1] }) },
@@ -130,7 +130,7 @@ export const buildInventoryWorksheet = (rowsData = []) => {
       ? { valueTotalColumn: 5, stockColumn: 3, priceColumn: 4, dataStartRow, dataEndRow, totalRow }
       : null,
     summary: buildSummaryWorksheet({
-      reportTitle: 'Inventario Actual',
+      reportTitle: 'Inventario actual',
       summaryItems: rowsData.length > 0
         ? [
           { label: 'Productos visibles', value: { formula: `COUNTA(Inventario!A${dataStartRow}:A${dataEndRow})` }, numFmt: '#,##0' },
@@ -198,11 +198,11 @@ export const buildMovementsWorksheet = (rowsData = [], movementsFilterKey = 'all
 }
 
 export const buildExpiringWorksheet = (rowsData = []) => {
-  const header = ['Codigo', 'Medicamento', 'Lote', 'Vencimiento', 'Dias restantes', 'Stock', 'Estado']
+  const header = ['Código', 'Medicamento', 'Lote', 'Vencimiento', 'Días restantes', 'Stock', 'Estado']
 
   return ({
     rows: buildWorksheetRows({
-      reportTitle: 'Proximos a Vencer',
+      reportTitle: 'Próximos a Vencer',
       header,
       rows: rowsData.map((item) => {
         const expirationDate = resolveBatchExpiration(item) || '---'
@@ -228,7 +228,7 @@ export const buildExpiringWorksheet = (rowsData = []) => {
       { wch: toContentWidth(rowsData, (item) => resolveExpiringStatus(getDaysUntilDate(resolveBatchExpiration(item) || '---')), { min: 12, max: 18, header: header[6] }) }
     ],
   summary: buildSummaryWorksheet({
-    reportTitle: 'Proximos a Vencer',
+    reportTitle: 'Próximos a Vencer',
     summaryItems: [{ label: 'Productos en ventana de vencimiento', value: rowsData.length }]
   }),
   numericColumns: [5, 6],
@@ -239,11 +239,11 @@ export const buildExpiringWorksheet = (rowsData = []) => {
 }
 
 export const buildLowStockWorksheet = (rowsData = []) => {
-  const header = ['Codigo', 'Medicamento', 'Lote', 'Vencimiento lote', 'Stock', 'Minimo', 'Estado', 'Sugerencia de reposicion']
+  const header = ['Código', 'Medicamento', 'Lote', 'Vencimiento lote', 'Stock', 'Mínimo', 'Estado', 'Sugerencia de reposición']
 
   return ({
     rows: buildWorksheetRows({
-      reportTitle: 'Bajo Stock',
+      reportTitle: 'Bajo stock',
       header,
       rows: rowsData.map((item) => [
         item.codigo,
@@ -267,7 +267,7 @@ export const buildLowStockWorksheet = (rowsData = []) => {
       { wch: toContentWidth(rowsData, (item) => resolveLowStockSuggestion(item), { min: 26, max: 52, header: header[7] }) }
     ],
   summary: buildSummaryWorksheet({
-    reportTitle: 'Bajo Stock',
+    reportTitle: 'Bajo stock',
     summaryItems: [{ label: 'Productos en bajo stock', value: rowsData.length }]
   }),
   numericColumns: [5, 6],
@@ -279,7 +279,7 @@ export const buildLowStockWorksheet = (rowsData = []) => {
 
 export const buildByUserWorksheet = (rowsData = []) => ({
   rows: buildWorksheetRows({
-    reportTitle: 'Por Usuario',
+    reportTitle: 'Por usuario',
     header: ['Usuario', 'Rol', 'Movimientos', 'Entradas', 'Salidas', 'Actividad'],
     rows: rowsData.map((row) => [
       row.user,
@@ -299,7 +299,7 @@ export const buildByUserWorksheet = (rowsData = []) => ({
     { wch: toContentWidth(rowsData, (row) => resolveUserActivity(row), { min: 10, max: 14, header: 'Actividad' }) }
   ],
   summary: buildSummaryWorksheet({
-    reportTitle: 'Por Usuario',
+    reportTitle: 'Por usuario',
     summaryItems: [
       { label: 'Usuarios con movimientos', value: rowsData.length },
       { label: 'Movimientos consolidados', value: rowsData.reduce((sum, row) => sum + row.totalMovements, 0) }

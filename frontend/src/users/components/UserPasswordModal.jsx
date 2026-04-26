@@ -71,7 +71,7 @@ const UserPasswordModal = ({ isOpen, onClose, user, onSubmit, isSubmitting = fal
           ✕
         </button>
 
-        <h2 className="mb-1 text-xl font-bold text-[#1b2946]">Cambiar Contraseña</h2>
+        <h2 className="mb-1 text-xl font-bold text-[#1b2946]">Cambiar contraseña</h2>
         <p className="mb-1 text-sm text-[#7583a0]">Actualiza la contraseña del usuario seleccionado.</p>
         <p className="mb-5 text-sm font-medium text-[#1b2946]">
           {user.nombre || 'Sin nombre'} ({user.email || 'sin correo'})

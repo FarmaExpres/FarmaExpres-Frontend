@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { getMedicines, getMedicinesFefoSnapshot } from '../services/medicines.service'
+import { getActiveInventoryTable, getAllMedicines, getMedicines, getMedicinesFefoSnapshot } from '../services/medicines.service'
 
 const EditIcon = () => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-3.5 w-3.5">
@@ -54,11 +54,31 @@ const isExpiredDate = (value) => {
   return targetDate < startOfToday
 }
 
+const buildActiveInventoryKeys = (rows = []) => {
+  const keys = new Set()
+
+  rows.forEach((row) => {
+    if (row?.id !== null && row?.id !== undefined) keys.add(`id:${row.id}`)
+    if (row?.codigo) keys.add(`code:${String(row.codigo).trim().toLowerCase()}`)
+  })
+
+  return keys
+}
+
+const isListedAsActiveInventory = (medicine = {}, activeInventoryKeys = new Set()) => {
+  if (activeInventoryKeys.size === 0) return true
+
+  const idKey = `id:${medicine.id}`
+  const codeKey = `code:${String(medicine.codigo || '').trim().toLowerCase()}`
+  return activeInventoryKeys.has(idKey) || activeInventoryKeys.has(codeKey)
+}
+
 const MedicinesTable = ({
   reload,
   searchTerm = '',
   sortBy = 'code',
   readOnly = false,
+  includeInactive = false,
   onError,
   onEdit,
   onDeactivate
@@ -66,6 +86,7 @@ const MedicinesTable = ({
   const [medicines, setMedicines] = useState([])
   const [isLoading, setIsLoading] = useState(false)
   const [fefoByMedicineId, setFefoByMedicineId] = useState({})
+  const [activeInventoryKeys, setActiveInventoryKeys] = useState(new Set())
 
   const normalizedSearchTerm = searchTerm.trim().toLowerCase()
   const filteredMedicines = useMemo(() => {
@@ -140,7 +161,10 @@ const MedicinesTable = ({
       setIsLoading(true)
 
       try {
-        const data = await getMedicines()
+        const data = includeInactive
+          ? await getAllMedicines()
+          : await getMedicines()
+
         if (isMounted) setMedicines(data || [])
       } catch (error) {
         if (onError) onError(error.message || 'No se pudieron cargar los medicamentos.')
@@ -154,7 +178,31 @@ const MedicinesTable = ({
     return () => {
       isMounted = false
     }
-  }, [reload, onError])
+  }, [includeInactive, reload, onError])
+
+  useEffect(() => {
+    let isMounted = true
+
+    const loadActiveInventoryKeys = async () => {
+      if (!includeInactive) {
+        setActiveInventoryKeys(new Set())
+        return
+      }
+
+      try {
+        const rows = await getActiveInventoryTable()
+        if (isMounted) setActiveInventoryKeys(buildActiveInventoryKeys(Array.isArray(rows) ? rows : []))
+      } catch {
+        if (isMounted) setActiveInventoryKeys(new Set())
+      }
+    }
+
+    loadActiveInventoryKeys()
+
+    return () => {
+      isMounted = false
+    }
+  }, [includeInactive, reload])
 
   useEffect(() => {
     let isMounted = true
@@ -223,7 +271,6 @@ const MedicinesTable = ({
             filteredMedicines.map((medicine, index) => {
               const fefoReference = fefoByMedicineId[String(medicine?.id)] || null
               const operationalStock = Number(fefoReference?.operationalStock ?? medicine?.stock ?? 0)
-              const stockState = getStockVisualState(operationalStock, medicine.stockMinimo)
               const referenceDate =
                 fefoReference?.expirationDate ||
                 medicine.proximoVencimiento ||
@@ -237,11 +284,16 @@ const MedicinesTable = ({
               )
               const hasReferenceDate = Boolean(referenceDate)
               const isExpiredReference = hasReferenceDate && isExpiredDate(referenceDate)
+              const isOperationallyActive =
+                medicine.activo !== false &&
+                isListedAsActiveInventory(medicine, activeInventoryKeys)
+              const displayedOperationalStock = isOperationallyActive ? operationalStock : 0
+              const displayedStockState = getStockVisualState(displayedOperationalStock, medicine.stockMinimo)
 
               return (
                 <tr
                   key={medicine.id || index}
-                  className={medicine.activo === false ? 'bg-[#f6f7fb] text-gray-500' : ''}
+                  className={!isOperationallyActive ? 'bg-[#f6f7fb] text-gray-500' : ''}
                 >
                 <td className="whitespace-nowrap">
                   <span className="inline-flex h-8 items-center rounded-lg bg-[#eef2fa] px-3 text-xs font-semibold text-[#526180] 2xl:text-[12px]">
@@ -255,14 +307,14 @@ const MedicinesTable = ({
 
                 <td
                   className={`whitespace-nowrap text-center ${
-                    stockState === 'critical'
+                    displayedStockState === 'critical'
                       ? 'font-bold text-red-500'
-                      : stockState === 'warning'
+                      : displayedStockState === 'warning'
                         ? 'font-semibold text-amber-600'
                         : 'text-[#283b61]'
                   }`}
                 >
-                  {operationalStock}
+                  {displayedOperationalStock}
                 </td>
 
                 <td className="whitespace-nowrap text-center">{medicine.stockMinimo ?? 0}</td>
@@ -288,12 +340,12 @@ const MedicinesTable = ({
                 <td className="whitespace-nowrap text-center">
                   <span
                     className={`inline-flex h-8 min-w-[86px] items-center justify-center rounded-lg px-3 text-xs font-semibold 2xl:text-[12px] ${
-                      medicine.activo === false
+                      !isOperationallyActive
                         ? 'bg-slate-200 text-slate-700'
                         : 'bg-emerald-100 text-emerald-700'
                     }`}
                   >
-                    {medicine.activo === false ? 'Inactivo' : 'Activo'}
+                    {!isOperationallyActive ? 'Inactivo' : 'Activo'}
                   </span>
                 </td>
                 {!readOnly && (
@@ -304,7 +356,7 @@ const MedicinesTable = ({
                         onClick={() => onEdit?.(medicine)}
                         title="Editar medicamento"
                         aria-label="Editar medicamento"
-                        disabled={!medicine?.id || medicine.activo === false}
+                        disabled={!medicine?.id || !isOperationallyActive}
                         className="inline-flex h-8 w-8 items-center justify-center rounded-md bg-[#316dff] text-white transition hover:bg-[#295de0] disabled:cursor-not-allowed disabled:opacity-50"
                       >
                         <EditIcon />
@@ -315,7 +367,7 @@ const MedicinesTable = ({
                         onClick={() => onDeactivate?.(medicine)}
                         title="Desactivar medicamento"
                         aria-label="Desactivar medicamento"
-                        disabled={!medicine?.id || medicine.activo === false}
+                        disabled={!medicine?.id || !isOperationallyActive}
                         className="inline-flex h-8 w-8 items-center justify-center rounded-md bg-[#eb4e68] text-white transition hover:bg-[#d9405a] disabled:cursor-not-allowed disabled:opacity-50"
                       >
                         <DisableIcon />
