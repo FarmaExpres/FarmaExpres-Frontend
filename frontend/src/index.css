@@ -25,9 +25,13 @@
 @keyframes fe-route-enter {
   from {
     opacity: 0;
+    transform: translateY(8px);
+    filter: blur(1px);
   }
   to {
     opacity: 1;
+    transform: translateY(0);
+    filter: blur(0);
   }
 }
 
@@ -86,8 +90,8 @@
 
 @layer components {
   .fe-route-transition {
-    animation: fe-route-enter var(--fe-motion-slow) var(--fe-motion-ease);
-    will-change: opacity;
+    animation: fe-route-enter var(--fe-motion-base) var(--fe-motion-ease);
+    will-change: opacity, transform;
   }
 
   .fe-content-shell {

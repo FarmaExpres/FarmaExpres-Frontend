@@ -116,28 +116,28 @@ const iconMap = {
 
 const MENU_BY_ROLE = {
   [ROLES.ADMIN]: [
-    { key: 'dashboard', label: 'Dashboard' },
+    { key: 'dashboard', label: 'Dashboard', moduleKey: 'dashboard' },
     { key: 'medicines', label: 'Medicamentos', moduleKey: 'medicines' },
     { key: 'users', label: 'Usuarios', moduleKey: 'users' },
     { key: 'movements', label: 'Movimientos', moduleKey: 'movements' },
     { key: 'reports', label: 'Reportes', moduleKey: 'reports' },
     { key: 'alerts', label: 'Alertas', moduleKey: 'alerts', badge: '24' },
-    { key: 'stock', label: 'Control Stock' }
+    { key: 'stock', label: 'Control de stock', moduleKey: 'stock' }
   ],
   [ROLES.FARMACEUTICO]: [
-    { key: 'dashboard', label: 'Dashboard' },
+    { key: 'dashboard', label: 'Dashboard', moduleKey: 'dashboard' },
     { key: 'inventory', label: 'Inventario', moduleKey: 'medicines' },
     { key: 'entries', label: 'Entradas', moduleKey: 'entries' },
     { key: 'exits', label: 'Salidas', moduleKey: 'exits' },
     { key: 'alerts', label: 'Alertas', moduleKey: 'alerts', badge: '24' },
-    { key: 'stock', label: 'Control Stock' }
+    { key: 'stock', label: 'Control de stock', moduleKey: 'stock' }
   ],
   [ROLES.AUDITOR]: [
-    { key: 'dashboard', label: 'Dashboard' },
+    { key: 'dashboard', label: 'Dashboard', moduleKey: 'dashboard' },
     { key: 'inventory', label: 'Inventario', moduleKey: 'medicines' },
     { key: 'movements', label: 'Movimientos', moduleKey: 'movements' },
     { key: 'reports', label: 'Reportes', moduleKey: 'reports' },
-    { key: 'audit', label: 'Auditoria' }
+    { key: 'audit', label: 'Auditoría', moduleKey: 'audit' }
   ]
 }
 
@@ -151,7 +151,7 @@ const getInitials = (name) =>
     .toUpperCase()
 
 const getDefaultNameByRole = (role) => {
-  if (role === ROLES.FARMACEUTICO) return 'Usuario Farmaceutico'
+  if (role === ROLES.FARMACEUTICO) return 'Usuario Farmacéutico'
   if (role === ROLES.AUDITOR) return 'Usuario Auditor'
   return 'Usuario Administrador'
 }
