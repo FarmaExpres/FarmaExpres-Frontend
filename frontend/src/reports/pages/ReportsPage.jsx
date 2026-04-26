@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { useLocation, useNavigate } from 'react-router-dom'
 import {
   getActiveInventorySummary,
   getActiveInventoryTable
@@ -28,7 +29,12 @@ import { exportReportExcel } from '../utils/reportExport.utils'
 const REPORTS_ACTIVE_TAB_STORAGE_KEY = 'reports:active-tab'
 
 const ReportsPage = () => {
+  const location = useLocation()
+  const navigate = useNavigate()
   const [activeTab, setActiveTab] = useState(() => {
+    const requestedTab = String(location.state?.activeTab || '').trim()
+    if (REPORT_TABS.some((tab) => tab.key === requestedTab)) return requestedTab
+
     const persistedTab = String(sessionStorage.getItem(REPORTS_ACTIVE_TAB_STORAGE_KEY) || '').trim()
     const isValidPersistedTab = REPORT_TABS.some((tab) => tab.key === persistedTab)
     return isValidPersistedTab ? persistedTab : 'inventory'
@@ -50,7 +56,7 @@ const ReportsPage = () => {
   const [adjustmentMovements, setAdjustmentMovements] = useState([])
   const [byUserRows, setByUserRows] = useState([])
   const [filteredMovementsRows, setFilteredMovementsRows] = useState([])
-  const [movementsFilterKey, setMovementsFilterKey] = useState('all')
+  const [movementsFilterKey, setMovementsFilterKey] = useState(() => String(location.state?.movementFilter || 'all').trim() || 'all')
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
 
@@ -159,11 +165,25 @@ const ReportsPage = () => {
     sessionStorage.setItem(REPORTS_ACTIVE_TAB_STORAGE_KEY, activeTab)
   }, [activeTab])
 
+  useEffect(() => {
+    const requestedTab = String(location.state?.activeTab || '').trim()
+    const requestedMovementFilter = String(location.state?.movementFilter || '').trim()
+    const hasRequestedTab = REPORT_TABS.some((tab) => tab.key === requestedTab)
+    const hasRequestedMovementFilter = ['all', 'entrance', 'exit', 'adjustment'].includes(requestedMovementFilter)
+
+    if (hasRequestedTab) setActiveTab(requestedTab)
+    if (hasRequestedMovementFilter) setMovementsFilterKey(requestedMovementFilter)
+
+    if (hasRequestedTab || hasRequestedMovementFilter) {
+      navigate(location.pathname, { replace: true, state: null })
+    }
+  }, [location.pathname, location.state, navigate])
+
   return (
     <div className="fe-page-shell">
       <div className="fe-page-head">
         <div>
-          <h1 className="fe-page-title">Reportes del Sistema</h1>
+          <h1 className="fe-page-title">Reportes del sistema</h1>
         </div>
       </div>
 
@@ -206,11 +226,13 @@ const ReportsPage = () => {
       )}
       {activeTab === 'movements' && (
         <MovementsReportSection
+          key={movementsFilterKey}
           rows={movementsRows}
           entranceRows={entranceMovements}
           exitRows={exitMovements}
           adjustmentRows={adjustmentMovements}
           isLoading={isLoading}
+          initialTypeFilter={movementsFilterKey}
           onRowsForExportChange={setFilteredMovementsRows}
           onFilterForExportChange={setMovementsFilterKey}
           onExport={handleExportExcel}

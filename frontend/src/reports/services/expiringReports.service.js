@@ -136,6 +136,6 @@ export const getExpiringReportGroups = async (token) => {
       controlled: dedupeRows(groupedRows.controlled)
     }
   } catch (error) {
-    throw normalizeApiError(error, 'No se pudo obtener el reporte de proximos a vencer.')
+    throw normalizeApiError(error, 'No se pudo obtener el reporte de próximos a vencer.')
   }
 }

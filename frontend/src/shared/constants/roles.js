@@ -79,8 +79,6 @@ export const canAccessAlerts = (role) => {
 
 export const getDefaultRouteByRole = (role) => {
   const normalizedRole = normalizeRole(role)
-
-  if (normalizedRole === ROLES.AUDITOR) return '/movements'
-  if (normalizedRole === ROLES.FARMACEUTICO) return '/alerts'
+  if ([ROLES.ADMIN, ROLES.FARMACEUTICO, ROLES.AUDITOR].includes(normalizedRole)) return '/dashboard'
   return '/medicines'
 }

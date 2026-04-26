@@ -5,6 +5,7 @@ import {
   registerInventoryExit
 } from '../services/movements.service'
 import {
+  getActiveInventoryTable,
   getMedicines
 } from '../../medicines/services/medicines.service'
 import { getUsers } from '../../users/services/users.service'
@@ -21,10 +22,10 @@ const INITIAL_FORM = Object.freeze({
 })
 
 const EXIT_REASON_OPTIONS = Object.freeze([
-  'Venta',
-  'Devolucion proveedor',
-  'Merma',
-  'Ajuste inventario'
+  { value: 'Venta', label: 'Venta' },
+  { value: 'Devolucion proveedor', label: 'Devolución proveedor' },
+  { value: 'Merma', label: 'Merma' },
+  { value: 'Ajuste inventario', label: 'Ajuste inventario' }
 ])
 
 const toSortedMedicines = (medicines = []) => (
@@ -55,6 +56,24 @@ const isMedicineAvailableForExit = (medicine = {}) => {
   return expirationDate >= todayAtMidnight
 }
 
+const buildOperableMedicineKeys = (inventoryRows = []) => {
+  const keys = new Set()
+
+  inventoryRows.forEach((row) => {
+    if (row?.id !== null && row?.id !== undefined) keys.add(`id:${row.id}`)
+    if (row?.codigo) keys.add(`code:${String(row.codigo).trim().toLowerCase()}`)
+  })
+
+  return keys
+}
+
+const isInActiveInventory = (medicine = {}, operableKeys = new Set()) => {
+  if (operableKeys.size === 0) return true
+  const idKey = `id:${medicine.id}`
+  const codeKey = `code:${String(medicine.codigo || '').trim().toLowerCase()}`
+  return operableKeys.has(idKey) || operableKeys.has(codeKey)
+}
+
 const ExitsPage = () => {
   const [form, setForm] = useState(INITIAL_FORM)
   const [medicines, setMedicines] = useState([])
@@ -78,12 +97,17 @@ const ExitsPage = () => {
     setError('')
 
     try {
-      const [medicinesData, usersData] = await Promise.all([
+      const [medicinesData, activeInventoryRows, usersData] = await Promise.all([
         getMedicines(),
+        getActiveInventoryTable().catch(() => []),
         getUsers().catch(() => [])
       ])
 
       const normalizedMedicines = Array.isArray(medicinesData) ? medicinesData : []
+      const operableKeys = buildOperableMedicineKeys(Array.isArray(activeInventoryRows) ? activeInventoryRows : [])
+      const operableMedicines = normalizedMedicines.filter((medicine) =>
+        isMedicineAvailableForExit(medicine) && isInActiveInventory(medicine, operableKeys)
+      )
       const productsById = buildProductsMap(normalizedMedicines)
       const { usersByIdentity, usersById } = buildUsersIndex(usersData)
       const exitsData = await getExitMovements({
@@ -92,7 +116,7 @@ const ExitsPage = () => {
         usersById
       })
 
-      setMedicines(normalizedMedicines)
+      setMedicines(operableMedicines)
       setExits(Array.isArray(exitsData) ? exitsData : [])
     } catch (loadError) {
       setMedicines([])
@@ -128,7 +152,7 @@ const ExitsPage = () => {
     }
 
     if (!Number.isFinite(amount) || amount <= 0) {
-      setError('La cantidad debe ser un numero mayor a 0.')
+      setError('La cantidad debe ser un número mayor a 0.')
       return
     }
 
@@ -161,10 +185,7 @@ const ExitsPage = () => {
     <div className="fe-page-shell">
       <div className="fe-page-head">
         <div>
-          <h1 className="fe-page-title">Registrar Salida de Inventario</h1>
-          <p className="fe-section-subtitle">
-            Registra egresos del inventario y consulta las ultimas salidas registradas.
-          </p>
+          <h1 className="fe-page-title">Registrar salida de inventario</h1>
         </div>
       </div>
 
@@ -227,15 +248,15 @@ const ExitsPage = () => {
                 required
               >
                 {EXIT_REASON_OPTIONS.map((reasonOption) => (
-                  <option key={reasonOption} value={reasonOption}>
-                    {reasonOption}
+                  <option key={reasonOption.value} value={reasonOption.value}>
+                    {reasonOption.label}
                   </option>
                 ))}
               </select>
             </div>
 
             <div>
-              <label htmlFor="exit-observation">Observacion (opcional)</label>
+              <label htmlFor="exit-observation">Observación (opcional)</label>
               <textarea
                 id="exit-observation"
                 name="observation"
@@ -251,7 +272,7 @@ const ExitsPage = () => {
               <div className="rounded-xl border border-[#e9eef8] bg-[#f7f9ff] px-4 py-3 text-sm text-[#5f6e8d]">
                 <p className="font-semibold text-[#24314a]">{selectedMedicine.nombre}</p>
                 <p>Stock actual: {selectedMedicine.stock}</p>
-                <p>Proximo vencimiento: {selectedMedicine.proximoVencimiento || 'Sin referencia'}</p>
+                <p>Próximo vencimiento: {selectedMedicine.proximoVencimiento || 'Sin referencia'}</p>
               </div>
             )}
 
@@ -296,10 +317,7 @@ const ExitsPage = () => {
           <div className="fe-card p-4 md:p-5">
             <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
               <div>
-                <h2 className="fe-section-title text-[1.18rem]">Ultimas salidas</h2>
-                <p className="fe-section-subtitle">
-                  Historial reciente de movimientos de salida consumido desde backend.
-                </p>
+                <h2 className="fe-section-title text-[1.18rem]">Últimas salidas</h2>
               </div>
               <p className="text-sm font-medium text-[#6b7896]">
                 Registros visibles: <span className="font-semibold text-[#24314a]">{exits.length}</span>

@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import MedicinesTable from '../components/MedicinesTable'
 import DeactivateMedicineModal from '../components/DeactivateMedicineModal'
 import { deactivateMedicine } from '../services/medicines.service'
-import { canManageMedicines } from '../../shared/constants/roles'
+import { canManageMedicines, normalizeRole, ROLES } from '../../shared/constants/roles'
 
 const MEDICINES_SEARCH_STORAGE_KEY = 'medicines:search-term'
 const MEDICINES_SORT_STORAGE_KEY = 'medicines:sort-by'
@@ -49,6 +49,8 @@ const MedicinesPage = ({ role }) => {
   const navigate = useNavigate()
   const location = useLocation()
   const isReadOnly = !canManageMedicines(role)
+  const normalizedRole = normalizeRole(role)
+  const canViewInactiveMedicines = [ROLES.ADMIN, ROLES.AUDITOR].includes(normalizedRole)
   const [medicineToDeactivate, setMedicineToDeactivate] = useState(null)
   const [openDeactivateModal, setOpenDeactivateModal] = useState(false)
   const [isDeactivating, setIsDeactivating] = useState(false)
@@ -262,6 +264,7 @@ const MedicinesPage = ({ role }) => {
         searchTerm={searchTerm}
         sortBy={sortBy}
         readOnly={isReadOnly}
+        includeInactive={canViewInactiveMedicines}
         onError={handleError}
         onEdit={handleOpenEdit}
         onDeactivate={handleDeactivate}
