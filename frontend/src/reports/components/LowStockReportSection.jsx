@@ -141,7 +141,7 @@ const LowStockReportSection = ({
         <div className="border-b border-[#e8edf8] bg-[#f7f9ff] px-4 py-3">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <h2 className="text-[1.2rem] font-bold text-[#1f2e4d]">Reporte de Bajo Stock</h2>
+              <h2 className="text-[1.2rem] font-bold text-[#1f2e4d]">Reporte de bajo stock</h2>
               <p className="mt-1 text-sm text-[#6e7d99]">Productos por debajo del stock mínimo y sugerencia de reposición.</p>
             </div>
             <button

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { useLocation, useNavigate } from 'react-router-dom'
 import AlertsSummaryBar from '../components/AlertsSummaryBar'
 import ExpiredAlertsSection from '../components/sections/ExpiredAlertsSection'
 import ExpiringAlertsSection from '../components/sections/ExpiringAlertsSection'
@@ -25,6 +26,8 @@ const buildInitialOpenSections = () =>
   }, {})
 
 const AlertsPage = () => {
+  const location = useLocation()
+  const navigate = useNavigate()
   const [sectionsData, setSectionsData] = useState(ALERTS_EMPTY_DATA)
   const [openSections, setOpenSections] = useState(buildInitialOpenSections)
   const [isLoading, setIsLoading] = useState(false)
@@ -79,6 +82,23 @@ const AlertsPage = () => {
 
   const hasAnyAlert = totalAlerts > 0
 
+  useEffect(() => {
+    const requestedSection = String(location.state?.openSection || '').trim()
+    if (!requestedSection || isLoading) return
+
+    const isValidSection = ALERTS_SECTION_ORDER.some((section) => section.key === requestedSection)
+    if (!isValidSection) return
+
+    setOpenSections((current) => ({ ...current, [requestedSection]: true }))
+    window.requestAnimationFrame(() => {
+      document.getElementById(`alerts-${requestedSection}`)?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start'
+      })
+    })
+    navigate(location.pathname, { replace: true, state: null })
+  }, [isLoading, location.pathname, location.state, navigate])
+
   const handleToggleSection = (sectionKey) => {
     setOpenSections((current) => ({
       ...current,
@@ -98,10 +118,7 @@ const AlertsPage = () => {
     <div className="fe-page-shell">
       <div className="fe-page-head">
         <div>
-          <h1 className="fe-page-title">Centro de Alertas</h1>
-          <p className="fe-section-subtitle">
-            Prioriza reposición y control sanitario con una vista consolidada de alertas críticas.
-          </p>
+          <h1 className="fe-page-title">Centro de alertas</h1>
         </div>
       </div>
 

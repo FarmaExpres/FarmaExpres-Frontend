@@ -55,11 +55,12 @@ const MovementsReportSection = ({
   isLoading = false,
   onRowsForExportChange,
   onFilterForExportChange,
+  initialTypeFilter = 'all',
   onExport,
   exportDisabled = false,
   isExporting = false
 }) => {
-  const [typeFilter, setTypeFilter] = useState('all')
+  const [typeFilter, setTypeFilter] = useState(initialTypeFilter)
   const [pageSize, setPageSize] = useState(15)
   const [page, setPage] = useState(1)
 

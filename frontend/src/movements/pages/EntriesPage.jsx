@@ -5,6 +5,7 @@ import {
   registerInventoryEntry
 } from '../services/movements.service'
 import {
+  getActiveInventoryTable,
   getMedicines
 } from '../../medicines/services/medicines.service'
 import { getUsers } from '../../users/services/users.service'
@@ -22,10 +23,10 @@ const INITIAL_FORM = Object.freeze({
 })
 
 const ENTRY_REASON_OPTIONS = Object.freeze([
-  'Compra proveedor',
-  'Devolucion',
-  'Donacion',
-  'Ajuste inventario'
+  { value: 'Compra proveedor', label: 'Compra proveedor' },
+  { value: 'Devolucion', label: 'Devolución' },
+  { value: 'Donacion', label: 'Donación' },
+  { value: 'Ajuste inventario', label: 'Ajuste inventario' }
 ])
 
 const toSortedMedicines = (medicines = []) => (
@@ -34,7 +35,25 @@ const toSortedMedicines = (medicines = []) => (
   )
 )
 
-const filterActiveMedicines = (medicines = []) => medicines.filter((medicine) => medicine?.activo !== false)
+const buildOperableMedicineKeys = (inventoryRows = []) => {
+  const keys = new Set()
+
+  inventoryRows.forEach((row) => {
+    if (row?.id !== null && row?.id !== undefined) keys.add(`id:${row.id}`)
+    if (row?.codigo) keys.add(`code:${String(row.codigo).trim().toLowerCase()}`)
+  })
+
+  return keys
+}
+
+const isOperableMedicine = (medicine = {}, operableKeys = new Set()) => {
+  if (medicine?.activo === false) return false
+  if (operableKeys.size === 0) return true
+
+  const idKey = `id:${medicine.id}`
+  const codeKey = `code:${String(medicine.codigo || '').trim().toLowerCase()}`
+  return operableKeys.has(idKey) || operableKeys.has(codeKey)
+}
 
 const buildAutomaticBatchCode = (medicine, expirationDate) => {
   const medicineCode = String(medicine?.codigo || medicine?.nombre || 'MED').trim()
@@ -64,7 +83,7 @@ const EntriesPage = () => {
   const [successMessage, setSuccessMessage] = useState('')
 
   const medicineOptions = useMemo(
-    () => toSortedMedicines(filterActiveMedicines(medicines)),
+    () => toSortedMedicines(medicines),
     [medicines]
   )
   const selectedMedicine = useMemo(
@@ -81,12 +100,15 @@ const EntriesPage = () => {
     setError('')
 
     try {
-      const [medicinesData, usersData] = await Promise.all([
+      const [medicinesData, activeInventoryRows, usersData] = await Promise.all([
         getMedicines(),
+        getActiveInventoryTable().catch(() => []),
         getUsers().catch(() => [])
       ])
 
       const normalizedMedicines = Array.isArray(medicinesData) ? medicinesData : []
+      const operableKeys = buildOperableMedicineKeys(Array.isArray(activeInventoryRows) ? activeInventoryRows : [])
+      const operableMedicines = normalizedMedicines.filter((medicine) => isOperableMedicine(medicine, operableKeys))
       const productsById = buildProductsMap(normalizedMedicines)
       const { usersByIdentity, usersById } = buildUsersIndex(usersData)
       const entriesData = await getEntranceMovements({
@@ -95,7 +117,7 @@ const EntriesPage = () => {
         usersById
       })
 
-      setMedicines(normalizedMedicines)
+      setMedicines(operableMedicines)
       setEntries(Array.isArray(entriesData) ? entriesData : [])
     } catch (loadError) {
       setMedicines([])
@@ -131,7 +153,7 @@ const EntriesPage = () => {
     }
 
     if (!Number.isFinite(amount) || amount <= 0) {
-      setError('La cantidad debe ser un numero mayor a 0.')
+      setError('La cantidad debe ser un número mayor a 0.')
       return
     }
 
@@ -171,10 +193,7 @@ const EntriesPage = () => {
     <div className="fe-page-shell">
       <div className="fe-page-head">
         <div>
-          <h1 className="fe-page-title">Registrar Entrada de Inventario</h1>
-          <p className="fe-section-subtitle">
-            Registra ingresos al inventario y consulta las ultimas entradas registradas.
-          </p>
+          <h1 className="fe-page-title">Registrar entrada de inventario</h1>
         </div>
       </div>
 
@@ -183,7 +202,7 @@ const EntriesPage = () => {
           <div className="mb-4">
             <h2 className="fe-section-title text-[1.18rem]">Nueva entrada</h2>
             <p className="fe-section-subtitle">
-              Completa los datos del lote y envia la novedad al backend.
+              Completa los datos del lote y envía la novedad al backend.
             </p>
           </div>
 
@@ -251,15 +270,15 @@ const EntriesPage = () => {
                 required
               >
                 {ENTRY_REASON_OPTIONS.map((reasonOption) => (
-                  <option key={reasonOption} value={reasonOption}>
-                    {reasonOption}
+                  <option key={reasonOption.value} value={reasonOption.value}>
+                    {reasonOption.label}
                   </option>
                 ))}
               </select>
             </div>
 
             <div>
-              <label htmlFor="entry-observation">Observacion (opcional)</label>
+              <label htmlFor="entry-observation">Observación (opcional)</label>
               <textarea
                 id="entry-observation"
                 name="observation"
@@ -275,8 +294,8 @@ const EntriesPage = () => {
               <div className="rounded-xl border border-[#e9eef8] bg-[#f7f9ff] px-4 py-3 text-sm text-[#5f6e8d]">
                 <p className="font-semibold text-[#24314a]">{selectedMedicine.nombre}</p>
                 <p>Stock actual: {selectedMedicine.stock}</p>
-                <p>Proximo vencimiento: {selectedMedicine.proximoVencimiento || 'Sin referencia'}</p>
-                <p>Lote generado automaticamente: {autoBatchCode || 'Pendiente por fecha de vencimiento'}</p>
+                <p>Próximo vencimiento: {selectedMedicine.proximoVencimiento || 'Sin referencia'}</p>
+                <p>Lote generado automáticamente: {autoBatchCode || 'Pendiente por fecha de vencimiento'}</p>
               </div>
             )}
 
@@ -321,10 +340,7 @@ const EntriesPage = () => {
           <div className="fe-card p-4 md:p-5">
             <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
               <div>
-                <h2 className="fe-section-title text-[1.18rem]">Ultimas entradas</h2>
-                <p className="fe-section-subtitle">
-                  Historial reciente de movimientos de entrada consumido desde backend.
-                </p>
+                <h2 className="fe-section-title text-[1.18rem]">Últimas entradas</h2>
               </div>
               <p className="text-sm font-medium text-[#6b7896]">
                 Registros visibles: <span className="font-semibold text-[#24314a]">{entries.length}</span>
