@@ -5,6 +5,7 @@ import {
 } from '../../shared/services/api.service'
 
 const PRODUCTS_ENDPOINT = '/api/products'
+const ALL_PRODUCTS_ENDPOINT = '/api/products/all'
 const FEFO_SNAPSHOT_ENDPOINT = '/api/products/fefo-snapshot'
 const ACTIVE_TABLE_ENDPOINT = '/api/products/active-table'
 const ACTIVE_SUMMARY_ENDPOINT = '/api/products/active-summary'
@@ -177,6 +178,18 @@ export const getMedicines = async (token) => {
     return Array.isArray(response.data) ? response.data.map(mapProduct) : []
   } catch (error) {
     throw normalizeApiError(error, 'No se pudo obtener la lista de medicamentos.')
+  }
+}
+
+export const getAllMedicines = async (token) => {
+  try {
+    const response = await inventoryApi.get(ALL_PRODUCTS_ENDPOINT, {
+      headers: buildAuthHeaders(token)
+    })
+
+    return Array.isArray(response.data) ? response.data.map(mapProduct) : []
+  } catch (error) {
+    throw normalizeApiError(error, 'No se pudo obtener la lista completa de medicamentos.')
   }
 }
 

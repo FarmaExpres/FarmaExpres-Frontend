@@ -17,7 +17,7 @@ export const ALERTS_SECTION_ORDER = Object.freeze([
   },
   {
     key: 'lowStock',
-    title: 'Medicamentos con Bajo Stock',
+    title: 'Medicamentos con bajo stock',
     shortLabel: 'Bajo stock',
     tone: 'warning',
     emptyMessage: 'No hay medicamentos con bajo stock',
