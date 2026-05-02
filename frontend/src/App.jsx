@@ -12,6 +12,7 @@ import ReportsPage from './reports/pages/ReportsPage'
 import AlertsPage from './alerts/pages/AlertsPage'
 import { getAlertsCenterData } from './alerts/services/alerts.service'
 import DashboardPage from './dashboard/pages/DashboardPage'
+import StockControlPage from './stock/pages/StockControlPage'
 import LoginPage from './auth/pages/LoginPage'
 import ProtectedRoute from './shared/routing/ProtectedRoute'
 import PublicOnlyRoute from './shared/routing/PublicOnlyRoute'
@@ -23,6 +24,7 @@ import {
   canAccessMedicines,
   canAccessMovements,
   canAccessReports,
+  canAccessStockControl,
   canManageMedicines,
   getDefaultRouteByRole
 } from './shared/constants/roles'
@@ -68,6 +70,7 @@ function App() {
   const canAccessMovementsModule = canAccessMovements(session.role)
   const canAccessReportsModule = canAccessReports(session.role)
   const canAccessAlertsModule = canAccessAlerts(session.role)
+  const canAccessStockControlModule = canAccessStockControl(session.role)
   const canManageMedicinesModule = canManageMedicines(session.role)
   const [alertsCount, setAlertsCount] = useState(0)
 
@@ -126,6 +129,7 @@ function App() {
     }
 
     if (moduleKey === 'stock') {
+      if (!canAccessStockControlModule) return
       navigate('/stock')
       return
     }
@@ -369,17 +373,19 @@ function App() {
         />
         <Route
           path="/stock"
-          element={(
-            <AppShell
-              session={session}
-              activeModule="stock"
-              routeKey={location.key}
-              onNavigate={handleNavigate}
-              onLogout={handleLogout}
-              alertsCount={alertsCount}
-              content={<FutureModulePage title="Control de stock" message="Módulo reservado para la gestión avanzada de stock." />}
-            />
-          )}
+          element={canAccessStockControlModule
+            ? (
+              <AppShell
+                session={session}
+                activeModule="stock"
+                routeKey={location.key}
+                onNavigate={handleNavigate}
+                onLogout={handleLogout}
+                alertsCount={alertsCount}
+                content={<StockControlPage />}
+              />
+              )
+            : <Navigate to={defaultRoute} replace />}
         />
         <Route
           path="/audit"
