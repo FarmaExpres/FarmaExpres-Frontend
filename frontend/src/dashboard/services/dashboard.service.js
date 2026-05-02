@@ -28,6 +28,46 @@ const toNumberOrDefault = (value, fallback = 0) => {
   return Number.isFinite(parsedValue) ? parsedValue : fallback
 }
 
+const normalizeKey = (value) => String(value ?? '').trim().toLowerCase()
+
+const getMovementProductKeys = (movement = {}) => [
+  normalizeKey(movement?.productId),
+  normalizeKey(movement?.medicineId),
+  normalizeKey(movement?.productCode),
+  normalizeKey(movement?.code),
+  normalizeKey(movement?.codigo),
+  normalizeKey(movement?.medicine)
+].filter(Boolean)
+
+const buildActiveMedicineIndex = (medicines = []) => {
+  const activeKeys = new Set()
+
+  medicines.forEach((medicine) => {
+    if (medicine?.activo === false) return
+
+    ;[
+      medicine?.id,
+      medicine?.codigo,
+      medicine?.code,
+      medicine?.nombre,
+      medicine?.name
+    ].forEach((value) => {
+      const key = normalizeKey(value)
+      if (key) activeKeys.add(key)
+    })
+  })
+
+  return activeKeys
+}
+
+const filterActiveMedicines = (medicines = []) => medicines.filter((medicine) => medicine?.activo !== false)
+
+const isMovementFromActiveMedicine = (movement = {}, activeMedicineKeys = new Set()) => {
+  if (activeMedicineKeys.size === 0) return true
+  const movementProductKeys = getMovementProductKeys(movement)
+  return movementProductKeys.some((key) => activeMedicineKeys.has(key))
+}
+
 const countAlerts = (alertsData = {}) =>
   ['expired', 'expiringSoon', 'lowStock', 'outOfStock'].reduce(
     (sum, sectionKey) => sum + (Array.isArray(alertsData?.[sectionKey]) ? alertsData[sectionKey].length : 0),
@@ -96,10 +136,12 @@ const buildMovementsByDay = ({ entranceMovements = [], exitMovements = [] } = {}
   return days
 }
 
-const buildTopMovedMedicines = (movements = []) => {
+const buildTopMovedMedicines = (movements = [], activeMedicineKeys = new Set()) => {
   const totalsByMedicine = new Map()
 
   movements.forEach((movement) => {
+    if (!isMovementFromActiveMedicine(movement, activeMedicineKeys)) return
+
     const medicineName = String(movement?.medicine || '').trim()
     const fallbackKey = String(movement?.productId || movement?.id || '').trim()
     const key = medicineName && medicineName !== 'No disponible' ? medicineName : fallbackKey
@@ -251,6 +293,7 @@ const fetchKpisBlock = async ({ includeAlerts = true, role } = {}) => {
   const medicines = medicinesResult.status === 'fulfilled' && Array.isArray(medicinesResult.value)
     ? medicinesResult.value
     : []
+  const activeMedicines = filterActiveMedicines(medicines)
   const entranceMovements = entranceResult.status === 'fulfilled' && Array.isArray(entranceResult.value)
     ? entranceResult.value
     : []
@@ -261,8 +304,8 @@ const fetchKpisBlock = async ({ includeAlerts = true, role } = {}) => {
   const alertsData = alertsResult.status === 'fulfilled' ? alertsResult.value : null
   const hasInventoryData = inventoryRowsResult.status === 'fulfilled' || summaryResult.status === 'fulfilled' || medicinesResult.status === 'fulfilled'
   const hasAlertsData = includeAlerts && alertsResult.status === 'fulfilled'
-  const medicinesSource = inventoryRows.length > 0 ? inventoryRows : medicines
-  const totalStockFromMedicines = medicines.reduce((sum, row) => sum + toNumberOrDefault(row.stock, 0), 0)
+  const medicinesSource = inventoryRows.length > 0 ? inventoryRows : activeMedicines
+  const totalStockFromMedicines = activeMedicines.reduce((sum, row) => sum + toNumberOrDefault(row.stock, 0), 0)
 
   if (!hasInventoryData && !hasAlertsData) {
     throw new Error('No se pudieron cargar los indicadores principales.')
@@ -325,8 +368,9 @@ const fetchAuditBlock = async () => {
 const fetchTopMovedBlock = async () => {
   const medicines = await getMedicines().catch(() => [])
   const productsById = buildProductsMap(medicines)
+  const activeMedicineKeys = buildActiveMedicineIndex(medicines)
   const movements = await getMovements({ productsById })
-  return buildTopMovedMedicines(movements)
+  return buildTopMovedMedicines(movements, activeMedicineKeys)
 }
 
 const fetchOperationalBlock = async () => {
