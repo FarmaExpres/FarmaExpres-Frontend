@@ -2,12 +2,19 @@ import { authApi, normalizeApiError } from '../../shared/services/api.service'
 import { normalizeRole } from '../../shared/constants/roles'
 
 const AUTH_LOGIN_ENDPOINT = '/api/auth/login'
+const AUTH_REFRESH_ENDPOINT = '/api/auth/refresh'
 
 const resolveToken = (payload = {}) => (
   payload?.token ||
   payload?.jwt ||
   payload?.accessToken ||
   payload?.access_token ||
+  ''
+)
+
+const resolveRefreshToken = (payload = {}) => (
+  payload?.refreshToken ||
+  payload?.refresh_token ||
   ''
 )
 
@@ -36,6 +43,7 @@ export const login = async ({ email, password }) => {
 
     return {
       token,
+      refreshToken: String(resolveRefreshToken(payload) || '').trim(),
       role,
       email: userEmail,
       name: userName
@@ -58,5 +66,37 @@ export const login = async ({ email, password }) => {
     }
 
     throw normalizedError
+  }
+}
+
+export const refreshSession = async (refreshToken) => {
+  try {
+    const response = await authApi.post(AUTH_REFRESH_ENDPOINT, {
+      refreshToken: String(refreshToken || '').trim()
+    })
+
+    const payload = response?.data || {}
+    const token = String(resolveToken(payload) || '').trim()
+    const nextRefreshToken = String(resolveRefreshToken(payload) || refreshToken || '').trim()
+
+    if (!token) {
+      throw new Error('La respuesta de renovacion no contiene token.')
+    }
+
+    return {
+      token,
+      refreshToken: nextRefreshToken,
+      role: normalizeRole(payload?.role || payload?.rol || ''),
+      email: String(payload?.email || '').trim().toLowerCase(),
+      name: String(
+        payload?.name ||
+        payload?.nombre ||
+        payload?.fullName ||
+        payload?.fullname ||
+        ''
+      ).trim()
+    }
+  } catch (error) {
+    throw normalizeApiError(error, 'No fue posible renovar la sesion.')
   }
 }

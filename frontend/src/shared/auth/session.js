@@ -19,7 +19,7 @@ const decodeBase64UrlUtf8 = (payload) => {
 
 const repairMojibakeText = (value = '') => {
   const text = String(value || '')
-  if (!/[ÃÂ]/.test(text)) return text
+  if (!/[ÃƒÃ‚]/.test(text)) return text
 
   try {
     const bytes = Uint8Array.from(text, (char) => char.charCodeAt(0))
@@ -84,6 +84,8 @@ const isTokenExpired = (token) => {
   return exp <= nowInSeconds
 }
 
+export const getRefreshToken = () => sanitizeToken(localStorage.getItem('authRefreshToken'))
+
 export const getAuthToken = () => {
   const persistedToken = sanitizeToken(localStorage.getItem('authToken'))
   const envToken = sanitizeToken(import.meta.env.VITE_DEV_TOKEN || '')
@@ -91,9 +93,10 @@ export const getAuthToken = () => {
 
   if (!token) return ''
   if (!isTokenExpired(token)) return token
+  if (getRefreshToken()) return token
 
-  // Si el token venció se limpia sesión persistida para forzar nuevo login.
   localStorage.removeItem('authToken')
+  localStorage.removeItem('authRefreshToken')
   localStorage.removeItem('authUserRole')
   localStorage.removeItem('authUserEmail')
   localStorage.removeItem('authUserName')
@@ -115,11 +118,12 @@ const getSessionFromToken = (token) => {
   }
 }
 
-export const saveSession = ({ token, role, email, name } = {}) => {
+export const saveSession = ({ token, refreshToken, role, email, name } = {}) => {
   const sanitizedToken = sanitizeToken(token)
+  const sanitizedRefreshToken = sanitizeToken(refreshToken)
 
   if (!sanitizedToken) {
-    throw new Error('No se recibió un token de autenticación válido.')
+    throw new Error('No se recibio un token de autenticacion valido.')
   }
 
   const tokenSession = getSessionFromToken(sanitizedToken)
@@ -133,9 +137,26 @@ export const saveSession = ({ token, role, email, name } = {}) => {
   const safeName = repairMojibakeText(normalizedName)
 
   localStorage.setItem('authToken', sanitizedToken)
+  if (sanitizedRefreshToken) {
+    localStorage.setItem('authRefreshToken', sanitizedRefreshToken)
+  }
   localStorage.setItem('authUserRole', normalizedRole)
   localStorage.setItem('authUserEmail', normalizedEmail)
   localStorage.setItem('authUserName', safeName)
+}
+
+export const updateSessionTokens = ({ token, refreshToken, role, email, name } = {}) => {
+  const persistedRole = normalizeRole(localStorage.getItem('authUserRole') || '')
+  const persistedEmail = String(localStorage.getItem('authUserEmail') || '').trim().toLowerCase()
+  const persistedName = repairMojibakeText(localStorage.getItem('authUserName') || '')
+
+  saveSession({
+    token,
+    refreshToken: refreshToken || getRefreshToken(),
+    role: role || persistedRole,
+    email: email || persistedEmail,
+    name: name || persistedName
+  })
 }
 
 export const getSession = () => {
@@ -146,7 +167,6 @@ export const getSession = () => {
   const envRole = normalizeRole(import.meta.env.VITE_DEV_ROLE || '')
   const hasToken = Boolean(token)
 
-  // Si hay token, se prioriza su rol real para no habilitar acciones que backend rechazará (403).
   const role = hasToken
     ? tokenRole
     : (persistedRole || envRole || ROLES.ADMIN)
@@ -166,6 +186,7 @@ export const isAdmin = (role) => normalizeRole(role) === ROLES.ADMIN
 
 export const clearSession = () => {
   localStorage.removeItem('authToken')
+  localStorage.removeItem('authRefreshToken')
   localStorage.removeItem('authUserRole')
   localStorage.removeItem('authUserEmail')
   localStorage.removeItem('authUserName')

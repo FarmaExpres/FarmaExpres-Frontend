@@ -1,6 +1,6 @@
 import axios from 'axios'
 import { API_URL, AUTH_API_URL } from '../config/api'
-import { clearSession, getAuthToken } from '../auth/session'
+import { clearSession, getAuthToken, getRefreshToken, updateSessionTokens } from '../auth/session'
 
 export const inventoryApi = axios.create({
   baseURL: API_URL
@@ -10,18 +10,96 @@ export const authApi = axios.create({
   baseURL: AUTH_API_URL
 })
 
+const AUTH_LOGIN_ENDPOINT = '/api/auth/login'
+const AUTH_REFRESH_ENDPOINT = '/api/auth/refresh'
+let refreshSessionPromise = null
+
 const redirectToLogin = () => {
   if (typeof window === 'undefined') return
   if (window.location.pathname === '/login') return
   window.location.replace('/login')
 }
 
-const handleAuthFailure = (error) => {
-  const status = error?.response?.status
-  const requestUrl = String(error?.config?.url || '')
-  const isLoginRequest = /\/api\/auth\/login$/i.test(requestUrl)
+const resolveToken = (payload = {}) => (
+  payload?.token ||
+  payload?.jwt ||
+  payload?.accessToken ||
+  payload?.access_token ||
+  ''
+)
 
-  // Solo 401 invalida sesión. 403 se maneja en UI como "sin permisos" sin expulsar al usuario.
+const resolveRefreshToken = (payload = {}) => (
+  payload?.refreshToken ||
+  payload?.refresh_token ||
+  ''
+)
+
+const isAuthEndpoint = (url, endpoint) => {
+  const requestUrl = String(url || '')
+  return requestUrl === endpoint || requestUrl.endsWith(endpoint)
+}
+
+const requestNewAccessToken = async () => {
+  const refreshToken = getRefreshToken()
+
+  if (!refreshToken) {
+    throw new Error('No hay refresh token disponible.')
+  }
+
+  const response = await authApi.post(AUTH_REFRESH_ENDPOINT, { refreshToken })
+  const payload = response?.data || {}
+  const token = String(resolveToken(payload) || '').trim()
+  const nextRefreshToken = String(resolveRefreshToken(payload) || refreshToken).trim()
+
+  if (!token) {
+    throw new Error('La respuesta de renovacion no contiene token.')
+  }
+
+  updateSessionTokens({
+    token,
+    refreshToken: nextRefreshToken,
+    role: payload?.role || payload?.rol || '',
+    email: payload?.email || '',
+    name: payload?.name || payload?.nombre || payload?.fullName || payload?.fullname || ''
+  })
+
+  return token
+}
+
+const refreshAccessToken = async () => {
+  if (!refreshSessionPromise) {
+    refreshSessionPromise = requestNewAccessToken().finally(() => {
+      refreshSessionPromise = null
+    })
+  }
+
+  return refreshSessionPromise
+}
+
+const handleAuthFailure = async (error) => {
+  const status = error?.response?.status
+  const originalRequest = error?.config || {}
+  const requestUrl = String(originalRequest?.url || '')
+  const isLoginRequest = isAuthEndpoint(requestUrl, AUTH_LOGIN_ENDPOINT)
+  const isRefreshRequest = isAuthEndpoint(requestUrl, AUTH_REFRESH_ENDPOINT)
+
+  if (status === 401 && !isLoginRequest && !isRefreshRequest && !originalRequest._retry) {
+    try {
+      originalRequest._retry = true
+      const token = await refreshAccessToken()
+      originalRequest.headers = {
+        ...(originalRequest.headers || {}),
+        Authorization: `Bearer ${token}`
+      }
+
+      return axios(originalRequest)
+    } catch {
+      clearSession()
+      redirectToLogin()
+    }
+  }
+
+  // Solo 401 invalida sesion. 403 se maneja en UI como "sin permisos" sin expulsar al usuario.
   if (status === 401 && !isLoginRequest) {
     clearSession()
     redirectToLogin()
@@ -39,7 +117,7 @@ export const buildAuthHeaders = (token) => {
   if (!authToken) {
     clearSession()
     redirectToLogin()
-    throw new Error('No hay token de autenticación. Inicia sesión o configura VITE_DEV_TOKEN.')
+    throw new Error('No hay token de autenticacion. Inicia sesion o configura VITE_DEV_TOKEN.')
   }
 
   return {
@@ -67,9 +145,9 @@ export const normalizeApiError = (error, fallbackMessage) => {
     /forbidden|denegado|permiso|acceso/i.test(backendMessage)
 
   const userFriendlyMessage = isForbidden
-    ? 'No tienes permisos para realizar esta acción con tu rol actual.'
+    ? 'No tienes permisos para realizar esta accion con tu rol actual.'
     : isUnauthorized
-      ? 'Tu sesión expiró o el token no es válido. Inicia sesión nuevamente y actualiza el token.'
+      ? 'Tu sesion expiro o el token no es valido. Inicia sesion nuevamente y actualiza el token.'
       : backendMessage
 
   return {
@@ -80,7 +158,7 @@ export const normalizeApiError = (error, fallbackMessage) => {
     isUnauthorized,
     isForbidden,
     isNotFound: status === 404 || /no encontrado|not found/i.test(backendMessage),
-    isDuplicateCode: /duplic|exist|codigo|código/i.test(backendMessage),
+    isDuplicateCode: /duplic|exist|codigo|c[oó]digo/i.test(backendMessage),
     isDuplicateEmail:
       status === 409 ||
       (/email|correo/i.test(backendMessage) && /duplic|exist|registrad/i.test(backendMessage))
