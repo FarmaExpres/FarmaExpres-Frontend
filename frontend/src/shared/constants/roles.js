@@ -6,18 +6,22 @@ export const ROLES = Object.freeze({
 
 export const USER_ROLE_OPTIONS = Object.freeze([
   { value: ROLES.ADMIN, label: 'Administrador', apiValues: ['ADMIN', 'ADMINISTRADOR'] },
-  { value: ROLES.FARMACEUTICO, label: 'Farmacéutico', apiValues: ['FARMACEUTICO', 'FARMACÉUTICO', 'EMPLEADO'] },
+  { value: ROLES.FARMACEUTICO, label: 'Farmacéutico', apiValues: ['FARMACEUTICO', 'FARMACÉUTICO', 'PHARMACIST', 'EMPLEADO'] },
   { value: ROLES.AUDITOR, label: 'Auditor', apiValues: ['AUDITOR'] }
 ])
 
 const ROLE_NORMALIZATION = {
   ADMIN: ROLES.ADMIN,
+  ADMINISTRADOR: ROLES.ADMIN,
   ROLE_ADMIN: ROLES.ADMIN,
+  ROLE_ADMINISTRADOR: ROLES.ADMIN,
   EMPLEADO: ROLES.FARMACEUTICO,
   FARMACEUTICO: ROLES.FARMACEUTICO,
   FARMACÉUTICO: ROLES.FARMACEUTICO,
+  PHARMACIST: ROLES.FARMACEUTICO,
   ROLE_FARMACEUTICO: ROLES.FARMACEUTICO,
   ROLE_FARMACÉUTICO: ROLES.FARMACEUTICO,
+  ROLE_PHARMACIST: ROLES.FARMACEUTICO,
   AUDITOR: ROLES.AUDITOR,
   ROLE_AUDITOR: ROLES.AUDITOR
 }
@@ -73,6 +77,11 @@ export const canAccessReports = (role) => {
 }
 
 export const canAccessAlerts = (role) => {
+  const normalizedRole = normalizeRole(role)
+  return [ROLES.ADMIN, ROLES.FARMACEUTICO].includes(normalizedRole)
+}
+
+export const canAccessStockControl = (role) => {
   const normalizedRole = normalizeRole(role)
   return [ROLES.ADMIN, ROLES.FARMACEUTICO].includes(normalizedRole)
 }

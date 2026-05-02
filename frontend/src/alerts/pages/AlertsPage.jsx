@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { useLocation, useNavigate } from 'react-router-dom'
+import { useLocation } from 'react-router-dom'
 import AlertsSummaryBar from '../components/AlertsSummaryBar'
 import ExpiredAlertsSection from '../components/sections/ExpiredAlertsSection'
 import ExpiringAlertsSection from '../components/sections/ExpiringAlertsSection'
@@ -19,18 +19,52 @@ const SECTION_COMPONENTS = {
   outOfStock: OutOfStockAlertsSection
 }
 
-const buildInitialOpenSections = () =>
+export const ALERTS_OPEN_SECTION_STORAGE_KEY = 'alerts:open-section'
+
+const buildInitialOpenSections = (openSectionKey = '') =>
   ALERTS_SECTION_ORDER.reduce((accumulator, section) => {
-    accumulator[section.key] = false
+    accumulator[section.key] = section.key === openSectionKey
     return accumulator
   }, {})
 
+const isValidAlertSection = (sectionKey) =>
+  ALERTS_SECTION_ORDER.some((section) => section.key === sectionKey)
+
+const readPendingOpenSection = () => {
+  try {
+    return String(sessionStorage.getItem(ALERTS_OPEN_SECTION_STORAGE_KEY) || '').trim()
+  } catch {
+    return ''
+  }
+}
+
+const readSectionFromSearch = (search = '') => {
+  try {
+    return String(new URLSearchParams(search).get('section') || '').trim()
+  } catch {
+    return ''
+  }
+}
+
+const clearPendingOpenSection = () => {
+  try {
+    sessionStorage.removeItem(ALERTS_OPEN_SECTION_STORAGE_KEY)
+  } catch {
+    // no-op
+  }
+}
+
 const AlertsPage = () => {
   const location = useLocation()
-  const navigate = useNavigate()
+  const requestedSectionFromNavigation =
+    readSectionFromSearch(location.search) ||
+    String(location.state?.openSection || '').trim() ||
+    readPendingOpenSection()
   const [sectionsData, setSectionsData] = useState(ALERTS_EMPTY_DATA)
-  const [openSections, setOpenSections] = useState(buildInitialOpenSections)
+  const [openSections, setOpenSections] = useState(() => buildInitialOpenSections(requestedSectionFromNavigation))
+  const [pendingOpenSection, setPendingOpenSection] = useState(requestedSectionFromNavigation)
   const [isLoading, setIsLoading] = useState(false)
+  const [hasLoadedAlerts, setHasLoadedAlerts] = useState(false)
   const [error, setError] = useState('')
   const [partialWarning, setPartialWarning] = useState('')
 
@@ -39,6 +73,7 @@ const AlertsPage = () => {
 
     const loadAlertsData = async () => {
       setIsLoading(true)
+      setHasLoadedAlerts(false)
       setError('')
       setPartialWarning('')
 
@@ -64,7 +99,10 @@ const AlertsPage = () => {
         setSectionsData(ALERTS_EMPTY_DATA)
         setError(loadError?.message || 'No se pudo cargar el centro de alertas.')
       } finally {
-        if (isMounted) setIsLoading(false)
+        if (isMounted) {
+          setIsLoading(false)
+          setHasLoadedAlerts(true)
+        }
       }
     }
 
@@ -83,21 +121,31 @@ const AlertsPage = () => {
   const hasAnyAlert = totalAlerts > 0
 
   useEffect(() => {
-    const requestedSection = String(location.state?.openSection || '').trim()
-    if (!requestedSection || isLoading) return
+    const requestedSection =
+      readSectionFromSearch(location.search) ||
+      String(location.state?.openSection || '').trim()
+    if (requestedSection) setPendingOpenSection(requestedSection)
+  }, [location.search, location.state])
 
-    const isValidSection = ALERTS_SECTION_ORDER.some((section) => section.key === requestedSection)
-    if (!isValidSection) return
+  useEffect(() => {
+    const requestedSection = String(pendingOpenSection || readPendingOpenSection()).trim()
+    if (!requestedSection || isLoading || !hasLoadedAlerts) return
+    if (!isValidAlertSection(requestedSection)) {
+      clearPendingOpenSection()
+      setPendingOpenSection('')
+      return
+    }
 
     setOpenSections((current) => ({ ...current, [requestedSection]: true }))
-    window.requestAnimationFrame(() => {
-      document.getElementById(`alerts-${requestedSection}`)?.scrollIntoView({
+    window.setTimeout(() => {
+      const targetElement = document.getElementById(`alerts-${requestedSection}`)
+      targetElement?.scrollIntoView({
         behavior: 'smooth',
         block: 'start'
       })
-    })
-    navigate(location.pathname, { replace: true, state: null })
-  }, [isLoading, location.pathname, location.state, navigate])
+      clearPendingOpenSection()
+    }, 0)
+  }, [hasLoadedAlerts, isLoading, pendingOpenSection])
 
   const handleToggleSection = (sectionKey) => {
     setOpenSections((current) => ({
@@ -147,7 +195,7 @@ const AlertsPage = () => {
             key={section.key}
             section={section}
             rows={sectionsData[section.key] || []}
-            isOpen={openSections[section.key]}
+            isOpen={openSections[section.key] || requestedSectionFromNavigation === section.key}
             isLoading={isLoading}
             onToggle={handleToggleSection}
           />
