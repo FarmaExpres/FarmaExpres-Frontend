@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { ALERTS_OPEN_SECTION_STORAGE_KEY } from '../../alerts/pages/AlertsPage'
 import {
   canAccessAlerts,
   canAccessMedicines,
@@ -754,7 +755,12 @@ const DashboardPage = ({ session }) => {
 
   const handleNavigateToAlertSection = (sectionKey) => {
     if (canAccessAlerts(session?.role)) {
-      navigate('/alerts', { state: { openSection: sectionKey } })
+      try {
+        sessionStorage.setItem(ALERTS_OPEN_SECTION_STORAGE_KEY, sectionKey)
+      } catch {
+        // no-op
+      }
+      navigate(`/alerts?section=${encodeURIComponent(sectionKey)}`, { state: { openSection: sectionKey } })
       return
     }
 

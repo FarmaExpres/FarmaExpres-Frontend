@@ -1,11 +1,11 @@
-# HU-QA-FE-14 - Dashboard por Roles
+# HU-QA-NTM-14 - Dashboard por Roles
 
 ## 1. Historia de Usuario
 
 ### 1.1 Identificación
 
 - **Título:** Dashboard inicial por rol para Administrador, Farmacéutico y Auditor
-- **ID:** HU-FE-14
+- **ID:** HU-14-NTM
 - **Relacionado:** HU-FE-09, HU-FE-10, HU-FE-11, HU-FE-12
 - **Prioridad:** Must Have (Alta)
 
@@ -132,69 +132,69 @@ Por lo anterior, esta HU se enfoca únicamente en habilitar y validar el dashboa
 
 ---
 
-## 2. Casos de Prueba Propuestos (HU-FE-14)
+## 2. Casos de Prueba Propuestos (HU-14-NTM)
 
-> Ruta de evidencias: `doc/images/HU-FE-14/`
+> Ruta de evidencias: `doc/images/HU-14-NTM/`
 
-### CP-HU-FE-14-01 - Acceso a Dashboard desde panel lateral Administrador
+### CP-HU-14-NTM-01 - Acceso a Dashboard desde panel lateral Administrador
 
 - **Objetivo:** Validar que el rol Administrador visualiza el módulo Dashboard en el panel lateral.
 - **Acción ejecutada:** Iniciar sesión como Administrador y revisar el panel lateral.
 - **Resultado esperado:** La opción **Dashboard** aparece disponible y activa al ingresar.
 - **Evidencia:**
 
-![CP-HU-FE-14-01](./images/HU-FE-14/01-sidebar-dashboard-administrador.png)
+![CP-HU-14-NTM-01](./images/HU-14-NTM/01-sidebar-dashboard-administrador.png)
 
-### CP-HU-FE-14-02 - Vista general Dashboard Administrador
+### CP-HU-14-NTM-02 - Vista general Dashboard Administrador
 
 - **Objetivo:** Validar la vista general del dashboard para Administrador.
 - **Acción ejecutada:** Ingresar al Dashboard como Administrador.
 - **Resultado esperado:** Se visualiza el resumen general correspondiente al rol Administrador.
 - **Evidencia:**
 
-![CP-HU-FE-14-02](./images/HU-FE-14/02-dashboard-general-administrador.png)
+![CP-HU-14-NTM-02](./images/HU-14-NTM/02-dashboard-general-administrador.png)
 
-### CP-HU-FE-14-03 - Acceso a Dashboard desde panel lateral Farmacéutico
+### CP-HU-14-NTM-03 - Acceso a Dashboard desde panel lateral Farmacéutico
 
 - **Objetivo:** Validar que el rol Farmacéutico visualiza el módulo Dashboard en el panel lateral.
 - **Acción ejecutada:** Iniciar sesión como Farmacéutico y revisar el panel lateral.
 - **Resultado esperado:** La opción **Dashboard** aparece disponible y activa al ingresar.
 - **Evidencia:**
 
-![CP-HU-FE-14-03](./images/HU-FE-14/03-sidebar-dashboard-farmaceutico.png)
+![CP-HU-14-NTM-03](./images/HU-14-NTM/03-sidebar-dashboard-farmaceutico.png)
 
-### CP-HU-FE-14-04 - Vista general Dashboard Farmacéutico
+### CP-HU-14-NTM-04 - Vista general Dashboard Farmacéutico
 
 - **Objetivo:** Validar la vista general del dashboard para Farmacéutico.
 - **Acción ejecutada:** Ingresar al Dashboard como Farmacéutico.
 - **Resultado esperado:** Se visualiza el resumen operativo correspondiente al rol Farmacéutico.
 - **Evidencia:**
 
-![CP-HU-FE-14-04](./images/HU-FE-14/04-dashboard-general-farmaceutico.png)
+![CP-HU-14-NTM-04](./images/HU-14-NTM/04-dashboard-general-farmaceutico.png)
 
-### CP-HU-FE-14-05 - Acceso a Dashboard desde panel lateral Auditor
+### CP-HU-14-NTM-05 - Acceso a Dashboard desde panel lateral Auditor
 
 - **Objetivo:** Validar que el rol Auditor visualiza el módulo Dashboard en el panel lateral.
 - **Acción ejecutada:** Iniciar sesión como Auditor y revisar el panel lateral.
 - **Resultado esperado:** La opción **Dashboard** aparece disponible y activa al ingresar.
 - **Evidencia:**
 
-![CP-HU-FE-14-05](./images/HU-FE-14/05-sidebar-dashboard-auditor.png)
+![CP-HU-14-NTM-05](./images/HU-14-NTM/05-sidebar-dashboard-auditor.png)
 
-### CP-HU-FE-14-06 - Vista general Dashboard Auditor
+### CP-HU-14-NTM-06 - Vista general Dashboard Auditor
 
 - **Objetivo:** Validar la vista general del dashboard para Auditor.
 - **Acción ejecutada:** Ingresar al Dashboard como Auditor.
 - **Resultado esperado:** Se visualiza el resumen de consulta correspondiente al rol Auditor.
 - **Evidencia:**
 
-![CP-HU-FE-14-06](./images/HU-FE-14/06-dashboard-general-auditor.png)
+![CP-HU-14-NTM-06](./images/HU-14-NTM/06-dashboard-general-auditor.png)
 
 ---
 
 ## 3. Conclusiones esperadas
 
-- La HU-FE-14 habilita el Dashboard como vista inicial para los roles principales.
+- La HU-14-NTM habilita el Dashboard como vista inicial para los roles principales.
 - El panel lateral permite acceder al Dashboard en Administrador, Farmacéutico y Auditor.
 - La vista general del Dashboard cambia según el rol autenticado.
 - La experiencia visual se mantiene consistente con FarmaExpres.
