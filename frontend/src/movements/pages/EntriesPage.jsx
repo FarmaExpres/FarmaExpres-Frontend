@@ -184,6 +184,9 @@ const EntriesPage = () => {
       await loadEntriesView()
     } catch (submitError) {
       setError(submitError.message || 'No se pudo registrar la entrada.')
+      if (submitError?.isInventoryConflict) {
+        await loadEntriesView()
+      }
     } finally {
       setIsSubmitting(false)
     }

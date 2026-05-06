@@ -13,6 +13,8 @@ const MOVEMENTS_ENTRANCE_ENDPOINT = '/api/movements/entrance'
 const MOVEMENTS_EXIT_ENDPOINT = '/api/movements/exit'
 const MOVEMENTS_UPDATED_ENDPOINT = '/api/movements/updated'
 
+const INVENTORY_CONFLICT_PATTERN = /stock|inventario|lote|cantidad|disponible|inactivo|retirado/i
+
 const MOVEMENT_TYPE = Object.freeze({
   ENTRANCE: 'ENTRANCE',
   EXIT: 'EXIT',
@@ -479,6 +481,28 @@ const buildInventoryExitPayload = (data = {}) => {
   }
 }
 
+const normalizeInventoryMutationError = (error, fallbackMessage) => {
+  const normalizedError = normalizeApiError(error, fallbackMessage)
+  const status = Number(normalizedError?.status)
+  const rawMessage = String(normalizedError?.rawMessage || normalizedError?.message || '')
+  const isInventoryConflict =
+    status === 409 ||
+    status === 422 ||
+    INVENTORY_CONFLICT_PATTERN.test(rawMessage)
+
+  if (!isInventoryConflict) return normalizedError
+
+  const message = status === 409
+    ? 'El medicamento ya no esta disponible para movimientos. Actualiza la vista e intenta con otro registro.'
+    : 'El stock disponible cambio antes de confirmar la operacion. Actualiza la vista y valida la cantidad nuevamente.'
+
+  return {
+    ...normalizedError,
+    message,
+    isInventoryConflict: true
+  }
+}
+
 export const getMovements = ({ filters = {}, productsById = {}, usersByIdentity = {}, usersById = {}, token } = {}) => {
   const movementMapper = (movement) => mapMovement(movement, productsById, usersByIdentity, usersById)
   return fetchMovementsInternal({ endpoint: MOVEMENTS_ENDPOINT, filters, token, movementMapper })
@@ -508,7 +532,7 @@ export const registerInventoryEntry = async (data, token) => {
 
     return response?.data ?? null
   } catch (error) {
-    throw normalizeApiError(error, 'No se pudo registrar la entrada de inventario.')
+    throw normalizeInventoryMutationError(error, 'No se pudo registrar la entrada de inventario.')
   }
 }
 
@@ -521,7 +545,7 @@ export const registerInventoryExit = async (data, token) => {
 
     return response?.data ?? null
   } catch (error) {
-    throw normalizeApiError(error, 'No se pudo registrar la salida de inventario.')
+    throw normalizeInventoryMutationError(error, 'No se pudo registrar la salida de inventario.')
   }
 }
 
