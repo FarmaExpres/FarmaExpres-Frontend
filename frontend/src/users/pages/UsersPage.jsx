@@ -1,4 +1,6 @@
+// Start JFBM
 import { useCallback, useEffect, useState } from 'react'
+import ErrorBoundary from '../../shared/components/ErrorBoundary'
 import UsersTable from '../components/UsersTable'
 import UserModal from '../components/UserModal'
 import UserEditModal from '../components/UserEditModal'
@@ -249,80 +251,86 @@ const UsersPage = ({ role, currentUserEmail = '' }) => {
   }
 
   return (
-    <div className="fe-page-shell">
-      <div className="fe-page-head">
-        <div>
-          <h1 className="fe-page-title">Gestión de Usuarios</h1>
+    <ErrorBoundary
+      title="Gestión de usuarios"
+      message="Ocurrio un error al mostrar los usuarios."
+    >
+      <div className="fe-page-shell">
+        <div className="fe-page-head">
+          <div>
+            <h1 className="fe-page-title">Gestión de Usuarios</h1>
+          </div>
+
+          {isAdministrator && (
+            <button
+              onClick={handleOpenCreate}
+              className="fe-btn-primary 2xl:h-12 2xl:px-6 2xl:text-base"
+            >
+              + Nuevo Usuario
+            </button>
+          )}
         </div>
 
-        {isAdministrator && (
-          <button
-            onClick={handleOpenCreate}
-            className="fe-btn-primary 2xl:h-12 2xl:px-6 2xl:text-base"
-          >
-            + Nuevo Usuario
-          </button>
+        {!isAdministrator && (
+          <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+            Esta sección es solo de consulta. Solo un usuario con rol Administrador puede crear, editar, cambiar contraseña y activar/desactivar usuarios.
+          </div>
         )}
+
+        {feedback && (
+          <div
+            className={`mb-4 rounded-xl border px-4 py-3 text-sm shadow-sm ${
+              feedback.type === 'success'
+                ? 'border-green-200 bg-green-100 text-green-700'
+                : 'border-red-200 bg-red-100 text-red-700'
+            }`}
+          >
+            {feedback.message}
+          </div>
+        )}
+
+        <UsersTable
+          users={users}
+          isLoading={isLoadingUsers}
+          isAdministrator={isAdministrator}
+          currentUserEmail={normalizedCurrentUserEmail}
+          onEdit={handleOpenEdit}
+          onChangePassword={handleOpenPassword}
+          onToggleStatus={handleToggleUserStatus}
+          isProcessingId={processingUserId}
+        />
+
+        <UserModal
+          isOpen={openCreateModal}
+          onClose={handleCloseCreateModal}
+          onSuccess={handleCreateSuccess}
+          onError={handleError}
+          existingEmails={users.map((user) => user.email)}
+        />
+
+        <UserEditModal
+          key={`edit-${selectedUser?.id || 'none'}-${openEditModal ? 'open' : 'closed'}`}
+          isOpen={openEditModal}
+          onClose={handleCloseEditModal}
+          user={selectedUser}
+          onSubmit={handleEditSubmit}
+          isSubmitting={isSubmittingEdit}
+          existingEmails={users.map((user) => user.email)}
+        />
+
+        <UserPasswordModal
+          key={`password-${selectedUser?.id || 'none'}-${openPasswordModal ? 'open' : 'closed'}`}
+          isOpen={openPasswordModal}
+          onClose={handleClosePasswordModal}
+          user={selectedUser}
+          onSubmit={handlePasswordSubmit}
+          isSubmitting={isSubmittingPassword}
+          errorMessage={passwordError}
+        />
       </div>
-
-      {!isAdministrator && (
-        <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-          Esta sección es solo de consulta. Solo un usuario con rol Administrador puede crear, editar, cambiar contraseña y activar/desactivar usuarios.
-        </div>
-      )}
-
-      {feedback && (
-        <div
-          className={`mb-4 rounded-xl border px-4 py-3 text-sm shadow-sm ${
-            feedback.type === 'success'
-              ? 'border-green-200 bg-green-100 text-green-700'
-              : 'border-red-200 bg-red-100 text-red-700'
-          }`}
-        >
-          {feedback.message}
-        </div>
-      )}
-
-      <UsersTable
-        users={users}
-        isLoading={isLoadingUsers}
-        isAdministrator={isAdministrator}
-        currentUserEmail={normalizedCurrentUserEmail}
-        onEdit={handleOpenEdit}
-        onChangePassword={handleOpenPassword}
-        onToggleStatus={handleToggleUserStatus}
-        isProcessingId={processingUserId}
-      />
-
-      <UserModal
-        isOpen={openCreateModal}
-        onClose={handleCloseCreateModal}
-        onSuccess={handleCreateSuccess}
-        onError={handleError}
-        existingEmails={users.map((user) => user.email)}
-      />
-
-      <UserEditModal
-        key={`edit-${selectedUser?.id || 'none'}-${openEditModal ? 'open' : 'closed'}`}
-        isOpen={openEditModal}
-        onClose={handleCloseEditModal}
-        user={selectedUser}
-        onSubmit={handleEditSubmit}
-        isSubmitting={isSubmittingEdit}
-        existingEmails={users.map((user) => user.email)}
-      />
-
-      <UserPasswordModal
-        key={`password-${selectedUser?.id || 'none'}-${openPasswordModal ? 'open' : 'closed'}`}
-        isOpen={openPasswordModal}
-        onClose={handleClosePasswordModal}
-        user={selectedUser}
-        onSubmit={handlePasswordSubmit}
-        isSubmitting={isSubmittingPassword}
-        errorMessage={passwordError}
-      />
-    </div>
+    </ErrorBoundary>
   )
 }
 
 export default UsersPage
+// End JFBM
