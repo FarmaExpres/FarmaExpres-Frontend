@@ -23,8 +23,8 @@ const INITIAL_FORM = Object.freeze({
 
 const EXIT_REASON_OPTIONS = Object.freeze([
   { value: 'Venta', label: 'Venta' },
-  { value: 'Devolucion proveedor', label: 'Devolución proveedor' },
   { value: 'Merma', label: 'Merma' },
+  { value: 'Vencimiento', label: 'Vencimiento' },
   { value: 'Ajuste inventario', label: 'Ajuste inventario' }
 ])
 
@@ -176,6 +176,9 @@ const ExitsPage = () => {
       await loadExitsView()
     } catch (submitError) {
       setError(submitError.message || 'No se pudo registrar la salida.')
+      if (submitError?.isInventoryConflict) {
+        await loadExitsView()
+      }
     } finally {
       setIsSubmitting(false)
     }
