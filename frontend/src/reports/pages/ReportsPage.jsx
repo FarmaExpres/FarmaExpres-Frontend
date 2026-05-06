@@ -1,5 +1,7 @@
+// Start JFBM
 import { useEffect, useMemo, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
+import ErrorBoundary from '../../shared/components/ErrorBoundary'
 import {
   getActiveInventorySummary,
   getActiveInventoryTable
@@ -180,101 +182,107 @@ const ReportsPage = () => {
   }, [location.pathname, location.state, navigate])
 
   return (
-    <div className="fe-page-shell">
-      <div className="fe-page-head">
-        <div>
-          <h1 className="fe-page-title">Reportes del sistema</h1>
+    <ErrorBoundary
+      title="Reportes del sistema"
+      message="Ocurrio un error al cargar los reportes."
+    >
+      <div className="fe-page-shell">
+        <div className="fe-page-head">
+          <div>
+            <h1 className="fe-page-title">Reportes del sistema</h1>
+          </div>
         </div>
+
+        <section className="mb-4 flex flex-wrap gap-2">
+          {REPORT_TABS.map((tab) => {
+            const isActive = activeTab === tab.key
+
+            return (
+              <button
+                key={tab.key}
+                type="button"
+                onClick={() => setActiveTab(tab.key)}
+                className={`rounded-xl px-5 py-2.5 text-sm font-semibold transition ${
+                  isActive
+                    ? 'bg-gradient-to-r from-[var(--fe-brand-a)] to-[var(--fe-brand-b)] text-white'
+                    : 'bg-white text-[#4f638b] hover:bg-[#f2f6ff]'
+                }`}
+              >
+                {tab.label}
+              </button>
+            )
+          })}
+        </section>
+
+        {error && (
+          <div className="mb-4 rounded-xl border border-red-200 bg-red-100 px-4 py-3 text-sm text-red-700">
+            {error}
+          </div>
+        )}
+
+        {activeTab === 'inventory' && (
+          <InventoryReportSection
+            rows={inventoryRows}
+            summary={inventorySummary}
+            isLoading={isLoading}
+            onExport={handleExportExcel}
+            exportDisabled={exportDisabled}
+            isExporting={isExporting}
+          />
+        )}
+        {activeTab === 'movements' && (
+          <MovementsReportSection
+            key={movementsFilterKey}
+            rows={movementsRows}
+            entranceRows={entranceMovements}
+            exitRows={exitMovements}
+            adjustmentRows={adjustmentMovements}
+            isLoading={isLoading}
+            initialTypeFilter={movementsFilterKey}
+            onRowsForExportChange={setFilteredMovementsRows}
+            onFilterForExportChange={setMovementsFilterKey}
+            onExport={handleExportExcel}
+            exportDisabled={exportDisabled}
+            isExporting={isExporting}
+          />
+        )}
+        {activeTab === 'expiring' && (
+          <ExpiringReportSection
+            rows={expiringRows}
+            expiredRows={expiredRows}
+            criticalRows={criticalExpiringRows}
+            mediumRows={mediumExpiringRows}
+            controlledRows={controlledExpiringRows}
+            isLoading={isLoading}
+            onExport={handleExportExcel}
+            exportDisabled={exportDisabled}
+            isExporting={isExporting}
+          />
+        )}
+        {activeTab === 'lowstock' && (
+          <LowStockReportSection
+            rows={lowStockRows}
+            criticalRows={criticalLowStockRows}
+            alertRows={alertLowStockRows}
+            isLoading={isLoading}
+            onExport={handleExportExcel}
+            exportDisabled={exportDisabled}
+            isExporting={isExporting}
+          />
+        )}
+        {activeTab === 'byuser' && (
+          <ByUserReportSection
+            rows={byUserRows}
+            isLoading={isLoading}
+            onExport={handleExportExcel}
+            exportDisabled={exportDisabled}
+            isExporting={isExporting}
+          />
+        )}
       </div>
-
-      <section className="mb-4 flex flex-wrap gap-2">
-        {REPORT_TABS.map((tab) => {
-          const isActive = activeTab === tab.key
-
-          return (
-            <button
-              key={tab.key}
-              type="button"
-              onClick={() => setActiveTab(tab.key)}
-              className={`rounded-xl px-5 py-2.5 text-sm font-semibold transition ${
-                isActive
-                  ? 'bg-gradient-to-r from-[var(--fe-brand-a)] to-[var(--fe-brand-b)] text-white'
-                  : 'bg-white text-[#4f638b] hover:bg-[#f2f6ff]'
-              }`}
-            >
-              {tab.label}
-            </button>
-          )
-        })}
-      </section>
-
-      {error && (
-        <div className="mb-4 rounded-xl border border-red-200 bg-red-100 px-4 py-3 text-sm text-red-700">
-          {error}
-        </div>
-      )}
-
-      {activeTab === 'inventory' && (
-        <InventoryReportSection
-          rows={inventoryRows}
-          summary={inventorySummary}
-          isLoading={isLoading}
-          onExport={handleExportExcel}
-          exportDisabled={exportDisabled}
-          isExporting={isExporting}
-        />
-      )}
-      {activeTab === 'movements' && (
-        <MovementsReportSection
-          key={movementsFilterKey}
-          rows={movementsRows}
-          entranceRows={entranceMovements}
-          exitRows={exitMovements}
-          adjustmentRows={adjustmentMovements}
-          isLoading={isLoading}
-          initialTypeFilter={movementsFilterKey}
-          onRowsForExportChange={setFilteredMovementsRows}
-          onFilterForExportChange={setMovementsFilterKey}
-          onExport={handleExportExcel}
-          exportDisabled={exportDisabled}
-          isExporting={isExporting}
-        />
-      )}
-      {activeTab === 'expiring' && (
-        <ExpiringReportSection
-          rows={expiringRows}
-          expiredRows={expiredRows}
-          criticalRows={criticalExpiringRows}
-          mediumRows={mediumExpiringRows}
-          controlledRows={controlledExpiringRows}
-          isLoading={isLoading}
-          onExport={handleExportExcel}
-          exportDisabled={exportDisabled}
-          isExporting={isExporting}
-        />
-      )}
-      {activeTab === 'lowstock' && (
-        <LowStockReportSection
-          rows={lowStockRows}
-          criticalRows={criticalLowStockRows}
-          alertRows={alertLowStockRows}
-          isLoading={isLoading}
-          onExport={handleExportExcel}
-          exportDisabled={exportDisabled}
-          isExporting={isExporting}
-        />
-      )}
-      {activeTab === 'byuser' && (
-        <ByUserReportSection
-          rows={byUserRows}
-          isLoading={isLoading}
-          onExport={handleExportExcel}
-          exportDisabled={exportDisabled}
-          isExporting={isExporting}
-        />
-      )}
-    </div>
+    </ErrorBoundary>
   )
 }
 
 export default ReportsPage
+// End JFBM
