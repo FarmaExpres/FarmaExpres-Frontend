@@ -23,8 +23,8 @@ inactivo.
 
 ## 3. Historia de usuario
 
-Como usuario de FarmaExpres,  
-quiero que la interfaz me informe cuando el inventario ya no permite confirmar una entrada o salida,  
+Como usuario de FarmaExpres,
+quiero que la interfaz me informe cuando el inventario ya no permite confirmar una entrada o salida,
 para actualizar la vista y evitar registrar movimientos con cantidades desactualizadas.
 
 ## 4. Contexto backend
