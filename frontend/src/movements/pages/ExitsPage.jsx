@@ -5,7 +5,6 @@ import {
   registerInventoryExit
 } from '../services/movements.service'
 import {
-  getActiveInventoryTable,
   getMedicines
 } from '../../medicines/services/medicines.service'
 import { getUsers } from '../../users/services/users.service'
@@ -56,24 +55,6 @@ const isMedicineAvailableForExit = (medicine = {}) => {
   return expirationDate >= todayAtMidnight
 }
 
-const buildOperableMedicineKeys = (inventoryRows = []) => {
-  const keys = new Set()
-
-  inventoryRows.forEach((row) => {
-    if (row?.id !== null && row?.id !== undefined) keys.add(`id:${row.id}`)
-    if (row?.codigo) keys.add(`code:${String(row.codigo).trim().toLowerCase()}`)
-  })
-
-  return keys
-}
-
-const isInActiveInventory = (medicine = {}, operableKeys = new Set()) => {
-  if (operableKeys.size === 0) return true
-  const idKey = `id:${medicine.id}`
-  const codeKey = `code:${String(medicine.codigo || '').trim().toLowerCase()}`
-  return operableKeys.has(idKey) || operableKeys.has(codeKey)
-}
-
 const ExitsPage = () => {
   const [form, setForm] = useState(INITIAL_FORM)
   const [medicines, setMedicines] = useState([])
@@ -99,39 +80,16 @@ const ExitsPage = () => {
     setError('')
 
     try {
-      const [medicinesData, activeInventoryRows, usersData] = await Promise.all([
+      const [medicinesData, usersData] = await Promise.all([
         getMedicines(),
-        getActiveInventoryTable().catch(() => []),
         getUsers().catch(() => [])
       ])
 
       const normalizedMedicines = Array.isArray(medicinesData) ? medicinesData : []
-      const inventoryRowsArray = Array.isArray(activeInventoryRows) ? activeInventoryRows : []
       
-      // Crear mapa de stock desde tabla de inventario activo
-      const stockByProductId = new Map()
-      inventoryRowsArray.forEach((row) => {
-        if (row?.id !== null && row?.id !== undefined) {
-          stockByProductId.set(`id:${row.id}`, row?.stock || 0)
-        }
-        if (row?.codigo) {
-          stockByProductId.set(`code:${String(row.codigo).trim().toLowerCase()}`, row?.stock || 0)
-        }
-      })
-      
-      const operableKeys = buildOperableMedicineKeys(inventoryRowsArray)
       const operableMedicines = normalizedMedicines.filter((medicine) =>
-        isMedicineAvailableForExit(medicine) && isInActiveInventory(medicine, operableKeys)
-      ).map((medicine) => {
-        // Enriquecer medicamento con stock real de inventario
-        const stockByIdKey = `id:${medicine.id}`
-        const stockByCodeKey = `code:${String(medicine.codigo).trim().toLowerCase()}`
-        const realStock = stockByProductId.get(stockByIdKey) || stockByProductId.get(stockByCodeKey) || 0
-        return {
-          ...medicine,
-          stock: realStock
-        }
-      })
+        isMedicineAvailableForExit(medicine)
+      )
       
       const productsById = buildProductsMap(normalizedMedicines)
       const { usersByIdentity, usersById } = buildUsersIndex(usersData)

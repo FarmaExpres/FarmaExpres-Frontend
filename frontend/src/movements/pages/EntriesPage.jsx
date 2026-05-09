@@ -162,6 +162,17 @@ const EntriesPage = () => {
       return
     }
 
+    // Validar que la fecha de vencimiento no sea anterior a hoy
+    const today = new Date()
+    const todayString = today.getFullYear() + '-' + 
+                        String(today.getMonth() + 1).padStart(2, '0') + '-' + 
+                        String(today.getDate()).padStart(2, '0')
+
+    if (form.expirationDate < todayString) {
+      setError('La fecha de vencimiento no puede ser anterior a la fecha actual. Por favor, selecciona una fecha válida.')
+      return
+    }
+
     if (!String(form.reason || '').trim()) {
       setError('Debes indicar el motivo de la entrada.')
       return
