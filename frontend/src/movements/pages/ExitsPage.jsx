@@ -82,6 +82,8 @@ const ExitsPage = () => {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState('')
   const [successMessage, setSuccessMessage] = useState('')
+  const [showStockWarning, setShowStockWarning] = useState(false)
+  const [warningData, setWarningData] = useState({ requested: 0, available: 0, medicineName: '' })
 
   const medicineOptions = useMemo(
     () => toSortedMedicines(medicines.filter(isMedicineAvailableForExit)),
@@ -104,10 +106,33 @@ const ExitsPage = () => {
       ])
 
       const normalizedMedicines = Array.isArray(medicinesData) ? medicinesData : []
-      const operableKeys = buildOperableMedicineKeys(Array.isArray(activeInventoryRows) ? activeInventoryRows : [])
+      const inventoryRowsArray = Array.isArray(activeInventoryRows) ? activeInventoryRows : []
+      
+      // Crear mapa de stock desde tabla de inventario activo
+      const stockByProductId = new Map()
+      inventoryRowsArray.forEach((row) => {
+        if (row?.id !== null && row?.id !== undefined) {
+          stockByProductId.set(`id:${row.id}`, row?.stock || 0)
+        }
+        if (row?.codigo) {
+          stockByProductId.set(`code:${String(row.codigo).trim().toLowerCase()}`, row?.stock || 0)
+        }
+      })
+      
+      const operableKeys = buildOperableMedicineKeys(inventoryRowsArray)
       const operableMedicines = normalizedMedicines.filter((medicine) =>
         isMedicineAvailableForExit(medicine) && isInActiveInventory(medicine, operableKeys)
-      )
+      ).map((medicine) => {
+        // Enriquecer medicamento con stock real de inventario
+        const stockByIdKey = `id:${medicine.id}`
+        const stockByCodeKey = `code:${String(medicine.codigo).trim().toLowerCase()}`
+        const realStock = stockByProductId.get(stockByIdKey) || stockByProductId.get(stockByCodeKey) || 0
+        return {
+          ...medicine,
+          stock: realStock
+        }
+      })
+      
       const productsById = buildProductsMap(normalizedMedicines)
       const { usersByIdentity, usersById } = buildUsersIndex(usersData)
       const exitsData = await getExitMovements({
@@ -161,6 +186,23 @@ const ExitsPage = () => {
       return
     }
 
+    // Validación preventiva: comparar cantidad con stock disponible
+    if (selectedMedicine && amount > selectedMedicine.stock) {
+      setWarningData({
+        requested: amount,
+        available: selectedMedicine.stock,
+        medicineName: selectedMedicine.nombre
+      })
+      setShowStockWarning(true)
+      return
+    }
+
+    // Si la cantidad es válida, proceder con el registro
+    await confirmExit(amount)
+  }
+
+  const confirmExit = async (amount) => {
+    setShowStockWarning(false)
     setIsSubmitting(true)
 
     try {
@@ -172,7 +214,7 @@ const ExitsPage = () => {
       })
 
       setForm(INITIAL_FORM)
-      setSuccessMessage('Salida registrada correctamente. El historial ya fue actualizado.')
+      setSuccessMessage('✓ Salida registrada exitosamente. El inventario ha sido actualizado.')
       await loadExitsView()
     } catch (submitError) {
       setError(submitError.message || 'No se pudo registrar la salida.')
@@ -192,6 +234,49 @@ const ExitsPage = () => {
         </div>
       </div>
 
+      {/* Modal de advertencia por stock insuficiente */}
+      {showStockWarning && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="w-full max-w-md rounded-lg bg-white p-6 shadow-lg">
+            <div className="mb-4">
+              <h3 className="text-lg font-bold text-red-600">⚠ Stock insuficiente</h3>
+            </div>
+            <div className="mb-6 space-y-2 text-sm text-gray-700">
+              <p className="font-semibold">{warningData.medicineName}</p>
+              <p>
+                <span className="font-semibold">Cantidad solicitada:</span> <span className="text-red-600">{warningData.requested}</span> unidades
+              </p>
+              <p>
+                <span className="font-semibold">Stock disponible:</span> <span className="text-emerald-600">{warningData.available}</span> unidades
+              </p>
+              <p className="mt-3 border-t pt-3 text-gray-600">
+                La cantidad solicitada supera el stock disponible. Por favor, corrija el valor antes de confirmar la salida.
+              </p>
+            </div>
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowStockWarning(false)
+                  setWarningData({ requested: 0, available: 0, medicineName: '' })
+                }}
+                className="flex-1 rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+              >
+                Volver a editar
+              </button>
+              <button
+                type="button"
+                onClick={() => confirmExit(warningData.requested)}
+                disabled={isSubmitting}
+                className="flex-1 rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:bg-red-400"
+              >
+                {isSubmitting ? 'Registrando...' : 'Forzar salida'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="space-y-4">
         <section className="fe-card p-4 md:p-5">
           <div className="mb-4">
@@ -210,7 +295,7 @@ const ExitsPage = () => {
                 value={form.productId}
                 onChange={handleChange}
                 className="fe-input"
-                disabled={isLoading || isSubmitting}
+                disabled={isLoading || isSubmitting || showStockWarning}
                 required
               >
                 <option value="">Selecciona un medicamento</option>
@@ -233,7 +318,7 @@ const ExitsPage = () => {
                 value={form.amount}
                 onChange={handleChange}
                 className="fe-input"
-                disabled={isLoading || isSubmitting}
+                disabled={isLoading || isSubmitting || showStockWarning}
                 placeholder="Cantidad de unidades"
                 required
               />
@@ -247,7 +332,7 @@ const ExitsPage = () => {
                 value={form.reason}
                 onChange={handleChange}
                 className="fe-input"
-                disabled={isLoading || isSubmitting}
+                disabled={isLoading || isSubmitting || showStockWarning}
                 required
               >
                 {EXIT_REASON_OPTIONS.map((reasonOption) => (
@@ -266,15 +351,26 @@ const ExitsPage = () => {
                 value={form.observation}
                 onChange={handleChange}
                 className="fe-input min-h-24 resize-y"
-                disabled={isLoading || isSubmitting}
+                disabled={isLoading || isSubmitting || showStockWarning}
                 placeholder="Notas adicionales..."
               />
             </div>
 
             {selectedMedicine && (
-              <div className="rounded-xl border border-[#e9eef8] bg-[#f7f9ff] px-4 py-3 text-sm text-[#5f6e8d]">
+              <div className={`rounded-xl border px-4 py-3 text-sm ${
+                Number(form.amount) > selectedMedicine.stock
+                  ? 'border-red-300 bg-red-50 text-red-700'
+                  : 'border-[#e9eef8] bg-[#f7f9ff] text-[#5f6e8d]'
+              }`}>
                 <p className="font-semibold text-[#24314a]">{selectedMedicine.nombre}</p>
-                <p>Stock actual: {selectedMedicine.stock}</p>
+                <p className={Number(form.amount) > selectedMedicine.stock ? 'font-semibold text-red-600' : ''}>
+                  Stock actual: {selectedMedicine.stock}
+                </p>
+                {Number(form.amount) > selectedMedicine.stock && (
+                  <p className="mt-1 text-xs text-red-600">
+                    ⚠ Cantidad ({form.amount}) supera el stock disponible ({selectedMedicine.stock})
+                  </p>
+                )}
                 <p>Próximo vencimiento: {selectedMedicine.proximoVencimiento || 'Sin referencia'}</p>
               </div>
             )}
@@ -283,7 +379,7 @@ const ExitsPage = () => {
               <button
                 type="submit"
                 className="fe-btn-primary"
-                disabled={isLoading || isSubmitting || medicineOptions.length === 0}
+                disabled={isLoading || isSubmitting || medicineOptions.length === 0 || showStockWarning}
               >
                 {isSubmitting ? 'Registrando salida...' : 'Registrar salida'}
               </button>
@@ -295,8 +391,9 @@ const ExitsPage = () => {
                   setForm(INITIAL_FORM)
                   setError('')
                   setSuccessMessage('')
+                  setShowStockWarning(false)
                 }}
-                disabled={isSubmitting}
+                disabled={isSubmitting || showStockWarning}
               >
                 Limpiar formulario
               </button>
