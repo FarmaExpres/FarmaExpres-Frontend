@@ -1,5 +1,7 @@
+// Start JFBM
 import { useEffect, useMemo, useState } from 'react'
 import { useLocation } from 'react-router-dom'
+import ErrorBoundary from '../../shared/components/ErrorBoundary'
 import AlertsSummaryBar from '../components/AlertsSummaryBar'
 import ExpiredAlertsSection from '../components/sections/ExpiredAlertsSection'
 import ExpiringAlertsSection from '../components/sections/ExpiringAlertsSection'
@@ -163,52 +165,58 @@ const AlertsPage = () => {
   }
 
   return (
-    <div className="fe-page-shell">
-      <div className="fe-page-head">
-        <div>
-          <h1 className="fe-page-title">Centro de alertas</h1>
+    <ErrorBoundary
+      title="Centro de alertas"
+      message="Ocurrio un error al mostrar el centro de alertas."
+    >
+      <div className="fe-page-shell">
+        <div className="fe-page-head">
+          <div>
+            <h1 className="fe-page-title">Centro de alertas</h1>
+          </div>
         </div>
+
+        <AlertsSummaryBar
+          totalAlerts={totalAlerts}
+          sectionsData={sectionsData}
+          onNavigateToSection={handleNavigateToSection}
+        />
+
+        {error && (
+          <div className="mb-3 rounded-lg border border-red-200 bg-red-100 px-4 py-3 text-sm text-red-700">
+            {error}
+          </div>
+        )}
+
+        {!error && partialWarning && (
+          <div className="mb-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700">
+            {partialWarning}
+          </div>
+        )}
+
+        {ALERTS_SECTION_ORDER.map((section) => {
+          const SectionComponent = SECTION_COMPONENTS[section.key]
+          return (
+            <SectionComponent
+              key={section.key}
+              section={section}
+              rows={sectionsData[section.key] || []}
+              isOpen={openSections[section.key] || requestedSectionFromNavigation === section.key}
+              isLoading={isLoading}
+              onToggle={handleToggleSection}
+            />
+          )
+        })}
+
+        {!error && !isLoading && !hasAnyAlert && (
+          <section className="fe-card border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+            No hay alertas activas en este momento. El inventario se encuentra en estado controlado.
+          </section>
+        )}
       </div>
-
-      <AlertsSummaryBar
-        totalAlerts={totalAlerts}
-        sectionsData={sectionsData}
-        onNavigateToSection={handleNavigateToSection}
-      />
-
-      {error && (
-        <div className="mb-3 rounded-lg border border-red-200 bg-red-100 px-4 py-3 text-sm text-red-700">
-          {error}
-        </div>
-      )}
-
-      {!error && partialWarning && (
-        <div className="mb-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700">
-          {partialWarning}
-        </div>
-      )}
-
-      {ALERTS_SECTION_ORDER.map((section) => {
-        const SectionComponent = SECTION_COMPONENTS[section.key]
-        return (
-          <SectionComponent
-            key={section.key}
-            section={section}
-            rows={sectionsData[section.key] || []}
-            isOpen={openSections[section.key] || requestedSectionFromNavigation === section.key}
-            isLoading={isLoading}
-            onToggle={handleToggleSection}
-          />
-        )
-      })}
-
-      {!error && !isLoading && !hasAnyAlert && (
-        <section className="fe-card border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
-          No hay alertas activas en este momento. El inventario se encuentra en estado controlado.
-        </section>
-      )}
-    </div>
+    </ErrorBoundary>
   )
 }
 
 export default AlertsPage
+// End JFBM

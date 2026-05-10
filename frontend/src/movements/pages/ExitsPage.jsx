@@ -6,6 +6,8 @@ import {
 } from '../services/movements.service'
 import {
   getActiveInventoryTable,
+  getMedicineBatches,
+  getMedicinesFefoSnapshot,
   getMedicines
 } from '../../medicines/services/medicines.service'
 import { getUsers } from '../../users/services/users.service'
@@ -61,7 +63,9 @@ const buildOperableMedicineKeys = (inventoryRows = []) => {
 
   inventoryRows.forEach((row) => {
     if (row?.id !== null && row?.id !== undefined) keys.add(`id:${row.id}`)
+    if (row?.productId !== null && row?.productId !== undefined) keys.add(`id:${row.productId}`)
     if (row?.codigo) keys.add(`code:${String(row.codigo).trim().toLowerCase()}`)
+    if (row?.productCode) keys.add(`code:${String(row.productCode).trim().toLowerCase()}`)
   })
 
   return keys
@@ -74,6 +78,93 @@ const isInActiveInventory = (medicine = {}, operableKeys = new Set()) => {
   return operableKeys.has(idKey) || operableKeys.has(codeKey)
 }
 
+const getInventoryRowKeys = (row = {}) => {
+  const keys = []
+
+  if (row?.id !== null && row?.id !== undefined) keys.push(`id:${row.id}`)
+  if (row?.productId !== null && row?.productId !== undefined) keys.push(`id:${row.productId}`)
+
+  const code = String(row?.codigo || '').trim().toLowerCase()
+  const productCode = String(row?.productCode || '').trim().toLowerCase()
+  if (code) keys.push(`code:${code}`)
+  if (productCode) keys.push(`code:${productCode}`)
+
+  return keys
+}
+
+const getMedicineLookupKeys = (medicine = {}) => {
+  const keys = []
+  const code = String(medicine.codigo || '').trim().toLowerCase()
+
+  if (medicine?.id !== null && medicine?.id !== undefined) keys.push(`id:${medicine.id}`)
+  if (code) keys.push(`code:${code}`)
+
+  return keys
+}
+
+const setStockForKeys = (stockByProductKey, keys, stock) => {
+  keys.forEach((key) => {
+    const currentStock = stockByProductKey.get(key)
+    stockByProductKey.set(key, Math.max(Number(currentStock) || 0, Number(stock) || 0))
+  })
+}
+
+const resolveInventoryReference = (medicine = {}, inventoryRows = []) => {
+  const medicineKeys = new Set(getMedicineLookupKeys(medicine))
+  return inventoryRows.find((row) =>
+    getInventoryRowKeys(row).some((key) => medicineKeys.has(key))
+  ) || null
+}
+
+const buildFefoSnapshotByMedicineId = (snapshotRows = []) => {
+  const snapshotByMedicineId = new Map()
+
+  snapshotRows.forEach((row) => {
+    const medicineId = String(row?.medicineId || '').trim()
+    if (!medicineId) return
+    snapshotByMedicineId.set(medicineId, row)
+  })
+
+  return snapshotByMedicineId
+}
+
+const isConsumableBatchForExit = (batch = {}) => {
+  const availableStock = Number(batch?.availableStock)
+  if (!Number.isFinite(availableStock) || availableStock <= 0) return false
+
+  const normalizedStatus = String(batch?.status || '').trim().toUpperCase()
+  if (['DEPLETED', 'AGOTADO', 'EXPIRED', 'VENCIDO', 'INACTIVE', 'INACTIVO'].includes(normalizedStatus)) return false
+
+  const expirationDate = normalizeDateValue(batch?.expirationDate)
+  if (!expirationDate) return true
+
+  const today = new Date()
+  const todayAtMidnight = new Date(today.getFullYear(), today.getMonth(), today.getDate())
+  return expirationDate >= todayAtMidnight
+}
+
+const buildBatchStockReference = (batches = []) => {
+  const consumableBatches = (Array.isArray(batches) ? batches : [])
+    .filter(isConsumableBatchForExit)
+    .sort((firstBatch, secondBatch) => {
+      const firstDate = normalizeDateValue(firstBatch?.expirationDate)
+      const secondDate = normalizeDateValue(secondBatch?.expirationDate)
+      return (firstDate?.getTime() || Number.MAX_SAFE_INTEGER) - (secondDate?.getTime() || Number.MAX_SAFE_INTEGER)
+    })
+
+  const stock = consumableBatches.reduce(
+    (sum, batch) => sum + (Number(batch?.availableStock) || 0),
+    0
+  )
+  const nextBatch = consumableBatches[0] || null
+
+  return {
+    stock,
+    batchCode: nextBatch?.batchCode || '',
+    expirationDate: nextBatch?.expirationDate || ''
+  }
+}
+
 const ExitsPage = () => {
   const [form, setForm] = useState(INITIAL_FORM)
   const [medicines, setMedicines] = useState([])
@@ -82,6 +173,8 @@ const ExitsPage = () => {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState('')
   const [successMessage, setSuccessMessage] = useState('')
+  const [showStockWarning, setShowStockWarning] = useState(false)
+  const [warningData, setWarningData] = useState({ requested: 0, available: 0, medicineName: '' })
 
   const medicineOptions = useMemo(
     () => toSortedMedicines(medicines.filter(isMedicineAvailableForExit)),
@@ -97,17 +190,76 @@ const ExitsPage = () => {
     setError('')
 
     try {
-      const [medicinesData, activeInventoryRows, usersData] = await Promise.all([
+      const [medicinesData, activeInventoryRows, fefoSnapshotData, usersData] = await Promise.all([
         getMedicines(),
         getActiveInventoryTable().catch(() => []),
+        getMedicinesFefoSnapshot().catch(() => []),
         getUsers().catch(() => [])
       ])
 
       const normalizedMedicines = Array.isArray(medicinesData) ? medicinesData : []
-      const operableKeys = buildOperableMedicineKeys(Array.isArray(activeInventoryRows) ? activeInventoryRows : [])
-      const operableMedicines = normalizedMedicines.filter((medicine) =>
+      const inventoryRowsArray = Array.isArray(activeInventoryRows) ? activeInventoryRows : []
+      const fefoSnapshotRows = Array.isArray(fefoSnapshotData) ? fefoSnapshotData : []
+      const fefoSnapshotByMedicineId = buildFefoSnapshotByMedicineId(fefoSnapshotRows)
+      
+      // Crear mapa de stock desde tabla de inventario activo
+      const stockByProductKey = new Map()
+      inventoryRowsArray.forEach((row) => {
+        setStockForKeys(stockByProductKey, getInventoryRowKeys(row), row?.stock)
+      })
+      
+      const operableKeys = buildOperableMedicineKeys(inventoryRowsArray)
+      const baseOperableMedicines = normalizedMedicines.filter((medicine) =>
         isMedicineAvailableForExit(medicine) && isInActiveInventory(medicine, operableKeys)
+      ).map((medicine) => {
+        // Enriquecer medicamento con stock real de inventario
+        const inventoryStock = getMedicineLookupKeys(medicine).reduce(
+          (stock, key) => Math.max(stock, Number(stockByProductKey.get(key)) || 0),
+          0
+        )
+        const fefoReference = fefoSnapshotByMedicineId.get(String(medicine.id))
+        const realStock = Math.max(
+          Number(fefoReference?.operationalStock) || 0,
+          inventoryStock,
+          Number(medicine.stock) || 0
+        )
+        const inventoryReference = resolveInventoryReference(medicine, inventoryRowsArray)
+        return {
+          ...medicine,
+          stock: realStock,
+          proximoVencimiento:
+            fefoReference?.expirationDate ||
+            inventoryReference?.proximoVencimiento ||
+            medicine.proximoVencimiento,
+          loteFefo:
+            fefoReference?.batchCode ||
+            inventoryReference?.batchCode ||
+            medicine.loteFefo
+        }
+      })
+
+      const operableMedicines = await Promise.all(
+        baseOperableMedicines.map(async (medicine) => {
+          if (Number(medicine?.stock) > 0) return medicine
+
+          try {
+            const batches = await getMedicineBatches(medicine.id)
+            const batchReference = buildBatchStockReference(batches)
+
+            if (batchReference.stock <= 0) return medicine
+
+            return {
+              ...medicine,
+              stock: batchReference.stock,
+              proximoVencimiento: batchReference.expirationDate || medicine.proximoVencimiento,
+              loteFefo: batchReference.batchCode || medicine.loteFefo
+            }
+          } catch {
+            return medicine
+          }
+        })
       )
+      
       const productsById = buildProductsMap(normalizedMedicines)
       const { usersByIdentity, usersById } = buildUsersIndex(usersData)
       const exitsData = await getExitMovements({
@@ -161,6 +313,23 @@ const ExitsPage = () => {
       return
     }
 
+    // Validación preventiva: comparar cantidad con stock disponible
+    if (selectedMedicine && amount > selectedMedicine.stock) {
+      setWarningData({
+        requested: amount,
+        available: selectedMedicine.stock,
+        medicineName: selectedMedicine.nombre
+      })
+      setShowStockWarning(true)
+      return
+    }
+
+    // Si la cantidad es válida, proceder con el registro
+    await confirmExit(amount)
+  }
+
+  const confirmExit = async (amount) => {
+    setShowStockWarning(false)
     setIsSubmitting(true)
 
     try {
@@ -172,7 +341,7 @@ const ExitsPage = () => {
       })
 
       setForm(INITIAL_FORM)
-      setSuccessMessage('Salida registrada correctamente. El historial ya fue actualizado.')
+      setSuccessMessage('✓ Salida registrada exitosamente. El inventario ha sido actualizado.')
       await loadExitsView()
     } catch (submitError) {
       setError(submitError.message || 'No se pudo registrar la salida.')
@@ -192,6 +361,49 @@ const ExitsPage = () => {
         </div>
       </div>
 
+      {/* Modal de advertencia por stock insuficiente */}
+      {showStockWarning && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="w-full max-w-md rounded-lg bg-white p-6 shadow-lg">
+            <div className="mb-4">
+              <h3 className="text-lg font-bold text-red-600">⚠ Stock insuficiente</h3>
+            </div>
+            <div className="mb-6 space-y-2 text-sm text-gray-700">
+              <p className="font-semibold">{warningData.medicineName}</p>
+              <p>
+                <span className="font-semibold">Cantidad solicitada:</span> <span className="text-red-600">{warningData.requested}</span> unidades
+              </p>
+              <p>
+                <span className="font-semibold">Stock disponible:</span> <span className="text-emerald-600">{warningData.available}</span> unidades
+              </p>
+              <p className="mt-3 border-t pt-3 text-gray-600">
+                La cantidad solicitada supera el stock disponible. Por favor, corrija el valor antes de confirmar la salida.
+              </p>
+            </div>
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowStockWarning(false)
+                  setWarningData({ requested: 0, available: 0, medicineName: '' })
+                }}
+                className="flex-1 rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+              >
+                Volver a editar
+              </button>
+              <button
+                type="button"
+                onClick={() => confirmExit(warningData.requested)}
+                disabled={isSubmitting}
+                className="flex-1 rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:bg-red-400"
+              >
+                {isSubmitting ? 'Registrando...' : 'Forzar salida'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="space-y-4">
         <section className="fe-card p-4 md:p-5">
           <div className="mb-4">
@@ -210,7 +422,7 @@ const ExitsPage = () => {
                 value={form.productId}
                 onChange={handleChange}
                 className="fe-input"
-                disabled={isLoading || isSubmitting}
+                disabled={isLoading || isSubmitting || showStockWarning}
                 required
               >
                 <option value="">Selecciona un medicamento</option>
@@ -233,7 +445,7 @@ const ExitsPage = () => {
                 value={form.amount}
                 onChange={handleChange}
                 className="fe-input"
-                disabled={isLoading || isSubmitting}
+                disabled={isLoading || isSubmitting || showStockWarning}
                 placeholder="Cantidad de unidades"
                 required
               />
@@ -247,7 +459,7 @@ const ExitsPage = () => {
                 value={form.reason}
                 onChange={handleChange}
                 className="fe-input"
-                disabled={isLoading || isSubmitting}
+                disabled={isLoading || isSubmitting || showStockWarning}
                 required
               >
                 {EXIT_REASON_OPTIONS.map((reasonOption) => (
@@ -266,15 +478,26 @@ const ExitsPage = () => {
                 value={form.observation}
                 onChange={handleChange}
                 className="fe-input min-h-24 resize-y"
-                disabled={isLoading || isSubmitting}
+                disabled={isLoading || isSubmitting || showStockWarning}
                 placeholder="Notas adicionales..."
               />
             </div>
 
             {selectedMedicine && (
-              <div className="rounded-xl border border-[#e9eef8] bg-[#f7f9ff] px-4 py-3 text-sm text-[#5f6e8d]">
+              <div className={`rounded-xl border px-4 py-3 text-sm ${
+                Number(form.amount) > selectedMedicine.stock
+                  ? 'border-red-300 bg-red-50 text-red-700'
+                  : 'border-[#e9eef8] bg-[#f7f9ff] text-[#5f6e8d]'
+              }`}>
                 <p className="font-semibold text-[#24314a]">{selectedMedicine.nombre}</p>
-                <p>Stock actual: {selectedMedicine.stock}</p>
+                <p className={Number(form.amount) > selectedMedicine.stock ? 'font-semibold text-red-600' : ''}>
+                  Stock actual: {selectedMedicine.stock}
+                </p>
+                {Number(form.amount) > selectedMedicine.stock && (
+                  <p className="mt-1 text-xs text-red-600">
+                    ⚠ Cantidad ({form.amount}) supera el stock disponible ({selectedMedicine.stock})
+                  </p>
+                )}
                 <p>Próximo vencimiento: {selectedMedicine.proximoVencimiento || 'Sin referencia'}</p>
               </div>
             )}
@@ -283,7 +506,7 @@ const ExitsPage = () => {
               <button
                 type="submit"
                 className="fe-btn-primary"
-                disabled={isLoading || isSubmitting || medicineOptions.length === 0}
+                disabled={isLoading || isSubmitting || medicineOptions.length === 0 || showStockWarning}
               >
                 {isSubmitting ? 'Registrando salida...' : 'Registrar salida'}
               </button>
@@ -295,8 +518,9 @@ const ExitsPage = () => {
                   setForm(INITIAL_FORM)
                   setError('')
                   setSuccessMessage('')
+                  setShowStockWarning(false)
                 }}
-                disabled={isSubmitting}
+                disabled={isSubmitting || showStockWarning}
               >
                 Limpiar formulario
               </button>
