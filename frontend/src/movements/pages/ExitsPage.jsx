@@ -6,6 +6,8 @@ import {
 } from '../services/movements.service'
 import {
   getActiveInventoryTable,
+  getMedicineBatches,
+  getMedicinesFefoSnapshot,
   getMedicines
 } from '../../medicines/services/medicines.service'
 import { getUsers } from '../../users/services/users.service'
@@ -61,7 +63,9 @@ const buildOperableMedicineKeys = (inventoryRows = []) => {
 
   inventoryRows.forEach((row) => {
     if (row?.id !== null && row?.id !== undefined) keys.add(`id:${row.id}`)
+    if (row?.productId !== null && row?.productId !== undefined) keys.add(`id:${row.productId}`)
     if (row?.codigo) keys.add(`code:${String(row.codigo).trim().toLowerCase()}`)
+    if (row?.productCode) keys.add(`code:${String(row.productCode).trim().toLowerCase()}`)
   })
 
   return keys
@@ -72,6 +76,93 @@ const isInActiveInventory = (medicine = {}, operableKeys = new Set()) => {
   const idKey = `id:${medicine.id}`
   const codeKey = `code:${String(medicine.codigo || '').trim().toLowerCase()}`
   return operableKeys.has(idKey) || operableKeys.has(codeKey)
+}
+
+const getInventoryRowKeys = (row = {}) => {
+  const keys = []
+
+  if (row?.id !== null && row?.id !== undefined) keys.push(`id:${row.id}`)
+  if (row?.productId !== null && row?.productId !== undefined) keys.push(`id:${row.productId}`)
+
+  const code = String(row?.codigo || '').trim().toLowerCase()
+  const productCode = String(row?.productCode || '').trim().toLowerCase()
+  if (code) keys.push(`code:${code}`)
+  if (productCode) keys.push(`code:${productCode}`)
+
+  return keys
+}
+
+const getMedicineLookupKeys = (medicine = {}) => {
+  const keys = []
+  const code = String(medicine.codigo || '').trim().toLowerCase()
+
+  if (medicine?.id !== null && medicine?.id !== undefined) keys.push(`id:${medicine.id}`)
+  if (code) keys.push(`code:${code}`)
+
+  return keys
+}
+
+const setStockForKeys = (stockByProductKey, keys, stock) => {
+  keys.forEach((key) => {
+    const currentStock = stockByProductKey.get(key)
+    stockByProductKey.set(key, Math.max(Number(currentStock) || 0, Number(stock) || 0))
+  })
+}
+
+const resolveInventoryReference = (medicine = {}, inventoryRows = []) => {
+  const medicineKeys = new Set(getMedicineLookupKeys(medicine))
+  return inventoryRows.find((row) =>
+    getInventoryRowKeys(row).some((key) => medicineKeys.has(key))
+  ) || null
+}
+
+const buildFefoSnapshotByMedicineId = (snapshotRows = []) => {
+  const snapshotByMedicineId = new Map()
+
+  snapshotRows.forEach((row) => {
+    const medicineId = String(row?.medicineId || '').trim()
+    if (!medicineId) return
+    snapshotByMedicineId.set(medicineId, row)
+  })
+
+  return snapshotByMedicineId
+}
+
+const isConsumableBatchForExit = (batch = {}) => {
+  const availableStock = Number(batch?.availableStock)
+  if (!Number.isFinite(availableStock) || availableStock <= 0) return false
+
+  const normalizedStatus = String(batch?.status || '').trim().toUpperCase()
+  if (['DEPLETED', 'AGOTADO', 'EXPIRED', 'VENCIDO', 'INACTIVE', 'INACTIVO'].includes(normalizedStatus)) return false
+
+  const expirationDate = normalizeDateValue(batch?.expirationDate)
+  if (!expirationDate) return true
+
+  const today = new Date()
+  const todayAtMidnight = new Date(today.getFullYear(), today.getMonth(), today.getDate())
+  return expirationDate >= todayAtMidnight
+}
+
+const buildBatchStockReference = (batches = []) => {
+  const consumableBatches = (Array.isArray(batches) ? batches : [])
+    .filter(isConsumableBatchForExit)
+    .sort((firstBatch, secondBatch) => {
+      const firstDate = normalizeDateValue(firstBatch?.expirationDate)
+      const secondDate = normalizeDateValue(secondBatch?.expirationDate)
+      return (firstDate?.getTime() || Number.MAX_SAFE_INTEGER) - (secondDate?.getTime() || Number.MAX_SAFE_INTEGER)
+    })
+
+  const stock = consumableBatches.reduce(
+    (sum, batch) => sum + (Number(batch?.availableStock) || 0),
+    0
+  )
+  const nextBatch = consumableBatches[0] || null
+
+  return {
+    stock,
+    batchCode: nextBatch?.batchCode || '',
+    expirationDate: nextBatch?.expirationDate || ''
+  }
 }
 
 const ExitsPage = () => {
@@ -99,39 +190,75 @@ const ExitsPage = () => {
     setError('')
 
     try {
-      const [medicinesData, activeInventoryRows, usersData] = await Promise.all([
+      const [medicinesData, activeInventoryRows, fefoSnapshotData, usersData] = await Promise.all([
         getMedicines(),
         getActiveInventoryTable().catch(() => []),
+        getMedicinesFefoSnapshot().catch(() => []),
         getUsers().catch(() => [])
       ])
 
       const normalizedMedicines = Array.isArray(medicinesData) ? medicinesData : []
       const inventoryRowsArray = Array.isArray(activeInventoryRows) ? activeInventoryRows : []
+      const fefoSnapshotRows = Array.isArray(fefoSnapshotData) ? fefoSnapshotData : []
+      const fefoSnapshotByMedicineId = buildFefoSnapshotByMedicineId(fefoSnapshotRows)
       
       // Crear mapa de stock desde tabla de inventario activo
-      const stockByProductId = new Map()
+      const stockByProductKey = new Map()
       inventoryRowsArray.forEach((row) => {
-        if (row?.id !== null && row?.id !== undefined) {
-          stockByProductId.set(`id:${row.id}`, row?.stock || 0)
-        }
-        if (row?.codigo) {
-          stockByProductId.set(`code:${String(row.codigo).trim().toLowerCase()}`, row?.stock || 0)
-        }
+        setStockForKeys(stockByProductKey, getInventoryRowKeys(row), row?.stock)
       })
       
       const operableKeys = buildOperableMedicineKeys(inventoryRowsArray)
-      const operableMedicines = normalizedMedicines.filter((medicine) =>
+      const baseOperableMedicines = normalizedMedicines.filter((medicine) =>
         isMedicineAvailableForExit(medicine) && isInActiveInventory(medicine, operableKeys)
       ).map((medicine) => {
         // Enriquecer medicamento con stock real de inventario
-        const stockByIdKey = `id:${medicine.id}`
-        const stockByCodeKey = `code:${String(medicine.codigo).trim().toLowerCase()}`
-        const realStock = stockByProductId.get(stockByIdKey) || stockByProductId.get(stockByCodeKey) || 0
+        const inventoryStock = getMedicineLookupKeys(medicine).reduce(
+          (stock, key) => Math.max(stock, Number(stockByProductKey.get(key)) || 0),
+          0
+        )
+        const fefoReference = fefoSnapshotByMedicineId.get(String(medicine.id))
+        const realStock = Math.max(
+          Number(fefoReference?.operationalStock) || 0,
+          inventoryStock,
+          Number(medicine.stock) || 0
+        )
+        const inventoryReference = resolveInventoryReference(medicine, inventoryRowsArray)
         return {
           ...medicine,
-          stock: realStock
+          stock: realStock,
+          proximoVencimiento:
+            fefoReference?.expirationDate ||
+            inventoryReference?.proximoVencimiento ||
+            medicine.proximoVencimiento,
+          loteFefo:
+            fefoReference?.batchCode ||
+            inventoryReference?.batchCode ||
+            medicine.loteFefo
         }
       })
+
+      const operableMedicines = await Promise.all(
+        baseOperableMedicines.map(async (medicine) => {
+          if (Number(medicine?.stock) > 0) return medicine
+
+          try {
+            const batches = await getMedicineBatches(medicine.id)
+            const batchReference = buildBatchStockReference(batches)
+
+            if (batchReference.stock <= 0) return medicine
+
+            return {
+              ...medicine,
+              stock: batchReference.stock,
+              proximoVencimiento: batchReference.expirationDate || medicine.proximoVencimiento,
+              loteFefo: batchReference.batchCode || medicine.loteFefo
+            }
+          } catch {
+            return medicine
+          }
+        })
+      )
       
       const productsById = buildProductsMap(normalizedMedicines)
       const { usersByIdentity, usersById } = buildUsersIndex(usersData)
