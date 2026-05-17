@@ -45,6 +45,7 @@ const mapLowStockItemToRow = (item = {}) => {
     id:
       item?.id ??
       `${item?.productId ?? product?.id ?? product?.code ?? 'product'}-${item?.batchId ?? batch?.id ?? 'batch'}`,
+    productId: item?.productId ?? product?.id ?? null,
     codigo: String(item?.productCode ?? product?.code ?? product?.codigo ?? '').trim(),
     nombre: String(item?.productName ?? product?.name ?? product?.nombre ?? '').trim(),
     loteId: item?.batchId ?? batch?.id ?? null,
@@ -62,6 +63,24 @@ const mapLowStockItemToRow = (item = {}) => {
   }
 }
 
+const getProductKey = (row = {}) => {
+  const productId = String(row?.productId ?? '').trim()
+  if (productId) return `id:${productId}`
+
+  const code = String(row?.codigo ?? '').trim().toLowerCase()
+  if (code) return `code:${code}`
+
+  return `name:${String(row?.nombre ?? row?.id ?? '').trim().toLowerCase()}`
+}
+
+const getOperationalStock = (row = {}) => {
+  const operationalStock = Number(row?.operationalStock)
+  if (Number.isFinite(operationalStock)) return operationalStock
+  return Number(row?.stock ?? row?.batchStock ?? 0) || 0
+}
+
+const hasOperationalStock = (row = {}) => Number.isFinite(Number(row?.operationalStock))
+
 const dedupeRows = (rows = []) => {
   const rowsByKey = new Map()
 
@@ -77,6 +96,66 @@ const dedupeRows = (rows = []) => {
       return firstRow.nombre.localeCompare(secondRow.nombre)
     }
   )
+}
+
+const groupRowsByProductStock = (rows = []) => {
+  const rowsByProduct = new Map()
+
+  rows.forEach((row) => {
+    const productKey = getProductKey(row)
+    const currentRow = rowsByProduct.get(productKey)
+    const rowStock = getOperationalStock(row)
+    const rowBatchStock = Number(row?.batchStock ?? row?.stock ?? 0) || 0
+    const rowHasOperationalStock = hasOperationalStock(row)
+
+    if (!currentRow) {
+      rowsByProduct.set(productKey, {
+        ...row,
+        id: productKey,
+        stock: rowStock,
+        hasOperationalStock: rowHasOperationalStock,
+        batchStock: rowBatchStock,
+        lotesCount: row?.loteCodigo ? 1 : 0,
+        loteCodigo: row?.loteCodigo || 'Sin lote',
+        suggestion: ''
+      })
+      return
+    }
+
+    const hasProductOperationalStock = Boolean(currentRow.hasOperationalStock || rowHasOperationalStock)
+    const totalBatchStock = (Number(currentRow.batchStock) || 0) + rowBatchStock
+
+    rowsByProduct.set(productKey, {
+      ...currentRow,
+      stock: hasProductOperationalStock ? Math.max(Number(currentRow.stock) || 0, rowStock) : totalBatchStock,
+      hasOperationalStock: hasProductOperationalStock,
+      batchStock: totalBatchStock,
+      lotesCount: (Number(currentRow.lotesCount) || 0) + (row?.loteCodigo ? 1 : 0),
+      loteCodigo: `${(Number(currentRow.lotesCount) || 0) + (row?.loteCodigo ? 1 : 0)} lotes`,
+      suggestion: ''
+    })
+  })
+
+  return Array.from(rowsByProduct.values())
+    .map((row) => ({
+      ...row,
+      coverage: Number(row.stockMinimo) > 0
+        ? Math.round((Number(row.stock) / Number(row.stockMinimo)) * 100)
+        : row.coverage,
+      coverageLabel: Number(row.stockMinimo) > 0
+        ? `${Math.round((Number(row.stock) / Number(row.stockMinimo)) * 100)}%`
+        : row.coverageLabel,
+      loteCodigo: Number(row.lotesCount) > 1 ? `${row.lotesCount} lotes` : row.loteCodigo
+    }))
+    .filter((row) => {
+      const stock = Number(row?.stock) || 0
+      const minimumStock = Number(row?.stockMinimo) || 0
+      return stock > 0 && minimumStock > 0 && stock < minimumStock
+    })
+    .sort((firstRow, secondRow) => {
+      if (firstRow.coverage !== secondRow.coverage) return firstRow.coverage - secondRow.coverage
+      return firstRow.nombre.localeCompare(secondRow.nombre)
+    })
 }
 
 const fetchLowStockRows = async (endpoints, token) => {
@@ -107,9 +186,9 @@ export const getLowStockReportGroups = async (token) => {
     ])
 
     return {
-      all: allRows,
-      critical: dedupeRows(criticalRows),
-      alert: dedupeRows(alertRows)
+      all: groupRowsByProductStock(allRows),
+      critical: groupRowsByProductStock(criticalRows),
+      alert: groupRowsByProductStock(alertRows)
     }
   } catch (error) {
     throw normalizeApiError(error, 'No se pudo obtener el reporte de bajo stock.')
