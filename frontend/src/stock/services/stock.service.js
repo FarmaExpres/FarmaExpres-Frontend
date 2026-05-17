@@ -63,13 +63,9 @@ export const getStockStatus = ({ stock, minimumStock, status }) => {
   return 'adequate'
 }
 
-const buildRestockSuggestion = ({ stock, minimumStock, suggestion }) => {
-  const backendSuggestion = String(suggestion || '').trim()
-  if (backendSuggestion) return backendSuggestion
-
-  const targetStock = Math.max(minimumStock * 2, minimumStock + 1)
-  const unitsToRestock = Math.max(Math.ceil(targetStock - stock), 1)
-  return `Reponer ${unitsToRestock} unidades para recuperar cobertura operativa.`
+const buildRestockSuggestion = ({ stock, minimumStock }) => {
+  const unitsToRestock = Math.max(Math.ceil(minimumStock - stock), 1)
+  return `Reponer ${unitsToRestock} unidades para alcanzar el mínimo operativo.`
 }
 
 const mapStockProduct = (item = {}) => {
@@ -128,8 +124,7 @@ const mapStockProduct = (item = {}) => {
     active: isActive,
     suggestion: buildRestockSuggestion({
       stock,
-      minimumStock,
-      suggestion: item?.suggestion ?? item?.sugerencia ?? product?.suggestion ?? product?.sugerencia
+      minimumStock
     })
   }
 }

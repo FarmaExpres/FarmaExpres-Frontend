@@ -22,8 +22,11 @@ const TAB_FIELDS = {
   regulatorio: ['requiereReceta', 'laboratorio', 'registroSanitario', 'observaciones']
 }
 
-const getTodayIsoDate = () => {
+const EXPIRATION_DATE_ERROR = 'No se permite registrar medicamentos con fecha de vencimiento de hoy, anterior o vencida.'
+
+const getDateIsoValue = (daysToAdd = 0) => {
   const today = new Date()
+  today.setDate(today.getDate() + daysToAdd)
   const year = today.getFullYear()
   const month = String(today.getMonth() + 1).padStart(2, '0')
   const day = String(today.getDate()).padStart(2, '0')
@@ -43,13 +46,7 @@ const isValidDate = (value) => {
   )
 }
 
-const isDateInPast = (value) => {
-  const selectedDate = new Date(`${value}T00:00:00`)
-  const today = new Date()
-  const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate())
-
-  return selectedDate < startOfToday
-}
+const isDateBeforeMinimum = (value) => value < getDateIsoValue(1)
 
 const validateForm = (formValues, { isCreate }) => {
   const errors = {}
@@ -103,8 +100,8 @@ const validateForm = (formValues, { isCreate }) => {
   if (isCreate) {
     if (!isValidDate(formValues.expirationDate)) {
       errors.expirationDate = 'La fecha de vencimiento es obligatoria y debe ser válida.'
-    } else if (isDateInPast(formValues.expirationDate)) {
-      errors.expirationDate = 'No se permite registrar medicamentos con fecha de vencimiento anterior a hoy.'
+    } else if (isDateBeforeMinimum(formValues.expirationDate)) {
+      errors.expirationDate = EXPIRATION_DATE_ERROR
     }
   }
 
@@ -215,7 +212,7 @@ const MedicineWorkspaceForm = ({
       return 'general'
     }
   })
-  const minExpirationDate = getTodayIsoDate()
+  const minExpirationDate = getDateIsoValue(1)
   const hasPendingChanges = useMemo(() => {
     if (isCreate) return true
     return JSON.stringify(buildComparableForEdit(form)) !== JSON.stringify(buildComparableForEdit(initialValues))
@@ -458,6 +455,14 @@ const MedicineWorkspaceForm = ({
                   name="expirationDate"
                   value={form.expirationDate}
                   onChange={handleChange}
+                  onInvalid={(event) => {
+                    event.target.setCustomValidity(EXPIRATION_DATE_ERROR)
+                    setErrors((currentErrors) => ({
+                      ...currentErrors,
+                      expirationDate: EXPIRATION_DATE_ERROR
+                    }))
+                  }}
+                  onInput={(event) => event.target.setCustomValidity('')}
                   min={minExpirationDate}
                   className={inputClassName}
                 />

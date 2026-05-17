@@ -23,4 +23,8 @@ export const toSortedRows = (rows = []) =>
     })
   })
 
-export const toRestockSuggestion = (row = {}) => `+${Math.max(Number(row.stockMinimo || 0) * 2, 1)} uds`
+export const toRestockSuggestion = (row = {}) => {
+  const stock = Number(row.stock || row.batchStock || 0)
+  const minimumStock = Number(row.stockMinimo || 0)
+  return `+${Math.max(minimumStock - stock, 1)} uds`
+}

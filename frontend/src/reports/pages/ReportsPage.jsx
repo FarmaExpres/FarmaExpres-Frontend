@@ -27,6 +27,7 @@ import {
   buildUsersIndex
 } from '../utils/reportData.utils'
 import { exportReportExcel } from '../utils/reportExport.utils'
+import { INVENTORY_CHANGED_EVENT } from '../../shared/events/inventory.events'
 
 const REPORTS_ACTIVE_TAB_STORAGE_KEY = 'reports:active-tab'
 
@@ -127,7 +128,12 @@ const ReportsPage = () => {
     }
 
     loadData()
-    return () => { isMounted = false }
+    window.addEventListener(INVENTORY_CHANGED_EVENT, loadData)
+
+    return () => {
+      isMounted = false
+      window.removeEventListener(INVENTORY_CHANGED_EVENT, loadData)
+    }
   }, [])
 
   const movementsRows = useMemo(() => buildMovementsRows(movements), [movements])

@@ -68,7 +68,7 @@ const buildSuggestion = (item = {}) => {
   if (backendSuggestion) return backendSuggestion
   const stock = toNumber(item.stock)
   const minimum = toNumber(item.stockMinimo)
-  const restockUnits = Math.max((minimum * 2) - stock, 1)
+  const restockUnits = Math.max(minimum - stock, 1)
   return `Reponer ${restockUnits} unidades`
 }
 
@@ -231,9 +231,9 @@ const LowStockReportSection = ({
                       <td className="whitespace-nowrap text-left font-medium text-[#30456f]">{item.loteCodigo || 'Sin lote'}</td>
                       <td
                         className={`whitespace-nowrap text-left font-semibold ${visuals.textClass}`}
-                        title={`Stock operativo producto: ${item.operationalStock ?? 0}`}
+                        title={`Stock operativo producto: ${item.operationalStock ?? item.stock ?? 0}`}
                       >
-                        {toNumber(item.batchStock ?? item.stock)}
+                        {toNumber(item.stock)}
                       </td>
                       <td className="whitespace-nowrap text-left font-semibold text-[#2f4269]">{toNumber(item.stockMinimo)}</td>
                       <td className={`whitespace-nowrap text-left font-semibold ${visuals.textClass}`}>{formatCoverage(item)}</td>
