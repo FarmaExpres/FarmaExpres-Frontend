@@ -76,6 +76,7 @@ const mapAlertItem = (item = {}) => {
     id:
       item?.id ??
       `${item?.productId ?? product?.id ?? product?.code ?? 'product'}-${item?.batchId ?? batch?.id ?? 'batch'}`,
+    productId: item?.productId ?? product?.id ?? null,
     codigo: String(item?.productCode ?? product?.code ?? product?.codigo ?? '').trim(),
     nombre: String(item?.productName ?? product?.name ?? product?.nombre ?? '').trim(),
     loteId: item?.batchId ?? batch?.id ?? null,
@@ -91,6 +92,74 @@ const mapAlertItem = (item = {}) => {
     ),
     estado: String(item?.status ?? item?.estado ?? '').trim()
   }
+}
+
+const getProductKey = (row = {}) => {
+  const productId = String(row?.productId ?? '').trim()
+  if (productId) return `id:${productId}`
+
+  const code = String(row?.codigo ?? '').trim().toLowerCase()
+  if (code) return `code:${code}`
+
+  return `name:${String(row?.nombre ?? row?.id ?? '').trim().toLowerCase()}`
+}
+
+const getOperationalStock = (row = {}) => {
+  const operationalStock = Number(row?.operationalStock)
+  if (Number.isFinite(operationalStock)) return operationalStock
+  return Number(row?.stock ?? row?.batchStock ?? 0) || 0
+}
+
+const hasOperationalStock = (row = {}) => Number.isFinite(Number(row?.operationalStock))
+
+const aggregateProductStockRows = (rows = []) => {
+  const rowsByProduct = new Map()
+
+  rows.forEach((row) => {
+    const productKey = getProductKey(row)
+    const currentRow = rowsByProduct.get(productKey)
+    const rowStock = getOperationalStock(row)
+    const rowBatchStock = Number(row?.batchStock ?? row?.stock ?? 0) || 0
+    const rowHasOperationalStock = hasOperationalStock(row)
+
+    if (!currentRow) {
+      rowsByProduct.set(productKey, {
+        ...row,
+        id: productKey,
+        stock: rowStock,
+        hasOperationalStock: rowHasOperationalStock,
+        batchStock: rowBatchStock,
+        lotesCount: row?.loteCodigo ? 1 : 0,
+        loteCodigo: row?.loteCodigo || 'Sin lote',
+        fechavencimiento: row?.fechavencimiento || ''
+      })
+      return
+    }
+
+    const currentExpiration = String(currentRow.fechavencimiento || '')
+    const rowExpiration = String(row?.fechavencimiento || '')
+    const nextExpiration = !currentExpiration || (rowExpiration && rowExpiration < currentExpiration)
+      ? rowExpiration
+      : currentExpiration
+
+    const hasProductOperationalStock = Boolean(currentRow.hasOperationalStock || rowHasOperationalStock)
+    const totalBatchStock = (Number(currentRow.batchStock) || 0) + rowBatchStock
+
+    rowsByProduct.set(productKey, {
+      ...currentRow,
+      stock: hasProductOperationalStock ? Math.max(Number(currentRow.stock) || 0, rowStock) : totalBatchStock,
+      hasOperationalStock: hasProductOperationalStock,
+      batchStock: totalBatchStock,
+      lotesCount: (Number(currentRow.lotesCount) || 0) + (row?.loteCodigo ? 1 : 0),
+      loteCodigo: `${(Number(currentRow.lotesCount) || 0) + (row?.loteCodigo ? 1 : 0)} lotes`,
+      fechavencimiento: nextExpiration
+    })
+  })
+
+  return Array.from(rowsByProduct.values()).map((row) => ({
+    ...row,
+    loteCodigo: Number(row.lotesCount) > 1 ? `${row.lotesCount} lotes` : row.loteCodigo
+  }))
 }
 
 const fetchSection = async (sectionKey, token) => {
@@ -115,21 +184,26 @@ const fetchSection = async (sectionKey, token) => {
 
 const normalizeSectionRows = ({ sectionKey, rows }) => {
   const normalizedRows = Array.isArray(rows) ? rows : []
+  const rowsWithBatchStock = normalizedRows.filter((row) => Number(row?.batchStock ?? row?.stock ?? 0) > 0)
 
   if (sectionKey === 'lowStock') {
-    // En bajo stock solo deben mostrarse productos con stock positivo.
-    return normalizedRows.filter((row) => Number(row?.stock) > 0)
+    // Bajo stock se evalua por medicamento: el stock operativo total debe estar por debajo del minimo.
+    return aggregateProductStockRows(normalizedRows).filter((row) => {
+      const stock = Number(row?.stock) || 0
+      const minimumStock = Number(row?.stockMinimo) || 0
+      return stock > 0 && minimumStock > 0 && stock < minimumStock
+    })
   }
 
   if (sectionKey === 'outOfStock') {
-    // En agotados solo deben mostrarse productos con stock en cero.
-    return normalizedRows.filter((row) => Number(row?.stock) === 0)
+    // Agotados tambien se evalua por medicamento para evitar duplicados por lote.
+    return aggregateProductStockRows(normalizedRows).filter((row) => Number(row?.stock) === 0)
   }
 
-  if (sectionKey === 'expiringSoon') return normalizedRows
+  if (sectionKey === 'expiringSoon') return rowsWithBatchStock
 
   if (sectionKey === 'expired') {
-    return normalizedRows.filter((row) => Number(row?.batchStock ?? row?.stock ?? 0) > 0)
+    return rowsWithBatchStock
   }
 
   return normalizedRows

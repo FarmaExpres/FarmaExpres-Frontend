@@ -13,11 +13,17 @@ import AlertsPage from './alerts/pages/AlertsPage'
 import { getAlertsCenterData } from './alerts/services/alerts.service'
 import DashboardPage from './dashboard/pages/DashboardPage'
 import StockControlPage from './stock/pages/StockControlPage'
+import AuditPage from './audit/pages/AuditPage'
 import LoginPage from './auth/pages/LoginPage'
 import ProtectedRoute from './shared/routing/ProtectedRoute'
 import PublicOnlyRoute from './shared/routing/PublicOnlyRoute'
 import { clearSession, getSession, isAdmin } from './shared/auth/session'
 import {
+  INVENTORY_CHANGED_EVENT,
+  INVENTORY_CHANGED_STORAGE_KEY
+} from './shared/events/inventory.events'
+import {
+  canAccessAudit,
   canAccessAlerts,
   canAccessEntries,
   canAccessExits,
@@ -46,19 +52,6 @@ const AppShell = ({ session, activeModule, routeKey, onNavigate, onLogout, alert
   </AppLayout>
 )
 
-const FutureModulePage = ({ title, message }) => (
-  <div className="fe-page-shell">
-    <div className="fe-page-head">
-      <div>
-        <h1 className="fe-page-title">{title}</h1>
-      </div>
-    </div>
-    <section className="fe-card px-5 py-5">
-      <p className="text-sm font-medium text-[#5f6f91]">{message}</p>
-    </section>
-  </div>
-)
-
 function App() {
   const navigate = useNavigate()
   const location = useLocation()
@@ -71,6 +64,7 @@ function App() {
   const canAccessReportsModule = canAccessReports(session.role)
   const canAccessAlertsModule = canAccessAlerts(session.role)
   const canAccessStockControlModule = canAccessStockControl(session.role)
+  const canAccessAuditModule = canAccessAudit(session.role)
   const canManageMedicinesModule = canManageMedicines(session.role)
   const [alertsCount, setAlertsCount] = useState(0)
 
@@ -135,6 +129,7 @@ function App() {
     }
 
     if (moduleKey === 'audit') {
+      if (!canAccessAuditModule) return
       navigate('/audit')
       return
     }
@@ -187,12 +182,25 @@ function App() {
 
     fetchAlertsCount()
 
+    const handleInventoryChanged = () => {
+      fetchAlertsCount()
+    }
+
+    const handleStorage = (event) => {
+      if (event.key === INVENTORY_CHANGED_STORAGE_KEY) fetchAlertsCount()
+    }
+
+    window.addEventListener(INVENTORY_CHANGED_EVENT, handleInventoryChanged)
+    window.addEventListener('storage', handleStorage)
+
     if (session.isAuthenticated && canAccessAlertsModule) {
       refreshIntervalId = window.setInterval(fetchAlertsCount, 60000)
     }
 
     return () => {
       isMounted = false
+      window.removeEventListener(INVENTORY_CHANGED_EVENT, handleInventoryChanged)
+      window.removeEventListener('storage', handleStorage)
       if (refreshIntervalId) window.clearInterval(refreshIntervalId)
     }
   }, [session.isAuthenticated, session.role, canAccessAlertsModule])
@@ -389,17 +397,19 @@ function App() {
         />
         <Route
           path="/audit"
-          element={(
-            <AppShell
-              session={session}
-              activeModule="audit"
-              routeKey={location.key}
-              onNavigate={handleNavigate}
-              onLogout={handleLogout}
-              alertsCount={alertsCount}
-              content={<FutureModulePage title="Auditoría" message="Módulo reservado para auditoría avanzada del sistema." />}
-            />
-          )}
+          element={canAccessAuditModule
+            ? (
+              <AppShell
+                session={session}
+                activeModule="audit"
+                routeKey={location.key}
+                onNavigate={handleNavigate}
+                onLogout={handleLogout}
+                alertsCount={alertsCount}
+                content={<AuditPage />}
+              />
+              )
+            : <Navigate to={defaultRoute} replace />}
         />
       </Route>
 

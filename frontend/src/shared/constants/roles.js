@@ -86,6 +86,8 @@ export const canAccessStockControl = (role) => {
   return [ROLES.ADMIN, ROLES.FARMACEUTICO].includes(normalizedRole)
 }
 
+export const canAccessAudit = (role) => normalizeRole(role) === ROLES.AUDITOR
+
 export const getDefaultRouteByRole = (role) => {
   const normalizedRole = normalizeRole(role)
   if ([ROLES.ADMIN, ROLES.FARMACEUTICO, ROLES.AUDITOR].includes(normalizedRole)) return '/dashboard'
