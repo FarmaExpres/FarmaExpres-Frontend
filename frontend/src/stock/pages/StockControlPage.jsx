@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { getStockControlData } from '../services/stock.service'
+import { INVENTORY_CHANGED_EVENT } from '../../shared/events/inventory.events'
 
 const numberFormatter = new Intl.NumberFormat('es-CO')
 const formatNumber = (value) => numberFormatter.format(Number(value) || 0)
@@ -407,9 +408,11 @@ const StockControlPage = () => {
     }
 
     runInitialLoad()
+    window.addEventListener(INVENTORY_CHANGED_EVENT, runInitialLoad)
 
     return () => {
       isMounted = false
+      window.removeEventListener(INVENTORY_CHANGED_EVENT, runInitialLoad)
     }
   }, [])
 

@@ -13,6 +13,7 @@ import {
 } from '../config/alertsSections.config'
 import { getAlertsCenterData } from '../services/alerts.service'
 import { toSortedRows } from '../utils/alertsFormatters'
+import { INVENTORY_CHANGED_EVENT } from '../../shared/events/inventory.events'
 
 const SECTION_COMPONENTS = {
   expired: ExpiredAlertsSection,
@@ -109,9 +110,11 @@ const AlertsPage = () => {
     }
 
     loadAlertsData()
+    window.addEventListener(INVENTORY_CHANGED_EVENT, loadAlertsData)
 
     return () => {
       isMounted = false
+      window.removeEventListener(INVENTORY_CHANGED_EVENT, loadAlertsData)
     }
   }, [])
 

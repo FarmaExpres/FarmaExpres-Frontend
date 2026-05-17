@@ -15,6 +15,7 @@ import {
   buildProductsMap,
   buildUsersIndex
 } from '../utils/movementsPage.utils'
+import { notifyInventoryChanged } from '../../shared/events/inventory.events'
 
 const INITIAL_FORM = Object.freeze({
   productId: '',
@@ -342,6 +343,7 @@ const ExitsPage = () => {
 
       setForm(INITIAL_FORM)
       setSuccessMessage('✓ Salida registrada exitosamente. El inventario ha sido actualizado.')
+      notifyInventoryChanged()
       await loadExitsView()
     } catch (submitError) {
       setError(submitError.message || 'No se pudo registrar la salida.')
@@ -391,14 +393,6 @@ const ExitsPage = () => {
               >
                 Volver a editar
               </button>
-              <button
-                type="button"
-                onClick={() => confirmExit(warningData.requested)}
-                disabled={isSubmitting}
-                className="flex-1 rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:bg-red-400"
-              >
-                {isSubmitting ? 'Registrando...' : 'Forzar salida'}
-              </button>
             </div>
           </div>
         </div>
@@ -408,9 +402,6 @@ const ExitsPage = () => {
         <section className="fe-card p-4 md:p-5">
           <div className="mb-4">
             <h2 className="fe-section-title text-[1.18rem]">Nueva salida</h2>
-            <p className="fe-section-subtitle">
-              Selecciona el medicamento, la cantidad y el motivo del egreso.
-            </p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-3">

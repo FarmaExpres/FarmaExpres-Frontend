@@ -13,6 +13,7 @@ import {
   buildProductsMap,
   buildUsersIndex
 } from '../utils/movementsPage.utils'
+import { notifyInventoryChanged } from '../../shared/events/inventory.events'
 
 const INITIAL_FORM = Object.freeze({
   productId: '',
@@ -28,6 +29,18 @@ const ENTRY_REASON_OPTIONS = Object.freeze([
   { value: 'Donacion', label: 'Donación' },
   { value: 'Ajuste inventario', label: 'Ajuste inventario' }
 ])
+
+const EXPIRATION_DATE_ERROR = 'No puedes registrar entradas con fecha de vencimiento de hoy, anterior o vencida. Selecciona una fecha posterior a la actual.'
+
+const getDateInputValue = (daysToAdd = 0) => {
+  const today = new Date()
+  today.setDate(today.getDate() + daysToAdd)
+  return [
+    today.getFullYear(),
+    String(today.getMonth() + 1).padStart(2, '0'),
+    String(today.getDate()).padStart(2, '0')
+  ].join('-')
+}
 
 const toSortedMedicines = (medicines = []) => (
   [...medicines].sort((firstMedicine, secondMedicine) =>
@@ -81,6 +94,7 @@ const EntriesPage = () => {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState('')
   const [successMessage, setSuccessMessage] = useState('')
+  const minimumExpirationDate = getDateInputValue(1)
 
   const medicineOptions = useMemo(
     () => toSortedMedicines(medicines),
@@ -134,6 +148,16 @@ const EntriesPage = () => {
 
   const handleChange = (event) => {
     const { name, value } = event.target
+
+    if (name === 'expirationDate') {
+      event.target.setCustomValidity('')
+      if (value && value < minimumExpirationDate) {
+        setError(EXPIRATION_DATE_ERROR)
+      } else if (error === EXPIRATION_DATE_ERROR) {
+        setError('')
+      }
+    }
+
     setForm((currentForm) => ({
       ...currentForm,
       [name]: value
@@ -162,6 +186,11 @@ const EntriesPage = () => {
       return
     }
 
+    if (form.expirationDate < minimumExpirationDate) {
+      setError(EXPIRATION_DATE_ERROR)
+      return
+    }
+
     if (!String(form.reason || '').trim()) {
       setError('Debes indicar el motivo de la entrada.')
       return
@@ -181,6 +210,7 @@ const EntriesPage = () => {
 
       setForm(INITIAL_FORM)
       setSuccessMessage('Entrada registrada correctamente. El historial ya fue actualizado.')
+      notifyInventoryChanged()
       await loadEntriesView()
     } catch (submitError) {
       setError(submitError.message || 'No se pudo registrar la entrada.')
@@ -204,10 +234,19 @@ const EntriesPage = () => {
         <section className="fe-card p-4 md:p-5">
           <div className="mb-4">
             <h2 className="fe-section-title text-[1.18rem]">Nueva entrada</h2>
-            <p className="fe-section-subtitle">
-              Completa los datos del lote y envía la novedad al backend.
-            </p>
           </div>
+
+          {error && (
+            <div className="mb-4 rounded-lg border border-red-200 bg-red-100 px-4 py-3 text-sm font-medium text-red-700">
+              {error}
+            </div>
+          )}
+
+          {!error && successMessage && (
+            <div className="mb-4 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700">
+              {successMessage}
+            </div>
+          )}
 
           <form onSubmit={handleSubmit} className="space-y-3">
             <div>
@@ -253,8 +292,13 @@ const EntriesPage = () => {
                 id="entry-expirationDate"
                 name="expirationDate"
                 type="date"
+                min={minimumExpirationDate}
                 value={form.expirationDate}
                 onChange={handleChange}
+                onInvalid={(event) => {
+                  event.target.setCustomValidity(EXPIRATION_DATE_ERROR)
+                  setError(EXPIRATION_DATE_ERROR)
+                }}
                 className="fe-input"
                 disabled={isLoading || isSubmitting}
                 required
@@ -326,17 +370,6 @@ const EntriesPage = () => {
             </div>
           </form>
 
-          {error && (
-            <div className="mt-4 rounded-lg border border-red-200 bg-red-100 px-4 py-3 text-sm text-red-700">
-              {error}
-            </div>
-          )}
-
-          {!error && successMessage && (
-            <div className="mt-4 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
-              {successMessage}
-            </div>
-          )}
         </section>
 
         <section className="space-y-3">

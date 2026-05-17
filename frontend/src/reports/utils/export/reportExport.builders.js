@@ -38,7 +38,7 @@ const resolveLowStockStatus = (item = {}) => {
 const resolveLowStockSuggestion = (item = {}) => {
   const backendSuggestion = String(item.suggestion || '').trim()
   if (backendSuggestion) return backendSuggestion
-  const shortage = Math.max((toNumber(item.stockMinimo) * 2) - toNumber(item.stock), 1)
+  const shortage = Math.max(toNumber(item.stockMinimo) - toNumber(item.stock), 1)
   return `Reponer ${shortage} unidades`
 }
 
@@ -250,7 +250,7 @@ export const buildLowStockWorksheet = (rowsData = []) => {
         item.nombre,
         resolveBatchCode(item) || 'Sin lote',
         resolveBatchExpiration(item) || '---',
-        item.batchStock ?? item.stock,
+        item.stock,
         item.stockMinimo,
         resolveLowStockStatus(item),
         resolveLowStockSuggestion(item)
@@ -261,7 +261,7 @@ export const buildLowStockWorksheet = (rowsData = []) => {
       { wch: toContentWidth(rowsData, (item) => item.nombre, { min: 22, max: 40, header: header[1] }) },
       { wch: toContentWidth(rowsData, (item) => resolveBatchCode(item) || 'Sin lote', { min: 14, max: 24, header: header[2] }) },
       { wch: toContentWidth(rowsData, (item) => resolveBatchExpiration(item) || '---', { min: 14, max: 20, header: header[3] }) },
-      { wch: toContentWidth(rowsData, (item) => String(item.batchStock ?? item.stock ?? ''), { min: 10, max: 14, header: header[4] }) },
+      { wch: toContentWidth(rowsData, (item) => String(item.stock ?? ''), { min: 10, max: 14, header: header[4] }) },
       { wch: toContentWidth(rowsData, (item) => String(item.stockMinimo ?? ''), { min: 10, max: 14, header: header[5] }) },
       { wch: toContentWidth(rowsData, (item) => resolveLowStockStatus(item), { min: 12, max: 18, header: header[6] }) },
       { wch: toContentWidth(rowsData, (item) => resolveLowStockSuggestion(item), { min: 26, max: 52, header: header[7] }) }

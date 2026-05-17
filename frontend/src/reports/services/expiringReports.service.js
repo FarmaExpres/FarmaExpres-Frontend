@@ -117,11 +117,7 @@ const fetchExpiringRows = async (token) => {
 export const getExpiringReportGroups = async (token) => {
   try {
     const rawRows = dedupeRows(await fetchExpiringRows(token))
-    const allRows = rawRows.filter((row) => {
-      const groupKey = getExpiringGroupKey(row)
-      if (groupKey !== 'expired') return true
-      return Number(row?.batchStock ?? row?.stock ?? 0) > 0
-    })
+    const allRows = rawRows.filter((row) => Number(row?.batchStock ?? row?.stock ?? 0) > 0)
     const groupedRows = allRows.reduce((acc, row) => {
       const groupKey = getExpiringGroupKey(row)
       if (groupKey !== 'all') acc[groupKey].push(row)

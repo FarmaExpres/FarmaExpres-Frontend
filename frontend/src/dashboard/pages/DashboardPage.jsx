@@ -11,6 +11,7 @@ import {
   normalizeRole,
   ROLES
 } from '../../shared/constants/roles'
+import { INVENTORY_CHANGED_EVENT } from '../../shared/events/inventory.events'
 import { getDashboardData } from '../services/dashboard.service'
 
 const INITIAL_BLOCK = Object.freeze({
@@ -777,9 +778,11 @@ const DashboardPage = ({ session }) => {
     }
 
     loadDashboard()
+    window.addEventListener(INVENTORY_CHANGED_EVENT, loadDashboard)
 
     return () => {
       isMounted = false
+      window.removeEventListener(INVENTORY_CHANGED_EVENT, loadDashboard)
     }
   }, [session?.role])
 
