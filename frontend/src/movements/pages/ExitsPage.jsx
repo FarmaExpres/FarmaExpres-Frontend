@@ -202,13 +202,13 @@ const ExitsPage = () => {
       const inventoryRowsArray = Array.isArray(activeInventoryRows) ? activeInventoryRows : []
       const fefoSnapshotRows = Array.isArray(fefoSnapshotData) ? fefoSnapshotData : []
       const fefoSnapshotByMedicineId = buildFefoSnapshotByMedicineId(fefoSnapshotRows)
-
+      
       // Crear mapa de stock desde tabla de inventario activo
       const stockByProductKey = new Map()
       inventoryRowsArray.forEach((row) => {
         setStockForKeys(stockByProductKey, getInventoryRowKeys(row), row?.stock)
       })
-
+      
       const operableKeys = buildOperableMedicineKeys(inventoryRowsArray)
       const baseOperableMedicines = normalizedMedicines.filter((medicine) =>
         isMedicineAvailableForExit(medicine) && isInActiveInventory(medicine, operableKeys)
@@ -260,7 +260,7 @@ const ExitsPage = () => {
           }
         })
       )
-
+      
       const productsById = buildProductsMap(normalizedMedicines)
       const { usersByIdentity, usersById } = buildUsersIndex(usersData)
       const exitsData = await getExitMovements({
