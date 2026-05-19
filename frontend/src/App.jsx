@@ -14,6 +14,7 @@ import { getAlertsCenterData } from './alerts/services/alerts.service'
 import DashboardPage from './dashboard/pages/DashboardPage'
 import StockControlPage from './stock/pages/StockControlPage'
 import AuditPage from './audit/pages/AuditPage'
+import PredictionsPage from './predictions/pages/PredictionsPage'
 import LoginPage from './auth/pages/LoginPage'
 import ProtectedRoute from './shared/routing/ProtectedRoute'
 import PublicOnlyRoute from './shared/routing/PublicOnlyRoute'
@@ -29,6 +30,7 @@ import {
   canAccessExits,
   canAccessMedicines,
   canAccessMovements,
+  canAccessPredictions,
   canAccessReports,
   canAccessStockControl,
   canManageMedicines,
@@ -65,6 +67,7 @@ function App() {
   const canAccessAlertsModule = canAccessAlerts(session.role)
   const canAccessStockControlModule = canAccessStockControl(session.role)
   const canAccessAuditModule = canAccessAudit(session.role)
+  const canAccessPredictionsModule = canAccessPredictions(session.role)
   const canManageMedicinesModule = canManageMedicines(session.role)
   const [alertsCount, setAlertsCount] = useState(0)
 
@@ -131,6 +134,12 @@ function App() {
     if (moduleKey === 'audit') {
       if (!canAccessAuditModule) return
       navigate('/audit')
+      return
+    }
+
+    if (moduleKey === 'predictions') {
+      if (!canAccessPredictionsModule) return
+      navigate('/predictions')
       return
     }
 
@@ -407,6 +416,22 @@ function App() {
                 onLogout={handleLogout}
                 alertsCount={alertsCount}
                 content={<AuditPage />}
+              />
+              )
+            : <Navigate to={defaultRoute} replace />}
+        />
+        <Route
+          path="/predictions"
+          element={canAccessPredictionsModule
+            ? (
+              <AppShell
+                session={session}
+                activeModule="predictions"
+                routeKey={location.key}
+                onNavigate={handleNavigate}
+                onLogout={handleLogout}
+                alertsCount={alertsCount}
+                content={<PredictionsPage session={session} />}
               />
               )
             : <Navigate to={defaultRoute} replace />}
