@@ -1,4 +1,4 @@
-# HU-MDRT-001 - Módulo de predicciones de inventario
+# HU-MDRT-003 - Módulo de predicciones de inventario
 
 ## Contexto
 
@@ -12,6 +12,7 @@ FarmaExpres incorpora un microservicio NoSQL con Python y MongoDB para estimar d
 - Nuevo permiso `canAccessPredictions`.
 - Nuevo permiso `canManagePredictions`.
 - Menú lateral actualizado para administrador, farmacéutico y auditor.
+- La trazabilidad de frontend queda en `HU-MDRT-003` porque `HU-MDRT-002` cubre la integración del servicio predictivo y la ingesta NoSQL.
 
 ## Permisos
 
@@ -43,6 +44,18 @@ El frontend usa rutas relativas para pasar por el gateway:
 ```
 
 No consume directamente el puerto del microservicio Python.
+
+## Validación local
+
+La pantalla fue validada en `http://localhost:3000/predictions` con datos generados desde el flujo normal de FarmaExpres. Se registraron entradas y salidas de inventario, luego se ejecutó `Sincronizar inventario` y `Recalcular flujo`.
+
+Resultado observado:
+
+- 130 registros crudos.
+- 130 registros limpios.
+- 11 medicamentos evaluados.
+- 10 medicamentos en riesgo alto.
+- 1 medicamento agotado.
 
 ## Archivos principales
 
