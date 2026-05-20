@@ -50,6 +50,8 @@ const INITIAL_METRICS = Object.freeze({
   }
 })
 
+const ACTION_DISABLED_MESSAGE = 'Para ejecutar esta acción inicia sesión como administrador o auditor.'
+
 const RISK_CONFIG = {
   out: {
     label: 'Sin stock',
@@ -78,6 +80,34 @@ const RISK_CONFIG = {
 }
 
 const getRiskConfig = (riskKey) => RISK_CONFIG[riskKey] || RISK_CONFIG.low
+
+const PredictionActionButton = ({
+  children,
+  variant = 'muted',
+  canManage,
+  disabled,
+  onClick
+}) => {
+  const isDisabled = disabled || !canManage
+  const className = variant === 'primary'
+    ? 'fe-btn-primary h-10 px-4 text-sm disabled:cursor-not-allowed disabled:opacity-60'
+    : variant === 'dark'
+      ? 'h-10 rounded-lg bg-[#243858] px-4 text-sm font-extrabold text-white transition hover:bg-[#17233d] disabled:cursor-not-allowed disabled:opacity-60'
+      : 'fe-btn-muted h-10 px-4 text-sm disabled:cursor-not-allowed disabled:opacity-60'
+
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={isDisabled}
+      title={!canManage ? ACTION_DISABLED_MESSAGE : undefined}
+      aria-disabled={isDisabled}
+      className={className}
+    >
+      {children}
+    </button>
+  )
+}
 
 const normalizeSearch = (value) =>
   String(value || '')
@@ -353,56 +383,53 @@ const PredictionsPage = ({ session }) => {
           </div>
         </div>
 
-        {canManageModel ? (
-          <div className="mt-5 flex flex-wrap gap-2">
-            <button
-              type="button"
+        <div className="mt-5 flex flex-wrap gap-2">
+            <PredictionActionButton
+              canManage={canManageModel}
               onClick={() => runAction(
                 'Sincronización de inventario',
                 () => ingestInventorySnapshot(session?.token),
                 'Inventario sincronizado en MongoDB. Ahora puedes limpiar y recalcular el modelo.'
               )}
               disabled={isRunningAction || isLoading}
-              className="fe-btn-primary h-10 px-4 text-sm disabled:cursor-not-allowed disabled:opacity-60"
+              variant="primary"
             >
               Sincronizar inventario
-            </button>
-            <button
-              type="button"
+            </PredictionActionButton>
+            <PredictionActionButton
+              canManage={canManageModel}
               onClick={() => runAction(
                 'Limpieza de datos',
                 () => cleanPredictionData(session?.token),
                 'Datos limpios generados correctamente para el modelo predictivo.'
               )}
               disabled={isRunningAction || isLoading}
-              className="fe-btn-muted h-10 px-4 text-sm disabled:cursor-not-allowed disabled:opacity-60"
             >
               Limpiar datos
-            </button>
-            <button
-              type="button"
+            </PredictionActionButton>
+            <PredictionActionButton
+              canManage={canManageModel}
               onClick={() => runAction(
                 'Recalcular predicción',
                 () => trainPredictionModel(session?.token, 7),
                 'Predicción recalculada con promedio móvil de 30 días.'
               )}
               disabled={isRunningAction || isLoading}
-              className="fe-btn-muted h-10 px-4 text-sm disabled:cursor-not-allowed disabled:opacity-60"
             >
               Entrenar modelo
-            </button>
-            <button
-              type="button"
+            </PredictionActionButton>
+            <PredictionActionButton
+              canManage={canManageModel}
               onClick={() => runAction(
                 'Flujo predictivo',
                 () => recalculatePredictions(session?.token, 7),
                 'Limpieza y predicción recalculadas correctamente.'
               )}
               disabled={isRunningAction || isLoading}
-              className="h-10 rounded-lg bg-[#243858] px-4 text-sm font-extrabold text-white transition hover:bg-[#17233d] disabled:cursor-not-allowed disabled:opacity-60"
+              variant="dark"
             >
               Recalcular flujo
-            </button>
+            </PredictionActionButton>
             <button
               type="button"
               onClick={() => loadDashboard()}
@@ -411,10 +438,11 @@ const PredictionsPage = ({ session }) => {
             >
               Actualizar tablero
             </button>
-          </div>
-        ) : (
-          <div className="mt-5">
-            <FlowMessage>Tu rol permite consultar predicciones. La sincronización, limpieza y entrenamiento quedan reservados para administrador o auditor.</FlowMessage>
+        </div>
+
+        {!canManageModel && (
+          <div className="mt-3">
+            <FlowMessage>Tu rol permite consultar predicciones. Las acciones del modelo se muestran para explicar el flujo, pero solo administrador o auditor pueden ejecutarlas.</FlowMessage>
           </div>
         )}
       </section>
