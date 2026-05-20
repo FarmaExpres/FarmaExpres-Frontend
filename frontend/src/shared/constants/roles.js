@@ -86,6 +86,16 @@ export const canAccessStockControl = (role) => {
   return [ROLES.ADMIN, ROLES.FARMACEUTICO].includes(normalizedRole)
 }
 
+export const canAccessPredictions = (role) => {
+  const normalizedRole = normalizeRole(role)
+  return [ROLES.ADMIN, ROLES.FARMACEUTICO, ROLES.AUDITOR].includes(normalizedRole)
+}
+
+export const canManagePredictions = (role) => {
+  const normalizedRole = normalizeRole(role)
+  return [ROLES.ADMIN, ROLES.AUDITOR].includes(normalizedRole)
+}
+
 export const canAccessAudit = (role) => normalizeRole(role) === ROLES.AUDITOR
 
 export const getDefaultRouteByRole = (role) => {

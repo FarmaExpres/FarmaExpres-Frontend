@@ -85,6 +85,14 @@ const IconShield = () => (
   </svg>
 )
 
+const IconTrend = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className={iconClassName}>
+    <path d="M4 18h16" />
+    <path d="M6 15.5 10 11l3 2.5 5-6" />
+    <path d="M15 7.5h3.5V11" />
+  </svg>
+)
+
 const IconLock = () => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className={iconClassName}>
     <rect x="5" y="11" width="14" height="10" rx="2" />
@@ -111,7 +119,8 @@ const iconMap = {
   inventory: IconInventory,
   entries: IconDown,
   exits: IconUp,
-  audit: IconShield
+  audit: IconShield,
+  predictions: IconTrend
 }
 
 const MENU_BY_ROLE = {
@@ -122,7 +131,8 @@ const MENU_BY_ROLE = {
     { key: 'movements', label: 'Movimientos', moduleKey: 'movements' },
     { key: 'reports', label: 'Reportes', moduleKey: 'reports' },
     { key: 'alerts', label: 'Alertas', moduleKey: 'alerts', badge: '24' },
-    { key: 'stock', label: 'Control de stock', moduleKey: 'stock' }
+    { key: 'stock', label: 'Control de stock', moduleKey: 'stock' },
+    { key: 'predictions', label: 'Predicciones', moduleKey: 'predictions' }
   ],
   [ROLES.FARMACEUTICO]: [
     { key: 'dashboard', label: 'Dashboard', moduleKey: 'dashboard' },
@@ -130,14 +140,16 @@ const MENU_BY_ROLE = {
     { key: 'entries', label: 'Entradas', moduleKey: 'entries' },
     { key: 'exits', label: 'Salidas', moduleKey: 'exits' },
     { key: 'alerts', label: 'Alertas', moduleKey: 'alerts', badge: '24' },
-    { key: 'stock', label: 'Control de stock', moduleKey: 'stock' }
+    { key: 'stock', label: 'Control de stock', moduleKey: 'stock' },
+    { key: 'predictions', label: 'Predicciones', moduleKey: 'predictions' }
   ],
   [ROLES.AUDITOR]: [
     { key: 'dashboard', label: 'Dashboard', moduleKey: 'dashboard' },
     { key: 'inventory', label: 'Inventario', moduleKey: 'medicines' },
     { key: 'movements', label: 'Movimientos', moduleKey: 'movements' },
     { key: 'reports', label: 'Reportes', moduleKey: 'reports' },
-    { key: 'audit', label: 'Auditoría', moduleKey: 'audit' }
+    { key: 'audit', label: 'Auditoría', moduleKey: 'audit' },
+    { key: 'predictions', label: 'Predicciones', moduleKey: 'predictions' }
   ]
 }
 
