@@ -57,6 +57,23 @@ Resultado observado:
 - 10 medicamentos en riesgo alto.
 - 1 medicamento agotado.
 
+## Despliegue requerido para evaluación
+
+El módulo visual depende de tres repositorios activos en el mismo ambiente:
+
+```bash
+cd FarmaExpres_Backend
+docker compose --env-file .env.dev up -d --build
+
+cd ../FarmaExpres-Micro-NoSQL
+docker compose --env-file .env.dev up -d --build
+
+cd ../FarmaExpres-Frontend/frontend
+docker compose --env-file .env.dev up -d --build
+```
+
+Para `qa` o `main`, se cambia `.env.dev` por `.env.qa` o `.env.main` en los tres repositorios. El frontend no llama a MongoDB directamente; consume `/api/predictions` por el gateway del backend.
+
 ## Archivos principales
 
 - `frontend/src/predictions/pages/PredictionsPage.jsx`
