@@ -41,7 +41,20 @@ npm run dev:main  # localhost:5000
 
 ## Ejecución con Docker
 
-Desde esta carpeta (`frontend/`), por ambiente:
+Antes de levantar el frontend, el backend y el microservicio predictivo deben estar activos en el mismo ambiente. El orden recomendado es:
+
+```bash
+cd ../../FarmaExpres_Backend
+docker compose --env-file .env.dev up -d --build
+
+cd ../FarmaExpres-Micro-NoSQL
+docker compose --env-file .env.dev up -d --build
+
+cd ../FarmaExpres-Frontend/frontend
+docker compose --env-file .env.dev up -d --build
+```
+
+Desde esta carpeta (`frontend/`), los comandos por ambiente son:
 
 ```bash
 docker compose --env-file .env.dev up -d --build
@@ -90,11 +103,22 @@ Esto mantiene la regla HU-018:
 - puertos externos distintos por ambiente
 - red por ambiente + puerto interno estable entre contenedores
 
+## Módulo de predicciones
+
+La ruta `/predictions` consume `/api/predictions` por el gateway. Para que los botones de sincronizar, limpiar y recalcular funcionen, también debe estar levantado `FarmaExpres-Micro-NoSQL` con el `.env` del mismo ambiente:
+
+- `dev`: `BACKEND_NETWORK=farmaexpres-dev_default`, API directa `http://localhost:8085`, MongoDB `mongodb://localhost:27017`.
+- `qa`: `BACKEND_NETWORK=farmaexpres-qa_default`, API directa `http://localhost:9085`, MongoDB `mongodb://localhost:37017`.
+- `main`: `BACKEND_NETWORK=farmaexpres-main_default`, API directa `http://localhost:10085`, MongoDB `mongodb://localhost:47017`.
+
+El usuario final no necesita abrir MongoDB ni el puerto directo del microservicio; esos puertos quedan para diagnóstico local y revisión técnica.
+
 ## Troubleshooting rapido
 
 Si al iniciar sesión o consumir `/api` aparece `502 Bad Gateway`:
 
 - verifica que el backend del mismo ambiente esté levantado
+- verifica que el microservicio NoSQL esté levantado si el error ocurre en `/predictions`
 - verifica que el frontend esté unido a la red backend correcta (`BACKEND_NETWORK`)
 - verifica que `BACKEND_URL` sea `http://api-gateway:8080` dentro de Docker
 
