@@ -1,4 +1,4 @@
-﻿import { useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 
 const PAGE_SIZE_OPTIONS = [10, 15, 20, 30]
 
@@ -28,7 +28,7 @@ const getExpirationVisuals = (daysUntilExpiration) => {
   if (days <= 7) {
     return {
       tone: 'critical',
-      label: 'Critico',
+      label: 'Crítico',
       badgeClass: 'bg-rose-100 text-rose-700',
       textClass: 'text-rose-700',
       rowClass: ''
@@ -68,9 +68,9 @@ const formatDaysLabel = (daysUntilExpiration) => {
   const days = Number(daysUntilExpiration)
 
   if (!Number.isFinite(days)) return '---'
-  if (days < 0) return `${Math.abs(days)} dia(s) vencido`
+  if (days < 0) return `${Math.abs(days)} día(s) vencido`
   if (days === 0) return 'VENCE HOY'
-  return `${days} dia(s)`
+  return `${days} día(s)`
 }
 
 const ExpiringReportSection = ({
@@ -134,7 +134,7 @@ const ExpiringReportSection = ({
           <p className="mt-2 text-2xl font-extrabold tracking-tight text-red-800">{summary.expired}</p>
         </article>
         <article className="fe-card border border-orange-200 bg-orange-50 p-4">
-          <p className="text-xs font-bold uppercase tracking-wide text-orange-700">Riesgo alto (0-15 dias)</p>
+          <p className="text-xs font-bold uppercase tracking-wide text-orange-700">Riesgo alto (0-15 días)</p>
           <p className="mt-2 text-2xl font-extrabold tracking-tight text-orange-800">{summary.critical}</p>
         </article>
         <article className="fe-card border border-[#d7e2f8] bg-gradient-to-r from-[#f6f8ff] to-[#eef3ff] p-4">
@@ -147,8 +147,8 @@ const ExpiringReportSection = ({
         <div className="border-b border-[#e8edf8] bg-[#f7f9ff] px-4 py-3">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <h2 className="text-[1.2rem] font-bold text-[#1f2e4d]">Reporte de Proximos a Vencer</h2>
-              <p className="mt-1 text-sm text-[#6e7d99]">Listado de productos proximos a vencer con su nivel de prioridad.</p>
+              <h2 className="text-[1.2rem] font-bold text-[#1f2e4d]">Reporte de próximos a vencer</h2>
+              <p className="mt-1 text-sm text-[#6e7d99]">Listado de productos próximos a vencer con su nivel de prioridad.</p>
             </div>
             <button
               type="button"
@@ -191,7 +191,7 @@ const ExpiringReportSection = ({
               }}
               className={`fe-badge-chip h-9 px-4 ${urgencyFilter === 'critical' ? 'bg-orange-100 text-orange-700' : 'bg-slate-100 text-slate-700'}`}
             >
-              0-15 dias
+              0-15 días
             </button>
             <button
               type="button"
@@ -201,7 +201,7 @@ const ExpiringReportSection = ({
               }}
               className={`fe-badge-chip h-9 px-4 ${urgencyFilter === 'medium' ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-700'}`}
             >
-              16-30 dias
+              16-30 días
             </button>
             <button
               type="button"
@@ -211,7 +211,7 @@ const ExpiringReportSection = ({
               }}
               className={`fe-badge-chip h-9 px-4 ${urgencyFilter === 'controlled' ? 'bg-blue-100 text-blue-700' : 'bg-slate-100 text-slate-700'}`}
             >
-              31-60 dias
+              31-60 días
             </button>
           </div>
         </div>
@@ -229,18 +229,18 @@ const ExpiringReportSection = ({
             </colgroup>
             <thead>
               <tr>
-                <th className="text-left">CODIGO</th>
+                <th className="text-left">CÓDIGO</th>
                 <th className="text-left">MEDICAMENTO</th>
                 <th className="text-left">LOTE</th>
                 <th className="text-left">VENCIMIENTO</th>
-                <th className="text-left">DIAS RESTANTES</th>
+                <th className="text-left">DÍAS RESTANTES</th>
                 <th className="text-left">{stockColumnLabel}</th>
                 <th className="text-left">ESTADO</th>
               </tr>
             </thead>
             <tbody>
               {isLoading ? (
-                <tr><td colSpan="7" className="p-5 text-center text-gray-400">Cargando proximos a vencer...</td></tr>
+                <tr><td colSpan="7" className="p-5 text-center text-gray-400">Cargando próximos a vencer...</td></tr>
               ) : paginatedRows.length > 0 ? (
                 paginatedRows.map((item) => {
                   const visuals = getExpirationVisuals(item.daysUntilExpiration)
@@ -280,7 +280,7 @@ const ExpiringReportSection = ({
                   )
                 })
               ) : (
-                <tr><td colSpan="7" className="p-5 text-center text-gray-400">No hay medicamentos proximos a vencer para el filtro seleccionado.</td></tr>
+                <tr><td colSpan="7" className="p-5 text-center text-gray-400">No hay medicamentos próximos a vencer para el filtro seleccionado.</td></tr>
               )}
             </tbody>
           </table>

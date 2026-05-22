@@ -5,6 +5,7 @@ import {
 } from '../../shared/services/api.service'
 
 const PRODUCTS_ENDPOINT = '/api/products'
+const ALL_PRODUCTS_ENDPOINT = '/api/products/all'
 const FEFO_SNAPSHOT_ENDPOINT = '/api/products/fefo-snapshot'
 const ACTIVE_TABLE_ENDPOINT = '/api/products/active-table'
 const ACTIVE_SUMMARY_ENDPOINT = '/api/products/active-summary'
@@ -100,11 +101,34 @@ const mapProduct = (product = {}) => {
   }
 }
 
+const resolveActiveInventoryStock = (item = {}) => toNumberOrDefault(
+  item?.operationalStock ??
+    item?.stock ??
+    item?.availableStock ??
+    item?.batchStock ??
+    item?.stockDisponible ??
+    item?.stockOperativo,
+  0
+)
+
 const mapActiveInventoryRow = (item = {}) => ({
-  id: item?.id ?? item?.code ?? null,
-  codigo: String(item?.code ?? item?.codigo ?? '').trim(),
-  nombre: String(item?.name ?? item?.nombre ?? '').trim(),
-  stock: toNumberOrDefault(item?.stock, 0),
+  id: item?.productId ?? item?.medicineId ?? item?.id ?? item?.code ?? null,
+  productId: item?.productId ?? item?.medicineId ?? item?.id ?? null,
+  codigo: String(item?.productCode ?? item?.code ?? item?.codigo ?? '').trim(),
+  productCode: String(item?.productCode ?? item?.code ?? item?.codigo ?? '').trim(),
+  nombre: String(item?.productName ?? item?.name ?? item?.nombre ?? '').trim(),
+  stock: resolveActiveInventoryStock(item),
+  operationalStock: toNumberOrDefault(item?.operationalStock ?? item?.stockOperativo, resolveActiveInventoryStock(item)),
+  availableStock: toNumberOrDefault(item?.availableStock ?? item?.stockDisponible ?? item?.batchStock, 0),
+  batchStock: toNumberOrDefault(item?.batchStock ?? item?.availableStock ?? item?.stockDisponible, 0),
+  batchCode: String(item?.batchCode ?? item?.nextBatchCode ?? item?.loteCodigo ?? '').trim(),
+  proximoVencimiento: normalizeDateValue(
+    item?.nextExpirationDate ??
+      item?.nextBatchExpirationDate ??
+      item?.batchExpirationDate ??
+      item?.expirationDate ??
+      item?.fechavencimiento
+  ),
   precio: toNumberOrDefault(item?.unitPrice ?? item?.precio, 0),
   totalValue: toNumberOrDefault(item?.totalValue ?? item?.valorTotal, 0)
 })
@@ -177,6 +201,18 @@ export const getMedicines = async (token) => {
     return Array.isArray(response.data) ? response.data.map(mapProduct) : []
   } catch (error) {
     throw normalizeApiError(error, 'No se pudo obtener la lista de medicamentos.')
+  }
+}
+
+export const getAllMedicines = async (token) => {
+  try {
+    const response = await inventoryApi.get(ALL_PRODUCTS_ENDPOINT, {
+      headers: buildAuthHeaders(token)
+    })
+
+    return Array.isArray(response.data) ? response.data.map(mapProduct) : []
+  } catch (error) {
+    throw normalizeApiError(error, 'No se pudo obtener la lista completa de medicamentos.')
   }
 }
 

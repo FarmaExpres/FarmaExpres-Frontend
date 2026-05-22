@@ -68,7 +68,7 @@ const buildSuggestion = (item = {}) => {
   if (backendSuggestion) return backendSuggestion
   const stock = toNumber(item.stock)
   const minimum = toNumber(item.stockMinimo)
-  const restockUnits = Math.max((minimum * 2) - stock, 1)
+  const restockUnits = Math.max(minimum - stock, 1)
   return `Reponer ${restockUnits} unidades`
 }
 
@@ -141,7 +141,7 @@ const LowStockReportSection = ({
         <div className="border-b border-[#e8edf8] bg-[#f7f9ff] px-4 py-3">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <h2 className="text-[1.2rem] font-bold text-[#1f2e4d]">Reporte de Bajo Stock</h2>
+              <h2 className="text-[1.2rem] font-bold text-[#1f2e4d]">Reporte de bajo stock</h2>
               <p className="mt-1 text-sm text-[#6e7d99]">Productos por debajo del stock mínimo y sugerencia de reposición.</p>
             </div>
             <button
@@ -231,9 +231,9 @@ const LowStockReportSection = ({
                       <td className="whitespace-nowrap text-left font-medium text-[#30456f]">{item.loteCodigo || 'Sin lote'}</td>
                       <td
                         className={`whitespace-nowrap text-left font-semibold ${visuals.textClass}`}
-                        title={`Stock operativo producto: ${item.operationalStock ?? 0}`}
+                        title={`Stock operativo producto: ${item.operationalStock ?? item.stock ?? 0}`}
                       >
-                        {toNumber(item.batchStock ?? item.stock)}
+                        {toNumber(item.stock)}
                       </td>
                       <td className="whitespace-nowrap text-left font-semibold text-[#2f4269]">{toNumber(item.stockMinimo)}</td>
                       <td className={`whitespace-nowrap text-left font-semibold ${visuals.textClass}`}>{formatCoverage(item)}</td>

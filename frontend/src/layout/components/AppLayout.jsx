@@ -1,4 +1,6 @@
+// Start JFBM
 import Sidebar from './Sidebar'
+import ErrorBoundary from '../../shared/components/ErrorBoundary'
 
 const AppLayout = ({ role, user, activeModule, alertsCount = 0, onNavigate, onLogout, children }) => {
   return (
@@ -15,7 +17,9 @@ const AppLayout = ({ role, user, activeModule, alertsCount = 0, onNavigate, onLo
       <main className="flex-1 md:overflow-y-auto">
         <div className="min-h-screen p-3 sm:p-4 md:min-h-full md:px-2 md:py-3 lg:px-3 lg:py-4">
           <div className="fe-content-shell min-h-[calc(100vh-1.5rem)]">
-            {children}
+            <ErrorBoundary title="Ocurrio un problema" message="No se pudo cargar esta seccion.">
+              {children}
+            </ErrorBoundary>
           </div>
         </div>
       </main>
@@ -24,3 +28,4 @@ const AppLayout = ({ role, user, activeModule, alertsCount = 0, onNavigate, onLo
 }
 
 export default AppLayout
+// End JFBM

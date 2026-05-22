@@ -11,24 +11,35 @@ import UsersPage from './users/pages/UsersPage'
 import ReportsPage from './reports/pages/ReportsPage'
 import AlertsPage from './alerts/pages/AlertsPage'
 import { getAlertsCenterData } from './alerts/services/alerts.service'
+import DashboardPage from './dashboard/pages/DashboardPage'
+import StockControlPage from './stock/pages/StockControlPage'
+import AuditPage from './audit/pages/AuditPage'
+import PredictionsPage from './predictions/pages/PredictionsPage'
 import LoginPage from './auth/pages/LoginPage'
 import ProtectedRoute from './shared/routing/ProtectedRoute'
 import PublicOnlyRoute from './shared/routing/PublicOnlyRoute'
 import { clearSession, getSession, isAdmin } from './shared/auth/session'
 import {
+  INVENTORY_CHANGED_EVENT,
+  INVENTORY_CHANGED_STORAGE_KEY
+} from './shared/events/inventory.events'
+import {
+  canAccessAudit,
   canAccessAlerts,
   canAccessEntries,
   canAccessExits,
   canAccessMedicines,
   canAccessMovements,
+  canAccessPredictions,
   canAccessReports,
+  canAccessStockControl,
   canManageMedicines,
   getDefaultRouteByRole
 } from './shared/constants/roles'
 
 const LAST_MEDICINES_ROUTE_STORAGE_KEY = 'medicines:last-route'
 
-const AppShell = ({ session, activeModule, routePath, onNavigate, onLogout, alertsCount, content }) => (
+const AppShell = ({ session, activeModule, routeKey, onNavigate, onLogout, alertsCount, content }) => (
   <AppLayout
     role={session.role}
     user={session.user}
@@ -37,7 +48,7 @@ const AppShell = ({ session, activeModule, routePath, onNavigate, onLogout, aler
     onNavigate={onNavigate}
     onLogout={onLogout}
   >
-    <div key={`${activeModule}:${routePath}`} className="fe-route-transition">
+    <div key={`${activeModule}:${routeKey}`} className="fe-route-transition">
       {content}
     </div>
   </AppLayout>
@@ -54,6 +65,9 @@ function App() {
   const canAccessMovementsModule = canAccessMovements(session.role)
   const canAccessReportsModule = canAccessReports(session.role)
   const canAccessAlertsModule = canAccessAlerts(session.role)
+  const canAccessStockControlModule = canAccessStockControl(session.role)
+  const canAccessAuditModule = canAccessAudit(session.role)
+  const canAccessPredictionsModule = canAccessPredictions(session.role)
   const canManageMedicinesModule = canManageMedicines(session.role)
   const [alertsCount, setAlertsCount] = useState(0)
 
@@ -69,6 +83,11 @@ function App() {
   }, [location.pathname])
 
   const handleNavigate = (moduleKey) => {
+    if (moduleKey === 'dashboard') {
+      navigate('/dashboard')
+      return
+    }
+
     if (moduleKey === 'users' && !isAdmin(session.role)) return
 
     if (moduleKey === 'users') {
@@ -103,6 +122,24 @@ function App() {
     if (moduleKey === 'alerts') {
       if (!canAccessAlertsModule) return
       navigate('/alerts')
+      return
+    }
+
+    if (moduleKey === 'stock') {
+      if (!canAccessStockControlModule) return
+      navigate('/stock')
+      return
+    }
+
+    if (moduleKey === 'audit') {
+      if (!canAccessAuditModule) return
+      navigate('/audit')
+      return
+    }
+
+    if (moduleKey === 'predictions') {
+      if (!canAccessPredictionsModule) return
+      navigate('/predictions')
       return
     }
 
@@ -154,12 +191,25 @@ function App() {
 
     fetchAlertsCount()
 
+    const handleInventoryChanged = () => {
+      fetchAlertsCount()
+    }
+
+    const handleStorage = (event) => {
+      if (event.key === INVENTORY_CHANGED_STORAGE_KEY) fetchAlertsCount()
+    }
+
+    window.addEventListener(INVENTORY_CHANGED_EVENT, handleInventoryChanged)
+    window.addEventListener('storage', handleStorage)
+
     if (session.isAuthenticated && canAccessAlertsModule) {
       refreshIntervalId = window.setInterval(fetchAlertsCount, 60000)
     }
 
     return () => {
       isMounted = false
+      window.removeEventListener(INVENTORY_CHANGED_EVENT, handleInventoryChanged)
+      window.removeEventListener('storage', handleStorage)
       if (refreshIntervalId) window.clearInterval(refreshIntervalId)
     }
   }, [session.isAuthenticated, session.role, canAccessAlertsModule])
@@ -173,13 +223,27 @@ function App() {
       <Route element={<ProtectedRoute isAuthenticated={session.isAuthenticated} />}>
         <Route path="/" element={<Navigate to={defaultRoute} replace />} />
         <Route
+          path="/dashboard"
+          element={(
+            <AppShell
+              session={session}
+              activeModule="dashboard"
+              routeKey={location.key}
+              onNavigate={handleNavigate}
+              onLogout={handleLogout}
+              alertsCount={alertsCount}
+              content={<DashboardPage session={session} />}
+            />
+          )}
+        />
+        <Route
           path="/medicines"
           element={canAccessMedicinesModule
             ? (
               <AppShell
                 session={session}
                 activeModule="medicines"
-                routePath={location.pathname}
+                routeKey={location.key}
                 onNavigate={handleNavigate}
                 onLogout={handleLogout}
                 alertsCount={alertsCount}
@@ -195,7 +259,7 @@ function App() {
               <AppShell
                 session={session}
                 activeModule="medicines"
-                routePath={location.pathname}
+                routeKey={location.key}
                 onNavigate={handleNavigate}
                 onLogout={handleLogout}
                 alertsCount={alertsCount}
@@ -211,7 +275,7 @@ function App() {
               <AppShell
                 session={session}
                 activeModule="medicines"
-                routePath={location.pathname}
+                routeKey={location.key}
                 onNavigate={handleNavigate}
                 onLogout={handleLogout}
                 alertsCount={alertsCount}
@@ -227,7 +291,7 @@ function App() {
               <AppShell
                 session={session}
                 activeModule="users"
-                routePath={location.pathname}
+                routeKey={location.key}
                 onNavigate={handleNavigate}
                 onLogout={handleLogout}
                 alertsCount={alertsCount}
@@ -243,7 +307,7 @@ function App() {
               <AppShell
                 session={session}
                 activeModule="entries"
-                routePath={location.pathname}
+                routeKey={location.key}
                 onNavigate={handleNavigate}
                 onLogout={handleLogout}
                 alertsCount={alertsCount}
@@ -263,7 +327,7 @@ function App() {
               <AppShell
                 session={session}
                 activeModule="exits"
-                routePath={location.pathname}
+                routeKey={location.key}
                 onNavigate={handleNavigate}
                 onLogout={handleLogout}
                 alertsCount={alertsCount}
@@ -283,7 +347,7 @@ function App() {
               <AppShell
                 session={session}
                 activeModule="movements"
-                routePath={location.pathname}
+                routeKey={location.key}
                 onNavigate={handleNavigate}
                 onLogout={handleLogout}
                 alertsCount={alertsCount}
@@ -299,7 +363,7 @@ function App() {
               <AppShell
                 session={session}
                 activeModule="reports"
-                routePath={location.pathname}
+                routeKey={location.key}
                 onNavigate={handleNavigate}
                 onLogout={handleLogout}
                 alertsCount={alertsCount}
@@ -315,11 +379,59 @@ function App() {
               <AppShell
                 session={session}
                 activeModule="alerts"
-                routePath={location.pathname}
+                routeKey={location.key}
                 onNavigate={handleNavigate}
                 onLogout={handleLogout}
                 alertsCount={alertsCount}
                 content={<AlertsPage />}
+              />
+              )
+            : <Navigate to={defaultRoute} replace />}
+        />
+        <Route
+          path="/stock"
+          element={canAccessStockControlModule
+            ? (
+              <AppShell
+                session={session}
+                activeModule="stock"
+                routeKey={location.key}
+                onNavigate={handleNavigate}
+                onLogout={handleLogout}
+                alertsCount={alertsCount}
+                content={<StockControlPage />}
+              />
+              )
+            : <Navigate to={defaultRoute} replace />}
+        />
+        <Route
+          path="/audit"
+          element={canAccessAuditModule
+            ? (
+              <AppShell
+                session={session}
+                activeModule="audit"
+                routeKey={location.key}
+                onNavigate={handleNavigate}
+                onLogout={handleLogout}
+                alertsCount={alertsCount}
+                content={<AuditPage />}
+              />
+              )
+            : <Navigate to={defaultRoute} replace />}
+        />
+        <Route
+          path="/predictions"
+          element={canAccessPredictionsModule
+            ? (
+              <AppShell
+                session={session}
+                activeModule="predictions"
+                routeKey={location.key}
+                onNavigate={handleNavigate}
+                onLogout={handleLogout}
+                alertsCount={alertsCount}
+                content={<PredictionsPage session={session} />}
               />
               )
             : <Navigate to={defaultRoute} replace />}

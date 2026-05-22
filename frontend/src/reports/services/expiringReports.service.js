@@ -117,11 +117,7 @@ const fetchExpiringRows = async (token) => {
 export const getExpiringReportGroups = async (token) => {
   try {
     const rawRows = dedupeRows(await fetchExpiringRows(token))
-    const allRows = rawRows.filter((row) => {
-      const groupKey = getExpiringGroupKey(row)
-      if (groupKey !== 'expired') return true
-      return Number(row?.batchStock ?? row?.stock ?? 0) > 0
-    })
+    const allRows = rawRows.filter((row) => Number(row?.batchStock ?? row?.stock ?? 0) > 0)
     const groupedRows = allRows.reduce((acc, row) => {
       const groupKey = getExpiringGroupKey(row)
       if (groupKey !== 'all') acc[groupKey].push(row)
@@ -136,6 +132,6 @@ export const getExpiringReportGroups = async (token) => {
       controlled: dedupeRows(groupedRows.controlled)
     }
   } catch (error) {
-    throw normalizeApiError(error, 'No se pudo obtener el reporte de proximos a vencer.')
+    throw normalizeApiError(error, 'No se pudo obtener el reporte de próximos a vencer.')
   }
 }

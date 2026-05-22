@@ -1,9 +1,11 @@
+// Start JFBM
 import { useCallback, useEffect, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
+import ErrorBoundary from '../../shared/components/ErrorBoundary'
 import MedicinesTable from '../components/MedicinesTable'
 import DeactivateMedicineModal from '../components/DeactivateMedicineModal'
 import { deactivateMedicine } from '../services/medicines.service'
-import { canManageMedicines } from '../../shared/constants/roles'
+import { canManageMedicines, normalizeRole, ROLES } from '../../shared/constants/roles'
 
 const MEDICINES_SEARCH_STORAGE_KEY = 'medicines:search-term'
 const MEDICINES_SORT_STORAGE_KEY = 'medicines:sort-by'
@@ -49,6 +51,8 @@ const MedicinesPage = ({ role }) => {
   const navigate = useNavigate()
   const location = useLocation()
   const isReadOnly = !canManageMedicines(role)
+  const normalizedRole = normalizeRole(role)
+  const canViewInactiveMedicines = [ROLES.ADMIN, ROLES.AUDITOR].includes(normalizedRole)
   const [medicineToDeactivate, setMedicineToDeactivate] = useState(null)
   const [openDeactivateModal, setOpenDeactivateModal] = useState(false)
   const [isDeactivating, setIsDeactivating] = useState(false)
@@ -211,73 +215,80 @@ const MedicinesPage = ({ role }) => {
   }, [medicineToDeactivate])
 
   return (
-    <div className="fe-page-shell">
-      <div className="fe-page-head">
-        <div>
-          <h1 className="fe-page-title">{isReadOnly ? 'Inventario' : 'Gestión de Medicamentos'}</h1>
+    <ErrorBoundary
+      title="Gestión de medicamentos"
+      message="Ocurrio un error al mostrar el inventario."
+    >
+      <div className="fe-page-shell">
+        <div className="fe-page-head">
+          <div>
+            <h1 className="fe-page-title">{isReadOnly ? 'Inventario' : 'Gestión de Medicamentos'}</h1>
+          </div>
+
+          {!isReadOnly && (
+            <button
+              onClick={handleOpenCreate}
+              className="fe-btn-primary 2xl:h-12 2xl:px-6 2xl:text-base"
+            >
+              + Agregar medicamento
+            </button>
+          )}
         </div>
+
+        {feedback && (
+          <div
+            className={`fe-toast ${
+              feedback.type === 'success'
+                ? 'border-green-200 bg-green-100 text-green-700'
+                : 'border-red-200 bg-red-100 text-red-700'
+            }`}
+          >
+            {feedback.message}
+          </div>
+        )}
+
+        <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center">
+          <input
+            value={searchTerm}
+            onChange={(event) => setSearchTerm(event.target.value)}
+            placeholder="Buscar por código o nombre..."
+            className="fe-input w-full sm:w-[310px] 2xl:h-12 2xl:text-base"
+          />
+
+          <select
+            value={sortBy}
+            onChange={(event) => setSortBy(event.target.value)}
+            className="fe-input w-full sm:w-[300px] 2xl:h-12 2xl:text-base"
+          >
+            <option value="code">Ordenar por código (asc)</option>
+            <option value="name">Ordenar por nombre (A-Z)</option>
+          </select>
+        </div>
+
+        <MedicinesTable
+          reload={reloadKey}
+          searchTerm={searchTerm}
+          sortBy={sortBy}
+          readOnly={isReadOnly}
+          includeInactive={canViewInactiveMedicines}
+          onError={handleError}
+          onEdit={handleOpenEdit}
+          onDeactivate={handleDeactivate}
+        />
 
         {!isReadOnly && (
-          <button
-            onClick={handleOpenCreate}
-            className="fe-btn-primary 2xl:h-12 2xl:px-6 2xl:text-base"
-          >
-            + Agregar medicamento
-          </button>
+          <DeactivateMedicineModal
+            isOpen={openDeactivateModal}
+            medicine={medicineToDeactivate}
+            isSubmitting={isDeactivating}
+            onCancel={handleCancelDeactivate}
+            onConfirm={handleConfirmDeactivate}
+          />
         )}
       </div>
-
-      {feedback && (
-        <div
-          className={`fe-toast ${
-            feedback.type === 'success'
-              ? 'border-green-200 bg-green-100 text-green-700'
-              : 'border-red-200 bg-red-100 text-red-700'
-          }`}
-        >
-          {feedback.message}
-        </div>
-      )}
-
-      <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center">
-        <input
-          value={searchTerm}
-          onChange={(event) => setSearchTerm(event.target.value)}
-          placeholder="Buscar por código o nombre..."
-          className="fe-input w-full sm:w-[310px] 2xl:h-12 2xl:text-base"
-        />
-
-        <select
-          value={sortBy}
-          onChange={(event) => setSortBy(event.target.value)}
-          className="fe-input w-full sm:w-[300px] 2xl:h-12 2xl:text-base"
-        >
-          <option value="code">Ordenar por código (asc)</option>
-          <option value="name">Ordenar por nombre (A-Z)</option>
-        </select>
-      </div>
-
-      <MedicinesTable
-        reload={reloadKey}
-        searchTerm={searchTerm}
-        sortBy={sortBy}
-        readOnly={isReadOnly}
-        onError={handleError}
-        onEdit={handleOpenEdit}
-        onDeactivate={handleDeactivate}
-      />
-
-      {!isReadOnly && (
-        <DeactivateMedicineModal
-          isOpen={openDeactivateModal}
-          medicine={medicineToDeactivate}
-          isSubmitting={isDeactivating}
-          onCancel={handleCancelDeactivate}
-          onConfirm={handleConfirmDeactivate}
-        />
-      )}
-    </div>
+    </ErrorBoundary>
   )
 }
 
 export default MedicinesPage
+// End JFBM

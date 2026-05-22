@@ -20,6 +20,7 @@ La aplicación contempla los siguientes dominios funcionales:
 - Alertas.
 - Reportes.
 - Auditoría.
+- Predicciones de inventario.
 
 Roles de operación:
 
@@ -119,6 +120,36 @@ Variables de entorno:
 
 - `VITE_API_BASE_URL`
 
+### Integración con el microservicio predictivo
+
+El módulo `Predicciones` no consulta MongoDB directamente. Consume el backend por el gateway:
+
+```text
+Frontend React -> API Gateway -> prediction-service -> MongoDB / inventory-service
+```
+
+Para que la pantalla funcione en Docker se deben levantar, en este orden, los repositorios del mismo ambiente:
+
+```bash
+cd FarmaExpres_Backend
+docker compose --env-file .env.dev up -d --build
+
+cd ../FarmaExpres-Micro-NoSQL
+docker compose --env-file .env.dev up -d --build
+
+cd ../FarmaExpres-Frontend/frontend
+docker compose --env-file .env.dev up -d --build
+```
+
+Para `qa` o `main` se cambia el archivo de entorno en los tres repositorios:
+
+```bash
+docker compose --env-file .env.qa up -d --build
+docker compose --env-file .env.main up -d --build
+```
+
+El frontend siempre llama rutas relativas `/api/predictions`; Nginx las envía a `api-gateway:8080` dentro de la red Docker del ambiente.
+
 ### Seguridad
 
 - Uso de token Bearer para endpoints protegidos.
@@ -163,18 +194,24 @@ npm run preview
 
 ### Ejecución con Docker
 
-Desde `frontend/`:
+Desde `frontend/`, usando el archivo de ambiente correspondiente:
 
 ```bash
-docker compose up --build
+docker compose --env-file .env.dev up -d --build
+docker compose --env-file .env.qa up -d --build
+docker compose --env-file .env.main up -d --build
 ```
 
 Aplicación disponible en:
 
-- `http://localhost:5173`
+- `http://localhost:3000` en dev.
+- `http://localhost:4000` en QA.
+- `http://localhost:5000` en main.
 
 Para detener contenedores:
 
 ```bash
-docker compose down
+docker compose --env-file .env.dev down
+docker compose --env-file .env.qa down
+docker compose --env-file .env.main down
 ```
